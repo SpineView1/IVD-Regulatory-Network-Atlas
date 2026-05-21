@@ -1,5 +1,15 @@
 # Phase 5: Verification UI — Implementation Plan
 
+> **⚠ CROSS-PLAN CONTRACT OVERRIDE:** Before implementing, read
+> `2026-05-19-cross-plan-reconciliation.md`. It is authoritative where this
+> plan's cross-phase references disagree. For this phase specifically: read
+> `graph.Edge` via canonical names (`relation`, `belief_score`, `status`,
+> `n_supporting_papers`, `n_models_agreeing`); `graph.Conflict.resolution_status`
+> values are `open`/`auto_resolved`/`human_resolved`; the sign-off path calls
+> `sbml.services.regenerate(network_id, bump='major')`. For audit-trail
+> provenance use `RawPPI.run.model_name`, `RawPPI.relation_logprob`,
+> `RawPPI.evidence_offset_start/end`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build the biologist-facing verification UI on top of the Phase 3 `Edge` / `Conflict` graph and the Phase 4 `ModelVersion` snapshots. End state: a biologist logs in via Authelia, sees all 200+ networks on a grid dashboard, drills into a network to view a Cytoscape.js graph of its edges, walks the disagreement queue resolving conflicts via HTMX-driven forms, downloads the SBML/CSV bundle, and finally signs off — bumping the model from `version_draft` to `verified` and cutting a curator MAJOR semver via `sbml.regenerate`. Subscribers receive email + in-app notifications on every status transition.

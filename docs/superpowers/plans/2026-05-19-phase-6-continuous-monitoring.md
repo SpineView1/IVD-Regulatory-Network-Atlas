@@ -1,5 +1,14 @@
 # Phase 6: Continuous Monitoring — Implementation Plan
 
+> **⚠ CROSS-PLAN CONTRACT OVERRIDE:** Before implementing, read
+> `2026-05-19-cross-plan-reconciliation.md`. It is authoritative where this
+> plan's cross-phase references disagree. For this phase specifically:
+> `graph.Conflict.reasoning` ALREADY EXISTS (Phase 3) — your migration must add
+> ONLY `resolved_relation`, `resolved_at`, `auto_resolve_attempted_at`, NOT
+> `reasoning`. The `monitoring` app is an accepted 11th app (reconciliation
+> §9A). Use `Paper.publication_date` (not `pub_date`) in fixtures. Set
+> `Conflict.resolution_status='auto_resolved'` on successful auto-resolution.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Wire the already-built Phase 1–5 components into a continuously-running loop. After Phase 6, the system runs unattended: PubMed deltas arrive hourly, affected networks are marked stale, conflicts are auto-resolved when models agree, subscribers are notified, backpressure prevents queue overflow, and a global pause switch is available for ops. End state: a synthetic Paper inserted at one end of the pipeline propagates all the way to a notification email at the other end with zero human intervention.

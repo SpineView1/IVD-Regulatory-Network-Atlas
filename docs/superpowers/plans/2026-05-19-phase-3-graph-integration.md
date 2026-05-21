@@ -1,5 +1,15 @@
 # Phase 3: Graph Integration — Implementation Plan
 
+> **⚠ CROSS-PLAN CONTRACT OVERRIDE:** Before implementing, read
+> `2026-05-19-cross-plan-reconciliation.md`. It is authoritative where this
+> plan's cross-phase references disagree. For this phase specifically: use
+> `RawPPI.subject`/`object` (not `subject_text`/`object_text`),
+> `RawPPI.evidence_offset_start/end`, `RawPPI.relation_logprob`, `RawPPI.run`,
+> `ExtractionRun.model_name` (not `extractor_model`), and
+> `Paper.publication_date` (not `pub_date`). `Network.root_entities` now exists
+> (added by reconciliation §8). `Edge` now persists `n_supporting_papers` and
+> `n_models_agreeing`; set them in `normalize_and_integrate`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Turn the stream of `RawPPI` rows produced by Phase 2 into a normalized, deduplicated, belief-scored regulatory graph that biologists can browse network-by-network. End state: every grounded `RawPPI` becomes an `Edge` carrying provenance back to its source chunks; conflicts (intra-paper, inter-paper, inter-model) raise `Conflict` rows; affected networks demote from `verified` → `stale`; the NF-κB axis renders in a Cytoscape.js dev view at `/graph/dev/networks/<code>/`.
@@ -221,6 +231,11 @@ class OntologyEntity(TimestampedModel):
     entity_type = models.CharField(max_length=32, choices=ENTITY_TYPES, db_index=True)
     preferred_label = models.CharField(max_length=255, db_index=True)
     description = models.TextField(blank=True, default="")
+    # Cellular compartment for SBML-qual compartment assignment (Phase 4).
+    compartment = models.CharField(max_length=32, blank=True, default="cytoplasm")
+    # Primary identifiers.org URI (derived from the preferred Identifier).
+    # Consumed by Phase 4 SBML MIRIAM annotation. See reconciliation doc §5/§8.
+    canonical_uri = models.URLField(blank=True, default="")
 
     class Meta:
         constraints = [
@@ -891,6 +906,34 @@ class Entity(TimestampedModel):
         return self.ontology_entity.identifiers.filter(is_primary=True).first() \
             or self.ontology_entity.identifiers.first()
 
+    # Proxy properties so Phase 4 (SBML emission) can read flat attributes off
+    # an Entity without knowing the OntologyEntity split. See reconciliation
+    # doc §5/§8.
+    @property
+    def symbol(self) -> str:
+        return self.ontology_entity.preferred_label
+
+    @property
+    def compartment(self) -> str:
+        return self.ontology_entity.compartment or "cytoplasm"
+
+    @property
+    def canonical_uri(self) -> str:
+        return self.ontology_entity.canonical_uri
+
+    @property
+    def miriam_uris(self) -> list[str]:
+        scheme_prefix = {
+            "UNIPROT": "uniprot", "HGNC": "hgnc",
+            "CHEBI": "chebi", "MIRBASE": "mirbase",
+        }
+        uris = []
+        for ident in self.ontology_entity.identifiers.all():
+            prefix = scheme_prefix.get(ident.scheme.upper())
+            if prefix:
+                uris.append(f"https://identifiers.org/{prefix}:{ident.value}")
+        return uris
+
     def __str__(self) -> str:
         return self.preferred_label
 ```
@@ -1047,6 +1090,12 @@ class Edge(TimestampedModel):
     )
     relation = models.CharField(max_length=32, choices=RELATIONS, db_index=True)
     belief_score = models.FloatField(default=0.0, db_index=True)
+    # Denormalized counters set by normalize_and_integrate alongside
+    # belief_score (the counts are already computed there as args to
+    # bayes_belief). Consumed by Phase 4 (SBML annotations + edges.csv) and
+    # Phase 5 (verification UI). See cross-plan reconciliation doc §4/§8.
+    n_supporting_papers = models.PositiveIntegerField(default=0)
+    n_models_agreeing = models.PositiveIntegerField(default=0)
     status = models.CharField(
         max_length=16, choices=STATUSES, default="candidate", db_index=True,
     )

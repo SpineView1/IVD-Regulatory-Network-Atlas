@@ -1,5 +1,16 @@
 # Phase 4: SBML-qual Emission and Versioning — Implementation Plan
 
+> **⚠ CROSS-PLAN CONTRACT OVERRIDE:** Before implementing, read
+> `2026-05-19-cross-plan-reconciliation.md`. It is authoritative where this
+> plan's cross-phase references disagree. For this phase specifically: use
+> `edge.relation` (not `relation_type`) — the `edges.csv` column header is
+> `relation`. `edge.n_supporting_papers` / `edge.n_models_agreeing` now persist
+> (reconciliation §8). `entity.symbol` / `compartment` / `canonical_uri` /
+> `miriam_uris` are proxy properties on `Entity` (reconciliation §5/§8) — your
+> existing flat-attribute access works. For evidence: `raw_ppi.run.model_name`
+> (not `extraction_run`), `raw_ppi.relation_logprob` (not `logprob`),
+> `raw_ppi.evidence_offset_start/end` (not `evidence_span_*`).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Turn the accepted `Edge` set produced by Phase 3 into versioned, MIRIAM-annotated SBML-qual models — one file per `(Network, semver)` snapshot — plus matching `edges.csv` and `evidence.csv` exports, all bundled into a per-version artifact ZIP and served behind a Django download view. End state: a curator can click "Download" on any network and get a `<network_code>_v<semver>.zip` containing an SBML-qual file that loads cleanly into GINsim / CellNOpt / Cytoscape, with every `qual:QualitativeSpecies` and `qual:Transition` carrying `bqbiol:is` MIRIAM annotations pointing at `identifiers.org` URIs, plus a custom `interactome:evidence` provenance block.

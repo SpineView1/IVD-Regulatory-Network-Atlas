@@ -1728,7 +1728,13 @@ class Network(TimestampedModel):
     title = models.CharField(max_length=256)
     description = models.TextField(blank=True, default="")
     keywords = models.JSONField(default=list, blank=True)
+    # Free-text alias strings ("NF-κB", "RelA", "p65") for cheap keyword
+    # relevance triage.
     root_entity_aliases = models.JSONField(default=list, blank=True)
+    # Structured identifier dicts ({"scheme": "HGNC", "value": "7794"}) used by
+    # Phase 3's NetworkEdgeMembership assignment. Distinct from the aliases
+    # above. See cross-plan reconciliation doc §6/§8.
+    root_entities = models.JSONField(default=list, blank=True)
     pipeline_status = models.CharField(
         max_length=24, choices=PIPELINE_STATUS_CHOICES, default="idle"
     )
