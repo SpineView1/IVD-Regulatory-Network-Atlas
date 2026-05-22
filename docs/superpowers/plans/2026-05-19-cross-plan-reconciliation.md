@@ -261,3 +261,54 @@ only `resolved_relation`/`resolved_at`/`auto_resolve_attempted_at`; use
 **Before implementing Phase 5:** consume `graph.Edge`, `graph.Conflict`,
 `sbml.ModelVersion` per canonical names above. Call `sbml.services.regenerate(
 network_id, bump='major')` on sign-off.
+
+**Before implementing Phase 8:** read `graph.Edge`/`Entity` via canonical names
+(§4/§5); the projection trigger is the `graph.signals.edges_integrated` signal
+(see §12); the Neo4j password env var is the single `NEO4J_PASSWORD` (§12C).
+
+---
+
+## 12. Phase 8 (graph analysis) contracts
+
+Phase 8 (`analysis` app + Neo4j read-model) was reconciled after the fact. Its
+cross-phase contracts:
+
+**A. The `graph` → `analysis` projection trigger (no circular import).**
+- `graph.signals.edges_integrated` is a Django `Signal` **defined in `graph`**
+  (the emitter owns it). Phase 3's `graph.services._post_integrate_hook(
+  touched_edges: set[int], raws: list)` emits it after a batch lands, passing
+  `touched_edges` (the edge-id set).
+- `analysis/signals.py` **receives** it and dispatches the Celery task **by
+  name**: `celery.current_app.send_task("analysis.tasks.project_edges",
+  args=[list(touched_edges)])`. The receiver imports
+  `graph.signals.edges_integrated`; `graph` NEVER imports `analysis`. A guard
+  test (`test_graph_does_not_import_analysis`) enforces the arrow direction.
+- Dependency rule: **`analysis → graph` only.** Adding `analysis` must not
+  introduce any `import analysis` into the `graph` app.
+
+**B. Phase 8 task names** (canonical): `analysis.tasks.project_edges(edge_ids)`
+(incremental projection), `analysis.tasks.reconcile_neo4j()` (nightly Beat +
+rebuild-after-loss). The `@shared_task(name=...)` string must match the
+`send_task(...)` string and the Beat schedule entry exactly.
+
+**C. Neo4j env vars (single password).** Canonical: `NEO4J_URI`, `NEO4J_USER`,
+`NEO4J_PASSWORD`. There is exactly ONE password var — compose's
+`NEO4J_AUTH: neo4j/${NEO4J_PASSWORD}` and the Django driver both read
+`NEO4J_PASSWORD`, so they cannot drift. (An earlier draft split this into
+`NEO4J_PASSWORD` + `NEO4J_PASSWORD_AUTH`; that footgun was removed.)
+
+**D. Neo4j projection schema** (the read-model contract — derived, never
+authoritative):
+- Nodes: `(:Entity {pg_id, symbol, entity_type, compartment, canonical_uri})`,
+  keyed on `pg_id` = Postgres `graph.Entity.id`. Sourced via the Entity proxy
+  properties (§5) + `ontology_entity.entity_type`.
+- Relationships: `(:Entity)-[:REGULATES {edge_id, relation, belief_score,
+  n_supporting_papers, n_models_agreeing, status, networks}]->(:Entity)` — one
+  per accepted `Edge`. Field names per §4 (`relation`, NOT `relation_type`).
+- `(:Network {code, title, category})` + `(:Entity)-[:IN_NETWORK]->(:Network)`
+  derived from `NetworkEdgeMembership` (`network`/`edge`/`relevance`).
+
+**E. Backend interface.** All Neo4j access goes through
+`analysis.backends.base.GraphBackend`; `Neo4jBackend` is real, `FakeGraphBackend`
+(networkx-backed) makes services unit-testable. Integration tests are marked
+`@pytest.mark.neo4j` and skip when `NEO4J_URI` is unset.
