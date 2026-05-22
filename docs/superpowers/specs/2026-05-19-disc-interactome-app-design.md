@@ -81,6 +81,13 @@ papers, network-tagged, with full-text where available.
 
 - **All persistent state lives in Postgres.** Resumability is a free consequence:
   every Celery task starts by reading rows, ends by committing rows.
+- **Neo4j is a derived read-model, not a system of record.** Postgres remains
+  the sole source of truth (writes, provenance, backup). The accepted-`Edge`
+  graph is *projected* into Neo4j (incrementally on integration, with a nightly
+  reconciliation sweep) purely to serve interactive cross-network crosstalk
+  traversal and Graph-Data-Science analysis (centrality, community detection,
+  feedback-loop motifs, pathfinding). If Neo4j is lost, it is rebuilt from
+  Postgres — so the "pull the plug" guarantee is unaffected. (Added Phase 8.)
 - **MinIO holds blobs only** (full-text PDFs, GROBID XML, generated SBML files,
   large LLM responses). Object keys stored in Postgres rows.
 - **One Authelia, one auth path.** Same gateway as Ollama; no new password store.
@@ -116,6 +123,8 @@ schedule ◄── (Beat triggers; reads everywhere) ────── verify  
 | **`verify`** | Biologist review queue, per-edge approve/reject/comment, per-network sign-off, reviewer audit trail. | `Review`, `Signoff`, `ReviewAssignment` |
 | **`schedule`** | Celery Beat schedules, rate limiting, pipeline state machine, dead-letter handling. | `ScheduledJob`, `Watermark`, `RateLimitBucket` |
 | **`dashboard`** | Read-only views over everything. Top-level grid, drill-in, search, activity feed. | (no models) |
+| **`monitoring`** | Health checks, feature flags (global pause), backpressure, ops alerts. (Added in Phase 6.) | `FeatureFlag`, `HealthAlert` |
+| **`analysis`** | Neo4j projection of the accepted-edge graph; interactive cross-network crosstalk traversal and network-analysis (centrality, communities, feedback-loop motifs, paths) via Cypher + Graph Data Science. (Added in Phase 8.) | (no Postgres models — owns the Neo4j read-model) |
 
 **Boundary discipline:** each app's `services.py` is the public API of that
 app. Other apps call those functions, not the underlying models or tasks. Lets
@@ -869,6 +878,13 @@ services:
     image: lfoppiano/grobid:0.8.0
     deploy: { resources: { limits: { memory: 6G } } }
 
+  neo4j:                # derived read-model for crosstalk + GDS analysis (Phase 8)
+    image: neo4j:5-community
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD}
+      NEO4J_PLUGINS: '["graph-data-science","apoc"]'
+    volumes: [neo4jdata:/data]
+
   pgbackrest:
     image: pgbackrest/pgbackrest
     volumes: [pgdata:/pgdata:ro, backupdata:/backup]
@@ -878,9 +894,12 @@ volumes:
   redisdata: {}
   miniodata: {}
   backupdata: {}
+  neo4jdata: {}
 ```
 
-**Container count: 16.** Only `caddy` is reachable externally.
+**Container count: 16 at Phase 0 baseline** (+7 per-model extractor workers in
+Phase 2, +`neo4j` in Phase 8, +`pgbackrest`/observability in Phase 7). Only
+`caddy` is reachable externally.
 
 ### Authelia integration
 
@@ -965,6 +984,7 @@ Eight phases. Each ends in a usable artifact.
 | **5. Verification UI** | 11–12 | Network grid dashboard, Cytoscape.js graph view, disagreement queue, resolution flow (HTMX), `Review`/`Signoff` models, email notifications. **End: biologist can approve/reject edges.** | `verify`, `dashboard` | medium — UX iteration |
 | **6. Continuous monitoring** | 13 | Daily PubMed delta, re-extraction trigger on new evidence, auto-conflict resolver, subscribe-to-network notifications. **End: unattended autonomous operation.** | `schedule` | low |
 | **7. Hardening + handoff** | 14–15 | pgbackrest, Sentry, Grafana basics, runbook, biologist onboarding, first sign-off. | infra, docs | low |
+| **8. Graph analysis & crosstalk** | after 5 | `neo4j` service, `analysis` app: Postgres→Neo4j edge projection (incremental + nightly reconcile), interactive cross-network crosstalk explorer (Cytoscape.js), GDS analysis (centrality, Louvain communities, feedback-loop motifs, pathfinding). **End: biologist queries "everything N hops from gene X across the atlas" and inter-network crosstalk interactively.** | `analysis`, `graph` | medium — projection consistency, Neo4j ops | dep: Phase 3 (Edge/NetworkEdgeMembership) + Phase 5 (UI shell) |
 
 ### Critical path
 
