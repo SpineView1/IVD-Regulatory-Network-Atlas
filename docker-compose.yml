@@ -235,6 +235,23 @@ services:
       timeout: 5s
       retries: 5
 
+  minio_bootstrap:
+    image: minio/mc:RELEASE.2024-10-14T19-39-44Z
+    depends_on:
+      minio:
+        condition: service_healthy
+    env_file: .env
+    entrypoint: >
+      sh -c "
+        mc alias set local http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD};
+        mc mb --ignore-existing local/$${MINIO_BUCKET_PAPERS};
+        mc mb --ignore-existing local/$${MINIO_BUCKET_SBML};
+        mc anonymous set none local/$${MINIO_BUCKET_PAPERS};
+        mc anonymous set none local/$${MINIO_BUCKET_SBML};
+        echo 'minio buckets ready';
+      "
+    restart: "no"
+
   grobid:
     image: lfoppiano/grobid:0.8.0
     restart: unless-stopped
