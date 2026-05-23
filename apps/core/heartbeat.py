@@ -61,6 +61,16 @@ def with_heartbeat(
             if row_id_raw is None and args:
                 row_id_raw = args[0]
             row = fetch(int(row_id_raw))
+
+            # Fix 6: skip heartbeat writes for rows already in a terminal state
+            # (done/failed). This avoids stomping already-done rows during
+            # idempotency short-circuits in run_ppi.
+            _terminal_statuses = {"done", "failed"}
+            row_status = getattr(row, "status", None)
+            if row_status in _terminal_statuses:
+                # Don't touch heartbeat; just run the function directly.
+                return fn(*args, **kwargs)
+
             row.heartbeat = timezone.now()
             if _supports_update_fields(row):
                 row.save(update_fields=["heartbeat"])

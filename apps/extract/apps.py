@@ -25,4 +25,5 @@ class ExtractConfig(AppConfig):
             model_name="ExtractionRun",
             status_field="status",
             heartbeat_field="heartbeat",
+            attempts_field="attempts",
         )

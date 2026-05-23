@@ -19,11 +19,12 @@ from typing import Any
 
 from django.conf import settings
 from django.db import transaction
+from django.db.models import Count, Q
 from django.utils import timezone
 
 from celery import shared_task
 from core.heartbeat import with_heartbeat
-from core.ollama import OllamaClient
+from core.ollama import OllamaClient, OllamaError
 from extract.models import ExtractionRun, RawPPI
 from extract.prompts import SUPPORTED_OLLAMA_MODELS
 from extract.routing import MODEL_TO_QUEUE, queue_for_model
@@ -81,10 +82,13 @@ def _provider_for_model(model_name: str) -> str:
 
 @shared_task(
     name="extract.tasks.run_ppi",
-    bind=False,
+    bind=True,
+    autoretry_for=(OllamaError,),
+    retry_backoff=True,
+    retry_kwargs={"max_retries": 3},
 )
 @with_heartbeat(interval_sec=30, fetch=_fetch_run)
-def run_ppi(row_id: int) -> str:
+def run_ppi(self: Any, row_id: int) -> str:
     """Execute one (chunk × model) extraction.
 
     Idempotent: if ``status == 'done'`` the task short-circuits.
@@ -108,15 +112,20 @@ def run_ppi(row_id: int) -> str:
     try:
         from schedule.models import RateLimitBucket
 
-        bucket = RateLimitBucket.objects.get(provider=provider)
-        if not bucket.consume(1):
-            retry_in = bucket.seconds_until_refill(1)
-            # Re-enqueue with countdown instead of raising to avoid losing the task.
-            run_ppi.apply_async(kwargs={"row_id": row_id}, countdown=int(retry_in) + 1)
-            return "rate_limited"
-    except Exception:
-        # If bucket lookup fails (e.g. not seeded), proceed without gating.
-        logger.warning("run_ppi: could not acquire rate-limit token for %s", provider)
+        try:
+            bucket = RateLimitBucket.objects.get(provider=provider)
+        except RateLimitBucket.DoesNotExist:
+            # Bucket not yet seeded — proceed without gating.
+            logger.warning("run_ppi: could not acquire rate-limit token for %s", provider)
+        else:
+            if not bucket.consume(1):
+                retry_in = bucket.seconds_until_refill(1)
+                # Re-enqueue with countdown instead of raising to avoid losing the task.
+                run_ppi.apply_async(kwargs={"row_id": row_id}, countdown=int(retry_in) + 1)
+                return "rate_limited"
+    except ImportError:
+        # schedule app not available — proceed without gating.
+        logger.warning("run_ppi: schedule app not available, skipping rate-limit for %s", provider)
 
     run.status = ExtractionRun.Status.RUNNING
     run.started_at = timezone.now()
@@ -132,8 +141,25 @@ def run_ppi(row_id: int) -> str:
         )
         parsed: dict[str, Any] = json.loads(response_text)
         validated = PPIExtractionResponse.model_validate(parsed)
+    except OllamaError as exc:
+        # Transient Ollama error — retry with exponential backoff.
+        # Explicitly call self.retry() so retries < max_retries leaves the
+        # row in running state (not FAILED).  Only after retries are exhausted
+        # (MaxRetriesExceededError) do we write status=failed.
+        if self.request.retries < self.max_retries:
+            # Raise Retry — row stays running; janitor handles stale running rows
+            # if the worker dies between retries.
+            raise self.retry(exc=exc, countdown=2**self.request.retries) from None
+        # All retries exhausted: mark permanently failed.
+        run.status = ExtractionRun.Status.FAILED
+        run.error = f"{type(exc).__name__}: {exc}"[:2000]
+        run.finished_at = timezone.now()
+        run.duration_ms = int((time.monotonic() - t0) * 1000)
+        run.save(update_fields=["status", "error", "finished_at", "duration_ms", "updated_at"])
+        logger.warning("run_ppi failed (retries exhausted) run_id=%d: %s", row_id, run.error)
+        return "failed"
     except Exception as exc:
-        # Catches OllamaError, JSONDecodeError, pydantic ValidationError, etc.
+        # Permanent failures: JSONDecodeError, pydantic ValidationError, etc.
         run.status = ExtractionRun.Status.FAILED
         run.error = f"{type(exc).__name__}: {exc}"[:2000]
         run.finished_at = timezone.now()
@@ -180,10 +206,11 @@ def run_ppi(row_id: int) -> str:
         )
 
         # Append model to Chunk.processed_by_models (Phase 1 reserved this field).
-        # Use F-expression-free approach: fetch, modify, save with update_fields.
+        # Use select_for_update() so concurrent workers serialize their appends
+        # and none are lost (Fix 2: prevent lost-update race).
         from papers.models import Chunk
 
-        chunk = Chunk.objects.get(pk=run.chunk_id)
+        chunk = Chunk.objects.select_for_update().get(pk=run.chunk_id)
         if run.model_name not in chunk.processed_by_models:
             chunk.processed_by_models = list(chunk.processed_by_models) + [run.model_name]
             chunk.save(update_fields=["processed_by_models", "updated_at"])
@@ -210,19 +237,27 @@ def enqueue_pending_chunks(batch_size: int = 200) -> dict[str, int]:
     version = active_prompt_version()
     enqueued: dict[str, int] = {m: 0 for m in SUPPORTED_OLLAMA_MODELS}
 
-    # Find Results chunks not yet fully processed for this prompt version.
-    # A chunk is "pending" for a model if it has no ExtractionRun with
-    # status in (done, running) for that model + version.
+    # Find Results chunks not yet fully covered by all models for this version.
+    # A chunk is "pending" if fewer than n_models ExtractionRun rows exist with
+    # status in (done, running) for the active prompt_version.
+    # The old .exclude() approach incorrectly excluded the whole chunk as soon
+    # as ONE model finished — the count-annotation correctly tracks coverage.
+    n_models = len(SUPPORTED_OLLAMA_MODELS)
     candidate_chunks = list(
         Chunk.objects.filter(section__doco_type="Results")
-        .exclude(
-            extraction_runs__prompt_version=version,
-            extraction_runs__status__in=[
-                ExtractionRun.Status.DONE,
-                ExtractionRun.Status.RUNNING,
-            ],
+        .annotate(
+            covered=Count(
+                "extraction_runs",
+                filter=Q(
+                    extraction_runs__prompt_version=version,
+                    extraction_runs__status__in=[
+                        ExtractionRun.Status.DONE,
+                        ExtractionRun.Status.RUNNING,
+                    ],
+                ),
+            )
         )
-        .distinct()
+        .filter(covered__lt=n_models)
         .order_by("id")[:batch_size]
     )
 
