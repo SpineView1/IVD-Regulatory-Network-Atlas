@@ -64,6 +64,8 @@ def write_edges_csv(edges: Iterable) -> bytes:
             {
                 "source_symbol": e.source.symbol,
                 "source_id": e.source.canonical_uri,
+                # entity_type has no Entity proxy property (unlike symbol/compartment/
+                # canonical_uri); drill through to OntologyEntity directly.
                 "source_type": e.source.ontology_entity.entity_type,
                 "relation": e.relation,  # real field name
                 "target_symbol": e.target.symbol,
