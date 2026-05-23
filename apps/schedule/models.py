@@ -56,6 +56,7 @@ class RateLimitBucket(TimestampedModel):
             if replenished < cost:
                 locked.current_tokens = replenished
                 locked.save(update_fields=["current_tokens", "updated_at"])
+                self.current_tokens = locked.current_tokens
                 return False
             locked.current_tokens = replenished - cost
             locked.save(update_fields=["current_tokens", "updated_at"])

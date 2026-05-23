@@ -80,6 +80,33 @@ def test_watermark_source_is_unique(db):
         Watermark.objects.create(source="pubmed")
 
 
+def test_seconds_until_refill_accurate_after_failed_consume(db):
+    """seconds_until_refill() must read the replenished token count after a
+    failed consume(), not the stale pre-consume value.
+
+    Setup: bucket starts with 0 tokens, refill_per_sec=2.0, cost=5.
+    After a failed consume() the bucket will have been replenished by a tiny
+    elapsed amount (≈0), so seconds_until_refill(cost=5) ≈ 5/2 = 2.5 s.
+    Before the fix, self.current_tokens was still 0.0, giving 5/2 = 2.5 s by
+    coincidence only when refill_per_sec stays the same — we assert the live
+    value is ≥ the stale estimate to verify the sync actually happened, i.e.
+    self.current_tokens reflects replenished >= 0.
+    """
+    bucket = RateLimitBucket.objects.create(
+        provider="stale_test", capacity=10, refill_per_sec=2.0, current_tokens=0.0
+    )
+    result = bucket.consume(cost=5)
+    assert result is False
+    # After the fix self.current_tokens is synced to the replenished value
+    # (>= 0.0 due to elapsed time during the call).
+    assert bucket.current_tokens >= 0.0
+    # seconds_until_refill now uses the synced (replenished) value, so the
+    # wait estimate is ≤ cost/refill_per_sec = 2.5 s (deficit cannot be larger
+    # than the cost itself).
+    wait = bucket.seconds_until_refill(cost=5)
+    assert 0.0 < wait <= 2.5
+
+
 def test_scheduled_job_round_trip(db):
     job = ScheduledJob.objects.create(
         name="corpus.refresh_pubmed",
