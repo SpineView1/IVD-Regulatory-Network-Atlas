@@ -170,6 +170,29 @@ def test_llm_pass_irrelevant_downgrades_score(db, nfkb):
     assert rel.score < 0.5
 
 
+def test_llm_pass_parse_error_preserves_cheap_pass_score(db, nfkb):
+    """When LLM returns unparseable output, the cheap-pass score (>= 0.5) must NOT be lowered.
+
+    Regression test for Fix 2: previously confidence=0.4 was written on parse error,
+    silently dropping the paper from the corpus.
+    """
+    p = Paper.objects.create(
+        pmid=20,
+        title="x",
+        abstract="NF-kB and RELA are upregulated.",
+        ingest_status="chunked",
+        is_original=True,
+    )
+    PaperRelevance.objects.create(paper=p, network=nfkb, score=0.5, classified_by="cheap_keyword")
+    with patch("corpus.tasks.OllamaClient") as M:
+        M.return_value.generate.return_value = {"response": "not json {{{"}
+        result = triage_relevance_llm.delay(20, nfkb.pk).get(timeout=2)
+    # Score must remain >= 0.5 (paper stays in corpus).
+    rel = PaperRelevance.objects.get(paper=p, network=nfkb)
+    assert rel.score >= 0.5, f"Score was downgraded to {rel.score} on LLM parse error"
+    assert result.get("llm_parse_failed") is True
+
+
 def test_triage_pending_enqueues_chunked_papers(db, nfkb):
     Paper.objects.create(pmid=8, title="x", ingest_status="chunked", is_original=True)
     Paper.objects.create(pmid=9, title="y", ingest_status="fetched", is_original=True)

@@ -109,6 +109,44 @@ def test_fetch_fulltext_idempotent(db):
     EPC.return_value.get_jats_for_pmcid.assert_not_called()
 
 
+def test_fetch_fulltext_generic_exception_sets_fetch_failed(db):
+    """Generic network error → full_text_status='fetch_failed' with error recorded."""
+    p = Paper.objects.create(
+        pmid=20,
+        title="x",
+        pmcid="PMC20",
+        ingest_status="classified",
+        is_original=True,
+    )
+    with (
+        patch("papers.tasks.EuropePmcClient") as EPC,
+        patch("papers.tasks.MinioClient"),
+    ):
+        EPC.return_value.get_jats_for_pmcid.side_effect = OSError("connection refused")
+        with pytest.raises(OSError):
+            fetch_fulltext(20)
+    p.refresh_from_db()
+    assert p.full_text_status == "fetch_failed"
+    assert "connection refused" in p.fulltext_fetch_error
+
+
+def test_fetch_fulltext_pending_picks_up_fetch_failed_papers(db):
+    """fetch_fulltext_pending must re-sweep papers with full_text_status='fetch_failed'."""
+    Paper.objects.create(
+        pmid=21,
+        title="x",
+        pmcid="PMC21",
+        ingest_status="classified",
+        is_original=True,
+        full_text_status="fetch_failed",
+        fulltext_fetch_error="OSError: connection refused",
+    )
+    with patch("papers.tasks.fetch_fulltext.delay") as mock_enq:
+        fetch_fulltext_pending.delay().get(timeout=2)
+    enqueued = {c.args[0] for c in mock_enq.call_args_list}
+    assert 21 in enqueued
+
+
 def test_fetch_fulltext_pending_skips_non_original(db):
     Paper.objects.create(
         pmid=10,

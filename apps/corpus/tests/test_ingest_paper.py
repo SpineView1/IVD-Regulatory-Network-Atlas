@@ -90,6 +90,8 @@ def test_ingest_paper_is_idempotent(db):
         ingest_paper.delay(38000123).get(timeout=2)
     # Existing row should be preserved (no IntegrityError, no second row).
     assert Paper.objects.count() == 1
+    # Short-circuit must prevent any re-work: efetch must NOT have been called.
+    M.return_value.efetch.assert_not_called()
 
 
 def test_ingest_paper_missing_efetch_marks_failed(db):
