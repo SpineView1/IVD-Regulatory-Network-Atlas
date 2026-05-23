@@ -29,19 +29,23 @@ def test_review_can_be_created_against_a_conflict(db, reviewer, conflict):
 
 
 def test_review_decision_must_be_in_allowed_set(db, reviewer, edge):
+    from django.core.exceptions import ValidationError
+
     review = Review(
         reviewer=reviewer,
         edge=edge,
         decision="explode",
         comment="",
     )
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         review.full_clean()
 
 
 def test_review_requires_either_edge_or_conflict_target(db, reviewer):
+    from django.core.exceptions import ValidationError
+
     review = Review(reviewer=reviewer, decision="approve", comment="")
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         review.full_clean()
 
 
@@ -91,10 +95,12 @@ def test_signoff_pins_a_specific_model_version(db, reviewer, network, model_vers
 
 
 def test_only_one_signoff_per_model_version(db, reviewer, other_reviewer, network, model_version):
+    from django.db import IntegrityError
+
     from verify.models import Signoff
 
     Signoff.objects.create(network=network, model_version=model_version, signed_by=reviewer)
-    with pytest.raises(Exception):
+    with pytest.raises(IntegrityError):
         Signoff.objects.create(network=network, model_version=model_version, signed_by=other_reviewer)
 
 
@@ -108,10 +114,12 @@ def test_review_assignment_links_reviewer_to_network(db, reviewer, network):
 
 
 def test_review_assignment_role_in_allowed_set(db, reviewer, network):
+    from django.core.exceptions import ValidationError
+
     from verify.models import ReviewAssignment
 
     ra = ReviewAssignment(reviewer=reviewer, network=network, role="emperor")
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         ra.full_clean()
 
 
@@ -134,10 +142,12 @@ def test_user_can_subscribe_to_category(db, reviewer):
 
 
 def test_subscription_requires_network_or_category(db, reviewer):
+    from django.core.exceptions import ValidationError
+
     from verify.models import Subscription
 
     sub = Subscription(user=reviewer)
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         sub.full_clean()
 
 
