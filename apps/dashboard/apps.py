@@ -1,4 +1,5 @@
 """Django AppConfig for the dashboard app."""
+
 from __future__ import annotations
 
 from django.apps import AppConfig
