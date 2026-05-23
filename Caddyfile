@@ -1,0 +1,42 @@
+# Caddy v2 reverse proxy.
+#
+# In production behind the cluster DNS, Caddy terminates TLS using ACME
+# (Let's Encrypt) and forwards traffic to the ``web`` container after
+# verifying the request with Authelia.
+#
+# In local dev, you can substitute the production hostname with
+# ``localhost:8000`` and skip the forward_auth block — see README.
+
+{
+    # Email used by Caddy for Let's Encrypt registration.
+    email francis.chemorion@upf.edu
+}
+
+interactome.simbiosys.sb.upf.edu {
+    encode zstd gzip
+
+    route {
+        # Defense-in-depth: never trust client-supplied identity headers;
+        # Authelia (via forward_auth copy_headers) is the only source.
+        request_header -Remote-User
+        request_header -Remote-Groups
+        request_header -Remote-Name
+        request_header -Remote-Email
+
+        forward_auth https://authelia.simbiosys.sb.upf.edu {
+            uri /api/verify?rd=https://authelia.simbiosys.sb.upf.edu/
+            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+        }
+
+        reverse_proxy web:8000 {
+            header_up X-Forwarded-Proto https
+            header_up X-Forwarded-Host {host}
+            header_up X-Real-IP {remote_host}
+        }
+    }
+
+    log {
+        output stdout
+        format json
+    }
+}

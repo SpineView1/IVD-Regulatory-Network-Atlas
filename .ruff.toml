@@ -1,0 +1,31 @@
+target-version = "py312"
+line-length = 100
+src = ["apps", "interactome"]
+
+[lint]
+select = [
+  "E",   # pycodestyle errors
+  "F",   # pyflakes
+  "W",   # pycodestyle warnings
+  "I",   # isort
+  "B",   # flake8-bugbear
+  "UP",  # pyupgrade
+  "DJ",  # flake8-django
+  "S",   # flake8-bandit (security)
+  "C4",  # flake8-comprehensions
+  "SIM", # flake8-simplify
+  "RET", # flake8-return
+]
+ignore = [
+  "E501",  # line-too-long — formatter handles this
+  "S101",  # assert used (we use it in tests freely)
+]
+
+[lint.per-file-ignores]
+"**/tests/*" = ["S101", "S106"]  # tests use literal passwords, asserts
+"**/migrations/*" = ["E501", "RET504"]
+"interactome/settings/*" = ["F401", "F403", "S105"]  # star imports are deliberate; dev has literal SECRET_KEY
+
+[format]
+quote-style = "double"
+indent-style = "space"
