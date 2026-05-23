@@ -64,6 +64,16 @@
               }
             },
             {
+              selector: "edge",
+              style: {
+                "label": "data(relation)",
+                "font-size": 10,
+                "curve-style": "bezier",
+                "target-arrow-shape": "triangle",
+                "width": "mapData(belief, 0, 1, 1, 4)"
+              }
+            },
+            {
               selector: "edge[status = 'accepted']",
               style: { "line-color": "#16a34a", "target-arrow-color": "#16a34a" }
             },
@@ -78,15 +88,6 @@
             {
               selector: "edge[status = 'rejected']",
               style: { "line-color": "#9ca3af", "target-arrow-color": "#9ca3af", "opacity": 0.4 }
-            },
-            {
-              selector: "edge",
-              style: {
-                "label": "data(relation)",
-                "font-size": 10,
-                "curve-style": "bezier",
-                "target-arrow-shape": "triangle"
-              }
             }
           ],
           layout: { name: "cose", animate: false }
