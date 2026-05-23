@@ -1,7 +1,6 @@
 """Tests for sbml.tasks — regenerate and regenerate_stale_networks."""
-from __future__ import annotations
 
-from unittest.mock import patch
+from __future__ import annotations
 
 import pytest
 
@@ -38,14 +37,16 @@ def test_regenerate_creates_first_version(db, network, accepted_edges, mock_obje
 def test_regenerate_uploads_four_blobs(db, network, accepted_edges, mock_object_store, settings):
     settings.CELERY_TASK_ALWAYS_EAGER = True
     regenerate.delay(network.id).get(timeout=10)
-    keys = {k for (_, k) in mock_object_store.keys()}
+    keys = {k for (_, k) in mock_object_store}
     assert any(k.endswith("/model.sbml") for k in keys)
     assert any(k.endswith("/edges.csv") for k in keys)
     assert any(k.endswith("/evidence.csv") for k in keys)
     assert any(k.endswith(".zip") for k in keys)
 
 
-def test_regenerate_flips_network_to_version_draft(db, network, accepted_edges, mock_object_store, settings):
+def test_regenerate_flips_network_to_version_draft(
+    db, network, accepted_edges, mock_object_store, settings
+):
     settings.CELERY_TASK_ALWAYS_EAGER = True
     assert network.pipeline_status == "stale"
     regenerate.delay(network.id).get(timeout=10)
@@ -53,7 +54,9 @@ def test_regenerate_flips_network_to_version_draft(db, network, accepted_edges, 
     assert network.pipeline_status == "version_draft"
 
 
-def test_regenerate_is_idempotent_on_no_change(db, network, accepted_edges, mock_object_store, settings):
+def test_regenerate_is_idempotent_on_no_change(
+    db, network, accepted_edges, mock_object_store, settings
+):
     settings.CELERY_TASK_ALWAYS_EAGER = True
     regenerate.delay(network.id).get(timeout=10)
     network.refresh_from_db()
@@ -131,12 +134,8 @@ def test_regenerate_stale_networks_enqueues_all_stale(
     from networks.models import Network
 
     settings.CELERY_TASK_ALWAYS_EAGER = True
-    Network.objects.create(
-        code="foo", title="Foo Network", category="II", pipeline_status="stale"
-    )
-    Network.objects.create(
-        code="bar", title="Bar Network", category="II", pipeline_status="idle"
-    )
+    Network.objects.create(code="foo", title="Foo Network", category="II", pipeline_status="stale")
+    Network.objects.create(code="bar", title="Bar Network", category="II", pipeline_status="idle")
     summary = regenerate_stale_networks.delay().get(timeout=10)
     # Two stale networks: `network` fixture + the new "foo".
     # "bar" is idle and is not enqueued.

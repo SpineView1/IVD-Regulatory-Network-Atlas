@@ -1,12 +1,16 @@
 """Tests for sbml.exporters — edges.csv and evidence.csv per spec §7."""
+
 from __future__ import annotations
 
 import csv
 import io
 
-import pytest
-
-from sbml.exporters import EDGES_CSV_COLUMNS, EVIDENCE_CSV_COLUMNS, write_edges_csv, write_evidence_csv
+from sbml.exporters import (
+    EDGES_CSV_COLUMNS,
+    EVIDENCE_CSV_COLUMNS,
+    write_edges_csv,
+    write_evidence_csv,
+)
 
 
 def test_edges_csv_column_order_matches_spec():
@@ -68,7 +72,9 @@ def test_write_edges_csv_includes_belief(db, network, accepted_edges):
     assert 0.94 in beliefs
 
 
-def test_write_evidence_csv_has_one_row_per_edge_evidence(db, network, accepted_edges, evidence_rows):
+def test_write_evidence_csv_has_one_row_per_edge_evidence(
+    db, network, accepted_edges, evidence_rows
+):
     data = write_evidence_csv(accepted_edges)
     rows = list(csv.DictReader(io.StringIO(data.decode("utf-8"))))
     assert len(rows) == len(evidence_rows)

@@ -24,9 +24,11 @@ Real field names (per cross-plan reconciliation):
 - raw_ppi.run.chunk.section.paper.pmid  (chain via run, NOT raw_ppi.chunk)
 - raw_ppi.evidence_offset_start/end  (NOT evidence_span_start/end)
 """
+
 from __future__ import annotations
 
 import re
+from typing import Any
 from xml.sax.saxutils import escape as xml_escape
 
 import libsbml
@@ -113,7 +115,7 @@ def _check(code: int, what: str) -> None:
         raise SbmlBuildError(f"libsbml call {what} returned {code}")
 
 
-def build_sbml_document(*, network, edges, semver: str) -> libsbml.SBMLDocument:
+def build_sbml_document(*, network: Any, edges: Any, semver: str) -> libsbml.SBMLDocument:
     """Build the full SBML-qual document. Returns the libsbml.SBMLDocument
     object; serialise it with ``serialise_to_string``.
 
@@ -221,7 +223,7 @@ def build_sbml_document(*, network, edges, semver: str) -> libsbml.SBMLDocument:
     return doc
 
 
-def _collect_entities(edges) -> list:
+def _collect_entities(edges: Any) -> list[Any]:
     seen: dict[int, object] = {}
     for e in edges:
         seen.setdefault(e.source_id, e.source)
@@ -229,7 +231,7 @@ def _collect_entities(edges) -> list:
     return sorted(seen.values(), key=lambda e: e.symbol)
 
 
-def _attach_evidence_annotation(transition, edge) -> None:
+def _attach_evidence_annotation(transition: Any, edge: Any) -> None:
     """Attach the custom interactome:evidence block to a transition.
 
     Tools that don't understand our namespace will silently ignore it
@@ -254,7 +256,7 @@ def _attach_evidence_annotation(transition, edge) -> None:
     _check(transition.appendAnnotation(node), "transition.appendAnnotation")
 
 
-def _gather_pmids(edge) -> list[str]:
+def _gather_pmids(edge: Any) -> list[str]:
     """Distinct PMIDs supporting this edge, sorted ascending.
 
     Chain: EdgeEvidence → RawPPI → ExtractionRun → Chunk → Section → Paper
@@ -268,7 +270,7 @@ def _gather_pmids(edge) -> list[str]:
     return [str(p) for p in pmids if p is not None]
 
 
-def _has_reviewer_signoff(edge) -> bool:
+def _has_reviewer_signoff(edge: Any) -> bool:
     """True if at least one Review row exists with action='approve'.
 
     Phase 5 will populate Review rows; if the model isn't installed yet

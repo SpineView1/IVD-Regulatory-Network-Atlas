@@ -4,6 +4,7 @@ This is the load-bearing acceptance test: emitted SBML must be parseable
 by libsbml with no fatal errors, and qual species/transitions/MIRIAM
 annotations must survive the serialize→parse cycle intact.
 """
+
 from __future__ import annotations
 
 import libsbml
@@ -38,9 +39,7 @@ def test_roundtrip_no_fatal_errors(parsed_doc):
 def test_roundtrip_species_count_preserved(parsed_doc, accepted_edges):
     doc, _ = parsed_doc
     qmodel = doc.getModel().getPlugin("qual")
-    distinct = {e.source.symbol for e in accepted_edges} | {
-        e.target.symbol for e in accepted_edges
-    }
+    distinct = {e.source.symbol for e in accepted_edges} | {e.target.symbol for e in accepted_edges}
     assert qmodel.getNumQualitativeSpecies() == len(distinct)
 
 
@@ -63,9 +62,9 @@ def test_roundtrip_miriam_resources_non_empty(parsed_doc):
         assert n_res >= 1, f"{sp.getId()} CVTerm has zero resources"
         for j in range(n_res):
             uri = cv.getResourceURI(j)
-            assert uri.startswith("https://identifiers.org/"), (
-                f"non-MIRIAM URI on {sp.getId()}: {uri}"
-            )
+            assert uri.startswith(
+                "https://identifiers.org/"
+            ), f"non-MIRIAM URI on {sp.getId()}: {uri}"
 
 
 def test_roundtrip_evidence_block_survives_serialisation(parsed_doc):

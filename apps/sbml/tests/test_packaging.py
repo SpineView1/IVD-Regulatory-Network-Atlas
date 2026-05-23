@@ -1,10 +1,9 @@
 """Tests for sbml.packaging — ZIP bundle + auto-generated README."""
+
 from __future__ import annotations
 
 import io
 import zipfile
-
-import pytest
 
 from sbml.packaging import bundle_artifact, generate_readme, zip_filename
 

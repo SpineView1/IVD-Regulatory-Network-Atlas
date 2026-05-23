@@ -1,12 +1,14 @@
 """sbml Celery tasks."""
+
 from __future__ import annotations
 
 import logging
+from typing import Any
 
-from celery import shared_task
 from django.db import transaction
 from django.utils import timezone
 
+from celery import shared_task
 from networks.models import Network
 from sbml.services import regenerate_network
 
@@ -21,7 +23,7 @@ log = logging.getLogger(__name__)
     retry_kwargs={"max_retries": 3},
     queue="q.io",
 )
-def regenerate(self, network_id: int, triggered_by_curator: bool = False) -> dict:
+def regenerate(self: Any, network_id: int, triggered_by_curator: bool = False) -> dict:
     """Regenerate the SBML/CSV/ZIP artifacts for one network.
 
     Errors are retried with exponential backoff up to 3 times; persistent
@@ -34,7 +36,7 @@ def regenerate(self, network_id: int, triggered_by_curator: bool = False) -> dic
             network_id=network_id,
             triggered_by_curator=triggered_by_curator,
         )
-    except Exception as exc:
+    except Exception:
         log.exception("sbml.regenerate failed for network_id=%s", network_id)
         with transaction.atomic():
             try:

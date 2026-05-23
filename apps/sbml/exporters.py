@@ -15,11 +15,16 @@ Real field names (per cross-plan reconciliation):
 - raw_ppi.evidence_offset_start/end  (NOT evidence_span_start/end)
 - raw_ppi.relation_logprob  (NOT logprob)
 """
+
 from __future__ import annotations
 
 import csv
 import io
-from typing import Iterable
+import logging
+from collections.abc import Iterable
+from typing import Any
+
+log = logging.getLogger(__name__)
 
 EDGES_CSV_COLUMNS = [
     "source_symbol",
@@ -82,9 +87,7 @@ def write_evidence_csv(edges: Iterable) -> bytes:
     writer.writeheader()
     for e in edges:
         # select_related chain: raw_ppi__run__chunk__section__paper
-        for ev in e.evidence.select_related(
-            "raw_ppi__run__chunk__section__paper"
-        ).all():
+        for ev in e.evidence.select_related("raw_ppi__run__chunk__section__paper").all():
             rppi = ev.raw_ppi
             chunk = rppi.run.chunk
             # Excerpt: window around the evidence span
@@ -109,7 +112,7 @@ def write_evidence_csv(edges: Iterable) -> bytes:
     return buf.getvalue().encode("utf-8")
 
 
-def _reviewer_status(edge) -> str:
+def _reviewer_status(edge: Any) -> str:
     """Map edge.status + Review rows to the spec's reviewer_status column."""
     if edge.status == "conflicted":
         return "conflicted"
@@ -118,6 +121,6 @@ def _reviewer_status(edge) -> str:
     try:
         if edge.reviews.filter(action="approve").exists():
             return "approved"
-    except Exception:
-        pass
+    except Exception:  # noqa: BLE001
+        log.debug("reviews not available for edge %s", edge.id)
     return "unreviewed"

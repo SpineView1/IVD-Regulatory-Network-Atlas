@@ -11,12 +11,14 @@ Final on-disk layout when extracted::
 Real field names:
 - network.title (NOT network.name — Network model has title not name)
 """
+
 from __future__ import annotations
 
 import io
 import textwrap
 import zipfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Any
 
 
 def zip_filename(network_code: str, semver: str) -> str:
@@ -40,25 +42,28 @@ def bundle_artifact(
         zf.writestr(f"{folder}/model.sbml", sbml_bytes)
         zf.writestr(f"{folder}/edges.csv", edges_csv)
         zf.writestr(f"{folder}/evidence.csv", evidence_csv)
-        zf.writestr(f"{folder}/README.md", readme_md.encode("utf-8") if isinstance(readme_md, str) else readme_md)
+        zf.writestr(
+            f"{folder}/README.md",
+            readme_md.encode("utf-8") if isinstance(readme_md, str) else readme_md,
+        )
     return buf.getvalue()
 
 
 def generate_readme(
     *,
-    network,
+    network: Any,
     semver: str,
     n_species: int,
     n_reactions: int,
     n_edges: int,
     n_papers: int,
-    edges,  # noqa: ARG001 — future use (per-edge stats)
+    edges: Any,  # noqa: ARG001 — future use (per-edge stats)
 ) -> str:
     """Build a human-readable README.md for the bundle.
 
     Uses ``network.title`` (the human-readable name per Networks model).
     """
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
     return textwrap.dedent(
         f"""\
         # {network.title}

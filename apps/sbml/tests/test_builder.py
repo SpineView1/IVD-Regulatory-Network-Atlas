@@ -1,4 +1,5 @@
 """Tests for sbml.builder — libsbml-driven document construction."""
+
 from __future__ import annotations
 
 import libsbml

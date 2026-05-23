@@ -9,6 +9,7 @@ Real field names (per cross-plan reconciliation):
 - raw_ppi.run.chunk.section.paper  (chain via run)
 - network.title  (NOT name)
 """
+
 from __future__ import annotations
 
 import logging
@@ -16,12 +17,10 @@ from dataclasses import dataclass
 
 from django.conf import settings
 from django.db import transaction
-from django.utils import timezone
 
 from core.storage import ObjectStore
-from graph.models import Edge, NetworkEdgeMembership
+from graph.models import Edge
 from networks.models import Network
-
 from sbml import builder, exporters, packaging
 from sbml.models import ModelVersion
 from sbml.versioning import EdgeSnapshot, bump_semver
@@ -72,9 +71,7 @@ def regenerate_network(
         )
 
         if prev and next_semver == prev.semver:
-            log.info(
-                "network %s: no change, staying at v%s", network.code, prev.semver
-            )
+            log.info("network %s: no change, staying at v%s", network.code, prev.semver)
             network.pipeline_status = "idle"
             network.save(update_fields=["pipeline_status", "updated_at"])
             return RegenerateResult(
@@ -88,9 +85,7 @@ def regenerate_network(
             )
 
         # Build artifacts
-        doc = builder.build_sbml_document(
-            network=network, edges=edges, semver=next_semver
-        )
+        doc = builder.build_sbml_document(network=network, edges=edges, semver=next_semver)
         sbml_bytes = builder.serialise_to_string(doc).encode("utf-8")
         edges_csv = exporters.write_edges_csv(edges)
         evidence_csv = exporters.write_evidence_csv(edges)
@@ -130,12 +125,8 @@ def regenerate_network(
 
         store.upload_bytes(bucket, sbml_key, sbml_bytes, content_type="application/xml")
         store.upload_bytes(bucket, edges_key, edges_csv, content_type="text/csv")
-        store.upload_bytes(
-            bucket, evidence_key, evidence_csv, content_type="text/csv"
-        )
-        store.upload_bytes(
-            bucket, zip_key, zip_bytes, content_type="application/zip"
-        )
+        store.upload_bytes(bucket, evidence_key, evidence_csv, content_type="text/csv")
+        store.upload_bytes(bucket, zip_key, zip_bytes, content_type="application/zip")
 
         # Persist the snapshot row
         mv = ModelVersion.objects.create(
@@ -165,13 +156,11 @@ def regenerate_network(
 
     # Best-effort downstream notification (Phase 5) — outside atomic block
     try:
-        from verify.services import notify_subscribers  # type: ignore[import]
+        from verify.services import notify_subscribers  # type: ignore[import-not-found]
 
         notify_subscribers(network=network, model_version=mv)
     except Exception:
-        log.exception(
-            "verify.notify hook failed for %s v%s", network.code, next_semver
-        )
+        log.exception("verify.notify hook failed for %s v%s", network.code, next_semver)
 
     return RegenerateResult(
         network_code=network.code,
@@ -206,7 +195,11 @@ def _accepted_edges_for(network: Network) -> list[Edge]:
             "source__ontology_entity__identifiers",
             "target__ontology_entity__identifiers",
         )
-        .order_by("source__ontology_entity__preferred_label", "target__ontology_entity__preferred_label", "id")
+        .order_by(
+            "source__ontology_entity__preferred_label",
+            "target__ontology_entity__preferred_label",
+            "id",
+        )
         .distinct()
     )
 
