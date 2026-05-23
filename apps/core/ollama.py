@@ -14,7 +14,7 @@ Phase 2 additions:
   • ``OllamaError`` — unified error alias for ``OllamaResponseError``
   • ``extract_relation_logprob()`` — renormalised logprob over a relation enum
   • ``OllamaClient.generate_structured()`` — schema-constrained decoding
-    (``format``=JSON schema), logprob capture, and tenacity exponential
+    (``format``=JSON schema), logprob capture, and manual exponential
     backoff on 5xx / timeouts.
 
 Settings:
@@ -277,15 +277,14 @@ class OllamaClient:
                 )
             else:
                 if response.status_code == 401:
-                    # Re-authenticate once (same pattern as _post_with_auth).
+                    # Auth/session-expiry event: immediate re-auth, no retry
+                    # slot consumed, no backoff sleep (matches _post_with_auth
+                    # 401 policy). If _login() itself returns 401 it raises
+                    # OllamaAuthError, which is the correct terminal behaviour.
                     self._authenticated = False
                     self._session_cookie = None
                     self._login()
-                    attempt += 1
-                    if attempt <= max_retries:
-                        time.sleep(backoff)
-                        backoff *= 2
-                    continue
+                    continue  # immediate re-auth: no attempt increment, no backoff sleep
 
                 if response.status_code in _RETRYABLE_STATUSES:
                     last_error = f"http {response.status_code}: {response.text[:200]}"

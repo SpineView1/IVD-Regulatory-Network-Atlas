@@ -294,3 +294,57 @@ def test_generate_structured_reauths_on_401(
             allowed_relations=("activates",),
         )
     assert "IL1B" in response_text
+
+
+def test_generate_structured_401_does_not_consume_retry_slot(
+    structured_client, success_payload, httpx_mock: HTTPXMock
+):
+    """A 401 mid-generation re-auths immediately without burning a retry slot.
+
+    With max_retries=1: if 401 consumed a slot we would exhaust retries before
+    the final success response. The test passes only when 401 is slot-free.
+    """
+    # Initial auth
+    httpx_mock.add_response(
+        method="POST",
+        url="https://authelia.example.com/api/firstfactor",
+        json={"status": "OK"},
+        headers={"Set-Cookie": "authelia_session=stale; Path=/"},
+    )
+    # First generate → 401 (session expiry, not a transient error)
+    httpx_mock.add_response(
+        method="POST",
+        url="https://ollama.example.com/api/generate",
+        status_code=401,
+        text="Unauthorized",
+    )
+    # Re-auth after 401
+    httpx_mock.add_response(
+        method="POST",
+        url="https://authelia.example.com/api/firstfactor",
+        json={"status": "OK"},
+        headers={"Set-Cookie": "authelia_session=fresh; Path=/"},
+    )
+    # Second generate → transient 503 (this consumes the 1 real retry slot)
+    httpx_mock.add_response(
+        method="POST",
+        url="https://ollama.example.com/api/generate",
+        status_code=503,
+        text="overloaded",
+    )
+    # Third generate → success (retry slot for 503 is still available because
+    # the 401 did not consume one)
+    httpx_mock.add_response(
+        method="POST",
+        url="https://ollama.example.com/api/generate",
+        json=success_payload,
+    )
+    with patch("core.ollama.time.sleep"):
+        response_text, _, _ = structured_client.generate_structured(
+            model="qwen3:8b",
+            prompt="p",
+            json_schema={},
+            allowed_relations=("activates",),
+            max_retries=1,  # tight budget: would fail if 401 consumed a slot
+        )
+    assert "IL1B" in response_text

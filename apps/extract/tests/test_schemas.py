@@ -1,4 +1,5 @@
 """Tests for extract.schemas — Pydantic models and JSON-schema export."""
+
 from __future__ import annotations
 
 import pytest
@@ -92,14 +93,20 @@ def test_json_schema_has_required_top_level_key():
 
 
 def test_json_schema_enumerates_relations():
-    relation_schema = (
-        PPI_JSON_SCHEMA["properties"]["ppis"]["items"]["properties"]["relation"]
-    )
+    relation_schema = PPI_JSON_SCHEMA["properties"]["ppis"]["items"]["properties"]["relation"]
     assert "enum" in relation_schema
     assert set(relation_schema["enum"]) == {
-        "activates", "inhibits", "binds", "phosphorylates",
-        "dephosphorylates", "ubiquitinates", "deubiquitinates",
-        "transcribes", "represses", "cleaves", "translocates",
+        "activates",
+        "inhibits",
+        "binds",
+        "phosphorylates",
+        "dephosphorylates",
+        "ubiquitinates",
+        "deubiquitinates",
+        "transcribes",
+        "represses",
+        "cleaves",
+        "translocates",
     }
 
 
@@ -108,3 +115,21 @@ def test_tuple_model_serialises_round_trip(sample_ppi_payload):
     serialised = parsed.model_dump(mode="json")
     re_parsed = PPIExtractionResponse.model_validate(serialised)
     assert re_parsed == parsed
+
+
+def test_ppi_tuple_is_directly_importable_and_constructable():
+    """PPITuple is a canonical export — confirm direct import + construction."""
+    t = PPITuple(
+        subject="TNF",
+        object="TNFR1",
+        relation=AllowedRelation.BINDS,
+        evidence_span="TNF binds TNFR1",
+        evidence_offset_start=0,
+        evidence_offset_end=16,
+        cell_type=None,
+        stimulus=None,
+        confidence=0.85,
+    )
+    assert t.subject == "TNF"
+    assert t.relation == AllowedRelation.BINDS
+    assert t.confidence == 0.85
