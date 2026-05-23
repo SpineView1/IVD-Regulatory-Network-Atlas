@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, cast
+
 from django.conf import settings
-from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_GET
+
+if TYPE_CHECKING:
+    from django.contrib.auth.models import User as _User
 
 from core.storage import get_object_store
 from sbml.models import ExportArtifact, ModelVersion
@@ -43,11 +47,11 @@ def download_artifact(request: HttpRequest, code: str, semver: str) -> HttpRespo
     if not key:
         return HttpResponse(f"no {artifact_type} artifact for v{semver}", status=404)
 
-    # request.user is guaranteed to be authenticated here (login_required above).
-    assert isinstance(request.user, AbstractBaseUser)
+    # @login_required guarantees request.user is a real user here;
+    # cast to the concrete User model so mypy's FK type-check is satisfied.
     ExportArtifact.objects.create(
         model_version=mv,
-        downloaded_by=request.user,
+        downloaded_by=cast("_User", request.user),
         artifact_type=audit_type,
         s3_key=key,
         user_agent=request.META.get("HTTP_USER_AGENT", "")[:512],

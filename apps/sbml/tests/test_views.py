@@ -45,6 +45,21 @@ def mock_presign(monkeypatch):
     )
 
 
+def test_unauthenticated_download_is_rejected(db, network, frozen_mv, settings):
+    """Unauthenticated requests must be redirected to the login URL.
+
+    The dev settings set AUTHELIA_DEV_FAKE_USER which auto-authenticates any
+    request that has no Remote-User header.  Nullify it so the middleware
+    sets request.user = AnonymousUser, then confirm @login_required kicks in.
+    """
+    settings.AUTHELIA_DEV_FAKE_USER = None
+    anon_client = Client()  # no Remote-User header
+    url = reverse("sbml:download", kwargs={"code": network.code, "semver": "0.1.0"})
+    resp = anon_client.get(url)
+    assert resp.status_code == 302
+    assert "/accounts/login/" in resp["Location"]
+
+
 def test_download_zip_redirects_to_presigned_url(db, network, frozen_mv, client_with_user):
     url = reverse("sbml:download", kwargs={"code": network.code, "semver": "0.1.0"})
     resp = client_with_user.get(url)
