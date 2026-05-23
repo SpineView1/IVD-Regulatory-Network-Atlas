@@ -18,5 +18,11 @@ SECURE_HSTS_SECONDS = 60 * 60 * 24 * 30  # 30 days
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = False
 
+# CSRF trusted origins — required for HTTPS POSTs behind Caddy's TLS termination.
+# Comma-separated full origins (scheme + host), e.g. https://interactome.simbiosys.sb.upf.edu
+CSRF_TRUSTED_ORIGINS = [
+    o.strip() for o in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()
+]
+
 # No dev fallback user in production.
 AUTHELIA_DEV_FAKE_USER = None
