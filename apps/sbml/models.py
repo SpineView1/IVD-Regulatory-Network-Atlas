@@ -60,6 +60,13 @@ class ModelVersion(TimestampedModel):
         blank=True,
     )
 
+    # Immutable snapshot of edge identity+relation values AT FREEZE TIME.
+    # Shape: [{"edge_id": int, "source_id": int, "target_id": int, "relation": str}, ...]
+    # DO NOT read relation from generated_from_edges for versioning — those
+    # are live FK rows whose .relation field can be mutated after the version
+    # was frozen.  This field is the authoritative historical record.
+    frozen_edges = models.JSONField(default=list, blank=True)
+
     generation_error = models.TextField(blank=True)
 
     class Meta:

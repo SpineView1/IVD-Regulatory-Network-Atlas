@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from django.conf import settings
 from django.db import transaction
 
-from core.storage import ObjectStore
+from core.storage import get_object_store
 from graph.models import Edge
 from networks.models import Network
 from sbml import builder, exporters, packaging
@@ -112,9 +112,10 @@ def regenerate_network(
             readme_md=readme,
         )
 
-        # Upload to MinIO (ObjectStore instantiated directly for testability;
-        # see Batch A note: monkeypatch ObjectStore instance, not singleton)
-        store = ObjectStore()
+        # Upload to MinIO via the lru_cache singleton (avoids a new boto3
+        # client on every regenerate).  Tests monkeypatch ObjectStore methods
+        # on the class, so the singleton is equally patchable.
+        store = get_object_store()
         bucket = settings.MINIO_BUCKET_SBML
         store.ensure_bucket(bucket)
         prefix = f"{network.code}/v{next_semver}"
@@ -141,6 +142,20 @@ def regenerate_network(
             zip_s3_key=zip_key,
         )
         mv.generated_from_edges.set(edges)
+        # Populate frozen_edges with the relation values AT THIS FREEZE.
+        # These are immutable historical data — _snapshots_from() reads them
+        # instead of the live generated_from_edges M2M so sign flips made
+        # after this point don't corrupt the previous version's snapshot.
+        mv.frozen_edges = [
+            {
+                "edge_id": s.edge_id,
+                "source_id": s.source_id,
+                "target_id": s.target_id,
+                "relation": s.relation,
+            }
+            for s in new_snapshots
+        ]
+        mv.save(update_fields=["frozen_edges", "updated_at"])
         mv.freeze()
 
         network.pipeline_status = "version_draft"
@@ -214,14 +229,23 @@ def _snapshot(edge: Edge) -> EdgeSnapshot:
 
 
 def _snapshots_from(mv: ModelVersion) -> set[EdgeSnapshot]:
+    """Reconstruct the edge snapshot set from the FROZEN historical record.
+
+    Reads ``mv.frozen_edges`` (immutable JSON written at freeze time) rather
+    than ``mv.generated_from_edges.all()`` (live FK rows whose ``.relation``
+    can be mutated after the version was frozen).  This is what makes sign-flip
+    detection work: when a curator changes edge.relation from "activates" to
+    "inhibits", the NEW live snapshot shows "inhibits" but the PREV frozen
+    snapshot still shows "activates" — diff_edge_sets sees the change.
+    """
     return {
         EdgeSnapshot(
-            edge_id=e.id,
-            source_id=e.source_id,
-            target_id=e.target_id,
-            relation=e.relation,  # real field name
+            edge_id=row["edge_id"],
+            source_id=row["source_id"],
+            target_id=row["target_id"],
+            relation=row["relation"],
         )
-        for e in mv.generated_from_edges.all()
+        for row in mv.frozen_edges
     }
 
 

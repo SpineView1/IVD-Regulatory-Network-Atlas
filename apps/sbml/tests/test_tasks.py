@@ -98,13 +98,7 @@ def test_regenerate_bumps_patch_on_added_edge(
 def test_regenerate_bumps_minor_on_edge_removed(
     db, network, accepted_edges, mock_object_store, settings
 ):
-    """Removing an edge from 'accepted' (set to rejected) bumps MINOR.
-
-    NOTE: The M2M generated_from_edges stores live references — changing
-    relation on a shared Edge object makes both prev/new snapshots identical.
-    The correct way to simulate a MINOR bump is removing an edge from
-    accepted status, which genuinely changes the new_snapshots set.
-    """
+    """Removing an edge from 'accepted' (set to rejected) bumps MINOR."""
     settings.CELERY_TASK_ALWAYS_EAGER = True
     regenerate.delay(network.id).get(timeout=10)
 
@@ -116,6 +110,56 @@ def test_regenerate_bumps_minor_on_edge_removed(
 
     result = regenerate.delay(network.id).get(timeout=10)
     assert result["semver"] == "0.2.0"
+
+
+def test_regenerate_bumps_minor_on_sign_flip(
+    db, network, accepted_edges, mock_object_store, settings
+):
+    """Changing an edge's relation (sign flip) must bump MINOR.
+
+    This is the canonical spec §7 "MINOR on sign flip" test. It requires
+    frozen_edges to work correctly: without the immutable JSON snapshot, both
+    the previous and new versions would read the CURRENT (post-flip) relation
+    from the live M2M FK rows, so diff_edge_sets would see no change and the
+    MINOR bump would never fire.
+
+    Flow:
+      1. Regenerate v0.1.0 (edge[0] relation = "activates")
+      2. Change edge[0].relation to "inhibits" in-place (same edge row)
+      3. Regenerate again → prev frozen snapshot still shows "activates",
+         new snapshot shows "inhibits" → sign flip detected → v0.2.0
+    """
+    settings.CELERY_TASK_ALWAYS_EAGER = True
+    result_v1 = regenerate.delay(network.id).get(timeout=10)
+    assert result_v1["semver"] == "0.1.0"
+
+    # Flip the sign on the first edge — keep it accepted, only change relation
+    accepted_edges[0].relation = "inhibits"
+    accepted_edges[0].save()
+    network.pipeline_status = "stale"
+    network.save()
+
+    result_v2 = regenerate.delay(network.id).get(timeout=10)
+
+    # Must be a MINOR bump (0.1.0 → 0.2.0)
+    assert result_v2["semver"] == "0.2.0", (
+        f"Expected 0.2.0 (MINOR for sign flip), got {result_v2['semver']}. "
+        "This would have been 0.1.0 (no change) before the frozen_edges fix."
+    )
+    assert result_v2["created_new_version"] is True
+
+    # The previous version's frozen_edges must still record the original relation
+    from sbml.models import ModelVersion
+
+    v1 = ModelVersion.objects.get(network=network, semver="0.1.0")
+    v1_relations = {row["relation"] for row in v1.frozen_edges}
+    # v1 was frozen with "activates" — the in-place mutation must not bleed back
+    assert (
+        "activates" in v1_relations
+    ), f"v1 frozen_edges should still have 'activates' but got: {v1_relations}"
+    assert (
+        "inhibits" not in v1_relations
+    ), "frozen_edges were mutated by the live edge update — sign-flip isolation is broken"
 
 
 def test_regenerate_curator_action_bumps_major(

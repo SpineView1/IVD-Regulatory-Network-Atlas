@@ -126,6 +126,42 @@ def test_model_version_latest_for_network(db, network):
     assert latest.semver == "1.0.0"
 
 
+def test_model_version_frozen_edges_default_empty(db, network):
+    """frozen_edges defaults to an empty list."""
+    mv = ModelVersion.objects.create(
+        network=network,
+        semver="0.1.0",
+        n_species=0,
+        n_reactions=0,
+        n_edges=0,
+        sbml_s3_key="",
+        csv_s3_key="",
+        zip_s3_key="",
+    )
+    assert mv.frozen_edges == []
+
+
+def test_model_version_frozen_edges_stored_and_retrieved(db, network):
+    """frozen_edges JSON is round-tripped through the DB correctly."""
+    snapshot = [
+        {"edge_id": 1, "source_id": 10, "target_id": 20, "relation": "activates"},
+        {"edge_id": 2, "source_id": 10, "target_id": 30, "relation": "inhibits"},
+    ]
+    mv = ModelVersion.objects.create(
+        network=network,
+        semver="0.1.0",
+        n_species=0,
+        n_reactions=0,
+        n_edges=0,
+        sbml_s3_key="",
+        csv_s3_key="",
+        zip_s3_key="",
+        frozen_edges=snapshot,
+    )
+    mv.refresh_from_db()
+    assert mv.frozen_edges == snapshot
+
+
 def test_export_artifact_records_download(db, network, reviewer):
     mv = ModelVersion.objects.create(
         network=network,
