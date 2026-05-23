@@ -266,8 +266,6 @@ def smoke_all_models(chunk_id: int) -> dict[str, int]:
 
             validated = PPIExtractionResponse.model_validate(parsed)
         except Exception as exc:
-            import time as _time
-
             run.status = ExtractionRun.Status.FAILED
             run.error = f"{type(exc).__name__}: {exc}"[:2000]
             run.finished_at = timezone.now()

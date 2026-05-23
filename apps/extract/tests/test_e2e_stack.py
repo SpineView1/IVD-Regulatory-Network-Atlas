@@ -46,16 +46,23 @@ def test_compose_file_is_valid():
     The compose file is also validated by the host-side scripts/verify.sh gate.
     """
     try:
-        result = subprocess.run(
-            ["docker", "compose", "-f", "docker-compose.yml", "config", "--services"],
+        result = subprocess.run(  # noqa: S603
+            [  # noqa: S607
+                "docker",
+                "compose",
+                "-f",
+                "docker-compose.yml",
+                "config",
+                "--services",
+            ],
             capture_output=True,
             text=True,
         )
         services = result.stdout.splitlines()
         worker_extract = [s for s in services if s.startswith("worker_extract_")]
-        assert len(worker_extract) == 7, (
-            f"Expected 7 worker_extract_* services, found {len(worker_extract)}: {worker_extract}"
-        )
+        assert (
+            len(worker_extract) == 7
+        ), f"Expected 7 worker_extract_* services, found {len(worker_extract)}: {worker_extract}"
     except FileNotFoundError:
         pytest.skip("docker not available in this environment; validated by scripts/verify.sh")
 

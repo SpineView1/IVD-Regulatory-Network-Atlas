@@ -8,14 +8,14 @@ from extract.models import ExtractionRun, PromptTemplate, RawPPI
 
 
 @admin.register(PromptTemplate)
-class PromptTemplateAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
+class PromptTemplateAdmin(admin.ModelAdmin):
     list_display = ("version", "is_active", "updated_at")
     list_filter = ("is_active",)
     readonly_fields = ("created_at", "updated_at")
 
 
 @admin.register(ExtractionRun)
-class ExtractionRunAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
+class ExtractionRunAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "chunk_id",
@@ -39,7 +39,7 @@ class ExtractionRunAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
 
 
 @admin.register(RawPPI)
-class RawPPIAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
+class RawPPIAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "run_id",

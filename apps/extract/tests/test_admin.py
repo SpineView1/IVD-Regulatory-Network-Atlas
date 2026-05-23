@@ -6,13 +6,12 @@ Django admin with the expected list_display fields and filters.
 
 from __future__ import annotations
 
-import pytest
 from django.contrib import admin as django_admin
 
 from extract.models import ExtractionRun, PromptTemplate, RawPPI
 
 
-def _get_model_admin(model):  # type: ignore[no-untyped-def]
+def _get_model_admin(model):  # noqa: ANN001
     """Return the registered ModelAdmin for a model, or None."""
     try:
         return django_admin.site._registry[model]

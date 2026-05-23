@@ -349,9 +349,7 @@ def refresh_authelia_session(
         timeout=timeout_sec,
     )
     if response.status_code != 200:
-        raise OllamaError(
-            f"authelia refresh failed: {response.status_code} {response.text[:200]}"
-        )
+        raise OllamaError(f"authelia refresh failed: {response.status_code} {response.text[:200]}")
     set_cookie = response.headers.get("Set-Cookie", "")
     for part in set_cookie.split(";"):
         part = part.strip()
