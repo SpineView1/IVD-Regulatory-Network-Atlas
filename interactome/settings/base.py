@@ -136,9 +136,7 @@ MINIO_REGION = "us-east-1"  # placeholder; MinIO ignores it
 
 # === Ollama gateway (behind Authelia) ===
 OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE", "https://ollama.simbiosys.sb.upf.edu")
-OLLAMA_AUTHELIA_BASE = os.environ.get(
-    "AUTHELIA_BASE", "https://authelia.simbiosys.sb.upf.edu"
-)
+OLLAMA_AUTHELIA_BASE = os.environ.get("AUTHELIA_BASE", "https://authelia.simbiosys.sb.upf.edu")
 OLLAMA_USER = os.environ.get("OLLAMA_USER", "")
 OLLAMA_PASSWORD = os.environ.get("OLLAMA_PASSWORD", "")
 OLLAMA_DEFAULT_TIMEOUT = float(os.environ.get("OLLAMA_DEFAULT_TIMEOUT", "120"))
@@ -185,3 +183,9 @@ LOGGING = {
         "celery": {"handlers": ["console"], "level": "INFO", "propagate": False},
     },
 }
+
+# === Celery Beat schedule (Phase 1) ===
+from schedule.beat_schedule import PHASE_1_BEAT_SCHEDULE  # noqa: E402
+
+CELERY_BEAT_SCHEDULE = PHASE_1_BEAT_SCHEDULE
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"

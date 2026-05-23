@@ -1,0 +1,22 @@
+# Initial token-bucket allocations per external provider.
+# Capacity = burst size; refill_per_sec = steady-state rate.
+# Conservative values; tune in production based on observed 429s.
+buckets:
+  - provider: ncbi_eutils
+    capacity: 10
+    refill_per_sec: 10.0   # with API key; 3 without
+  - provider: europe_pmc
+    capacity: 30
+    refill_per_sec: 30.0
+  - provider: europe_pmc_oai
+    capacity: 10
+    refill_per_sec: 5.0
+  - provider: pubtator3
+    capacity: 10
+    refill_per_sec: 10.0
+  - provider: ollama_qwen3_8b
+    capacity: 4
+    refill_per_sec: 2.0
+  - provider: grobid
+    capacity: 4
+    refill_per_sec: 4.0
