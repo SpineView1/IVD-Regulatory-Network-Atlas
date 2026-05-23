@@ -125,6 +125,11 @@ CELERY_TASK_ROUTES = {
     "papers.tasks.section_and_chunk": {"queue": "q.io"},
     "schedule.tasks.janitor_reset_stale_running": {"queue": "q.io"},
     "schedule.tasks.refill_rate_limit_buckets": {"queue": "q.io"},
+    # extract — non-dynamic tasks go to the io worker (spec §6).
+    # extract.tasks.run_ppi is routed dynamically by enqueue_pending_chunks
+    # via apply_async(queue=queue_for_model(...)); no static route here.
+    "extract.tasks.enqueue_pending_chunks": {"queue": "q.io"},
+    "extract.tasks.smoke_all_models": {"queue": "q.io"},
 }
 
 # === MinIO / S3-compatible object store ===
