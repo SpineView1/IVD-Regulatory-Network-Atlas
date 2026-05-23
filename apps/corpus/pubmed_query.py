@@ -28,7 +28,7 @@ MASTER_IDD_QUERY = (
 )
 
 
-def build_incremental_query(*, since: date | None, overlap_days: int = 0) -> str:
+def build_incremental_query(*, since: date | None, overlap_days: int = 7) -> str:
     """Build a date-bounded variant for incremental refresh.
 
     ``since`` is the watermark's ``last_entrez_date``. The query subtracts

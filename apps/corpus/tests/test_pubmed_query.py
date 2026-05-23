@@ -34,9 +34,16 @@ def test_master_query_language_and_date_filters():
 
 
 def test_build_incremental_query_includes_mindate():
-    q = build_incremental_query(since=date(2024, 5, 1))
+    # Pass overlap_days=0 explicitly to test the no-overlap case.
+    q = build_incremental_query(since=date(2024, 5, 1), overlap_days=0)
     assert "2024/05/01" in q
     assert "EDAT" in q
+
+
+def test_build_incremental_query_default_overlap_shifts_date():
+    # Default overlap_days=7: since=2024-05-08 should yield mindate=2024-05-01.
+    q = build_incremental_query(since=date(2024, 5, 8))
+    assert "2024/05/01" in q
 
 
 def test_build_incremental_query_uses_overlap_window():

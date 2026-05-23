@@ -122,6 +122,42 @@ def test_ollama_client_format_constraint_passed_through(client, httpx_mock: HTTP
     assert body["prompt"] == "hi"
 
 
+def test_ollama_client_reauths_on_401_and_retries(client, httpx_mock: HTTPXMock):
+    """A 401 from Ollama triggers one re-auth then a successful retry."""
+    # Initial auth succeeds.
+    httpx_mock.add_response(
+        method="POST",
+        url="https://authelia.example.com/api/firstfactor",
+        json={"status": "OK"},
+        headers={"Set-Cookie": "authelia_session=first; Path=/"},
+    )
+    # First generate call returns 401 (cookie expired).
+    httpx_mock.add_response(
+        method="POST",
+        url="https://ollama.example.com/api/generate",
+        status_code=401,
+        text="Unauthorized",
+    )
+    # Re-auth after 401 succeeds with a fresh cookie.
+    httpx_mock.add_response(
+        method="POST",
+        url="https://authelia.example.com/api/firstfactor",
+        json={"status": "OK"},
+        headers={"Set-Cookie": "authelia_session=second; Path=/"},
+    )
+    # Retry generate returns 200.
+    httpx_mock.add_response(
+        method="POST",
+        url="https://ollama.example.com/api/generate",
+        json={"response": "retried ok", "done": True},
+    )
+    result = client.generate(model="qwen3:8b", prompt="hello")
+    assert result["response"] == "retried ok"
+    # Confirm two auth calls were made (initial + re-auth on 401).
+    auth_calls = [r for r in httpx_mock.get_requests() if "firstfactor" in str(r.url)]
+    assert len(auth_calls) == 2
+
+
 def test_ollama_client_chat_endpoint(client, httpx_mock: HTTPXMock):
     httpx_mock.add_response(
         method="POST",
