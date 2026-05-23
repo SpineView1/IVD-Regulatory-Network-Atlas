@@ -399,3 +399,83 @@ def test_ungrounded_raw_ppi_never_becomes_edge(
     for raw in [raw1, raw2, raw3]:
         raw.refresh_from_db()
         assert raw.ungrounded is True
+
+
+# ---------------------------------------------------------------------------
+# Regression: papers with null publication_date must not be excluded from
+#             n_supporting_papers (and thus from bayes_belief's paper count).
+# ---------------------------------------------------------------------------
+
+
+def test_recompute_belief_counts_papers_with_null_publication_date(
+    db,
+    il1b_ontology_entity,
+    nfkb1_ontology_entity,
+    chunk_factory,
+    raw_ppi_factory,
+):
+    """Two EdgeEvidence rows whose papers BOTH have publication_date=None must yield
+    n_supporting_papers == 2 (not 0), and the belief must reflect 2 supporting papers.
+
+    Regression for: n_papers was derived from pmid_to_pubdate, which silently excluded
+    papers with no publication_date, causing n_supporting_papers to undercount support.
+    """
+    from corpus.models import Paper  # noqa: PLC0415
+    from graph.services import bayes_belief  # noqa: PLC0415
+
+    src = Entity.objects.create(ontology_entity=il1b_ontology_entity)
+    tgt = Entity.objects.create(ontology_entity=nfkb1_ontology_entity)
+    edge = Edge.objects.create(source=src, target=tgt, relation="activates")
+
+    # Create two papers with publication_date=None (preprints / ahead-of-print)
+    paper_a = Paper.objects.create(
+        pmid="70000001",
+        doi="10.0/70000001",
+        title="Preprint A",
+        abstract="",
+        publication_date=None,
+        is_original=True,
+    )
+    paper_b = Paper.objects.create(
+        pmid="70000002",
+        doi="10.0/70000002",
+        title="Preprint B",
+        abstract="",
+        publication_date=None,
+        is_original=True,
+    )
+
+    chunk_a = chunk_factory(paper=paper_a, text="IL1B activates NFKB1.", index=0)
+    chunk_b = chunk_factory(paper=paper_b, text="NFKB1 is activated by IL1B.", index=0)
+
+    raw_a = raw_ppi_factory(
+        subject="IL1B",
+        object="NFKB1",
+        relation="activates",
+        chunk=chunk_a,
+        model_name="qwen3:8b",
+    )
+    raw_b = raw_ppi_factory(
+        subject="IL1B",
+        object="NFKB1",
+        relation="activates",
+        chunk=chunk_b,
+        model_name="qwen3:8b",
+    )
+    EdgeEvidence.objects.create(edge=edge, raw_ppi=raw_a)
+    EdgeEvidence.objects.create(edge=edge, raw_ppi=raw_b)
+
+    recompute_edge_belief(edge)
+    edge.refresh_from_db()
+
+    # Must count both PMIDs, not 0
+    assert edge.n_supporting_papers == 2
+
+    # Belief must match what bayes_belief returns for 2 papers (recency defaults to 1.0
+    # when no dated papers exist)
+    expected_belief = bayes_belief(
+        n_supporting_papers=2,
+        n_models_agreeing=1,
+        mean_recency=1.0,
+    )
+    assert edge.belief_score == pytest.approx(expected_belief, abs=1e-9)

@@ -161,18 +161,21 @@ def recompute_edge_belief(edge: Edge) -> None:
         )
     )
 
+    all_pmids: set[str] = set()
     pmid_to_pubdate: dict[str, date] = {}
     models_seen: set[str] = set()
     for ev in evidence_rows:
         paper = ev.raw_ppi.run.chunk.section.paper
         pub = paper.publication_date  # canonical field name (date | None from stubs)
+        all_pmids.add(str(paper.pmid))
         if pub is not None:
             pmid_to_pubdate[str(paper.pmid)] = pub
         models_seen.add(ev.raw_ppi.run.model_name)  # canonical field name
 
-    n_papers = len(pmid_to_pubdate)
+    n_papers = len(all_pmids)  # ALL distinct PMIDs, including those with no publication_date
     n_models = len(models_seen)
-    recency = mean_recency_for_dates(list(pmid_to_pubdate.values())) if n_papers else 1.0
+    # Recency uses only dated papers; falls back to 1.0 when none have a date
+    recency = mean_recency_for_dates(list(pmid_to_pubdate.values())) if pmid_to_pubdate else 1.0
 
     belief = bayes_belief(
         n_supporting_papers=n_papers,
