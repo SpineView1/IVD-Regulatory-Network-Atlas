@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PubmedArticleSet>
+  <PubmedArticle>
+    <MedlineCitation>
+      <PMID Version="1">38000123</PMID>
+      <Article>
+        <Journal>
+          <Title>Spine</Title>
+        </Journal>
+        <ArticleTitle>A study of NP cells under hypoxia.</ArticleTitle>
+        <Abstract>
+          <AbstractText>Hypoxic NP cells upregulate HIF1A.</AbstractText>
+        </Abstract>
+        <AuthorList>
+          <Author>
+            <LastName>Doe</LastName>
+            <ForeName>Jane</ForeName>
+          </Author>
+        </AuthorList>
+        <PublicationTypeList>
+          <PublicationType UI="D016428">Journal Article</PublicationType>
+        </PublicationTypeList>
+        <ArticleDate DateType="Electronic">
+          <Year>2024</Year>
+          <Month>05</Month>
+          <Day>01</Day>
+        </ArticleDate>
+        <ELocationID EIdType="doi">10.1234/spine.2024.123</ELocationID>
+      </Article>
+      <MeshHeadingList>
+        <MeshHeading>
+          <DescriptorName UI="D007690">Intervertebral Disc</DescriptorName>
+        </MeshHeading>
+      </MeshHeadingList>
+      <DateRevised>
+        <Year>2024</Year><Month>05</Month><Day>02</Day>
+      </DateRevised>
+    </MedlineCitation>
+    <PubmedData>
+      <History>
+        <PubMedPubDate PubStatus="entrez">
+          <Year>2024</Year><Month>05</Month><Day>02</Day>
+        </PubMedPubDate>
+      </History>
+      <ArticleIdList>
+        <ArticleId IdType="pmc">PMC11000000</ArticleId>
+      </ArticleIdList>
+    </PubmedData>
+  </PubmedArticle>
+</PubmedArticleSet>
