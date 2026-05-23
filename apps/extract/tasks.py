@@ -68,6 +68,102 @@ def _fetch_run(row_id: int) -> ExtractionRun:
     return ExtractionRun.objects.select_related("chunk").get(id=row_id)
 
 
+def _execute_run(run: ExtractionRun) -> str:
+    """Shared extraction logic used by both run_ppi and smoke_all_models.
+
+    Performs the full correct sequence for one (chunk × model) extraction:
+    1. Mark status=running, set started_at, increment attempts.
+    2. Render active prompt and call _ollama_generate.
+    3. Parse + validate PPIExtractionResponse.
+    4. bulk_create RawPPI rows (relation stored as string, relation_logprob set).
+    5. Update Chunk.processed_by_models under select_for_update().
+    6. Mark status=done.
+
+    Returns "done" on success or "failed" on permanent (non-OllamaError) failure.
+
+    OllamaError is intentionally NOT caught here — it is re-raised so that:
+    - run_ppi (which has Celery retry machinery) can intercept and schedule retries.
+    - smoke_all_models catches it inline and marks failed for that model.
+
+    All other exceptions (JSONDecodeError, pydantic ValidationError, etc.) are
+    caught, written as status=failed, and "failed" is returned.
+    """
+    run.status = ExtractionRun.Status.RUNNING
+    run.started_at = timezone.now()
+    run.attempts = run.attempts + 1
+    run.error = ""
+    run.save(update_fields=["status", "started_at", "attempts", "error", "updated_at"])
+
+    prompt_text = build_prompt_text(run.chunk.text)
+    t0 = time.monotonic()
+    try:
+        response_text, relation_logprob, eval_count = _ollama_generate(
+            model=run.model_name, prompt=prompt_text
+        )
+        parsed: dict[str, Any] = json.loads(response_text)
+        validated = PPIExtractionResponse.model_validate(parsed)
+    except OllamaError:
+        # Re-raise transient errors so run_ppi can schedule retries via
+        # self.retry(). smoke_all_models catches this inline.
+        raise
+    except Exception as exc:
+        # Permanent failures: JSONDecodeError, pydantic ValidationError, etc.
+        run.status = ExtractionRun.Status.FAILED
+        run.error = f"{type(exc).__name__}: {exc}"[:2000]
+        run.finished_at = timezone.now()
+        run.duration_ms = int((time.monotonic() - t0) * 1000)
+        run.save(update_fields=["status", "error", "finished_at", "duration_ms", "updated_at"])
+        logger.warning("_execute_run failed run_id=%d model=%s: %s", run.id, run.model_name, exc)
+        return "failed"
+
+    raw_rows = [
+        RawPPI(
+            run=run,
+            subject=ppi.subject,
+            object=ppi.object,
+            relation=str(ppi.relation),
+            evidence_span=ppi.evidence_span,
+            evidence_offset_start=ppi.evidence_offset_start,
+            evidence_offset_end=ppi.evidence_offset_end,
+            cell_type=ppi.cell_type,
+            stimulus=ppi.stimulus,
+            confidence=ppi.confidence,
+            relation_logprob=relation_logprob,
+        )
+        for ppi in validated.ppis
+    ]
+
+    with transaction.atomic():
+        if raw_rows:
+            RawPPI.objects.bulk_create(raw_rows)
+
+        run.status = ExtractionRun.Status.DONE
+        run.finished_at = timezone.now()
+        run.duration_ms = int((time.monotonic() - t0) * 1000)
+        run.response_tokens = eval_count
+        run.save(
+            update_fields=[
+                "status",
+                "finished_at",
+                "duration_ms",
+                "response_tokens",
+                "updated_at",
+            ]
+        )
+
+        # Append model to Chunk.processed_by_models (Phase 1 reserved this field).
+        # Use select_for_update() so concurrent workers serialize their appends
+        # and none are lost (Fix 2: prevent lost-update race).
+        from papers.models import Chunk
+
+        chunk = Chunk.objects.select_for_update().get(pk=run.chunk_id)
+        if run.model_name not in chunk.processed_by_models:
+            chunk.processed_by_models = list(chunk.processed_by_models) + [run.model_name]
+            chunk.save(update_fields=["processed_by_models", "updated_at"])
+
+    return "done"
+
+
 def _provider_for_model(model_name: str) -> str:
     """Map model slug to rate-limit bucket provider string.
 
@@ -127,20 +223,11 @@ def run_ppi(self: Any, row_id: int) -> str:
         # schedule app not available — proceed without gating.
         logger.warning("run_ppi: schedule app not available, skipping rate-limit for %s", provider)
 
-    run.status = ExtractionRun.Status.RUNNING
-    run.started_at = timezone.now()
-    run.attempts = run.attempts + 1
-    run.error = ""
-    run.save(update_fields=["status", "started_at", "attempts", "error", "updated_at"])
-
-    prompt_text = build_prompt_text(run.chunk.text)
-    t0 = time.monotonic()
+    # Transient Ollama errors: retry with exponential backoff before delegating
+    # to _execute_run. We must intercept OllamaError here (before _execute_run)
+    # because only the @shared_task context has self.retry().
     try:
-        response_text, relation_logprob, eval_count = _ollama_generate(
-            model=run.model_name, prompt=prompt_text
-        )
-        parsed: dict[str, Any] = json.loads(response_text)
-        validated = PPIExtractionResponse.model_validate(parsed)
+        return _execute_run(run)
     except OllamaError as exc:
         # Transient Ollama error — retry with exponential backoff.
         # Explicitly call self.retry() so retries < max_retries leaves the
@@ -150,72 +237,15 @@ def run_ppi(self: Any, row_id: int) -> str:
             # Raise Retry — row stays running; janitor handles stale running rows
             # if the worker dies between retries.
             raise self.retry(exc=exc, countdown=2**self.request.retries) from None
-        # All retries exhausted: mark permanently failed.
+        # All retries exhausted: mark permanently failed (duplicate of _execute_run
+        # failure path but needed here so we can inspect self.request.retries).
+        run.refresh_from_db()
         run.status = ExtractionRun.Status.FAILED
         run.error = f"{type(exc).__name__}: {exc}"[:2000]
         run.finished_at = timezone.now()
-        run.duration_ms = int((time.monotonic() - t0) * 1000)
-        run.save(update_fields=["status", "error", "finished_at", "duration_ms", "updated_at"])
+        run.save(update_fields=["status", "error", "finished_at", "updated_at"])
         logger.warning("run_ppi failed (retries exhausted) run_id=%d: %s", row_id, run.error)
         return "failed"
-    except Exception as exc:
-        # Permanent failures: JSONDecodeError, pydantic ValidationError, etc.
-        run.status = ExtractionRun.Status.FAILED
-        run.error = f"{type(exc).__name__}: {exc}"[:2000]
-        run.finished_at = timezone.now()
-        run.duration_ms = int((time.monotonic() - t0) * 1000)
-        run.save(update_fields=["status", "error", "finished_at", "duration_ms", "updated_at"])
-        logger.warning("run_ppi failed run_id=%d: %s", row_id, run.error)
-        return "failed"
-
-    # Build RawPPI rows — store relation as STRING (ppi.relation is StrEnum
-    # so str(ppi.relation) == ppi.relation.value e.g. "activates").
-    raw_rows = [
-        RawPPI(
-            run=run,
-            subject=ppi.subject,
-            object=ppi.object,
-            relation=str(ppi.relation),
-            evidence_span=ppi.evidence_span,
-            evidence_offset_start=ppi.evidence_offset_start,
-            evidence_offset_end=ppi.evidence_offset_end,
-            cell_type=ppi.cell_type,
-            stimulus=ppi.stimulus,
-            confidence=ppi.confidence,
-            relation_logprob=relation_logprob,
-        )
-        for ppi in validated.ppis
-    ]
-
-    with transaction.atomic():
-        if raw_rows:
-            RawPPI.objects.bulk_create(raw_rows)
-
-        run.status = ExtractionRun.Status.DONE
-        run.finished_at = timezone.now()
-        run.duration_ms = int((time.monotonic() - t0) * 1000)
-        run.response_tokens = eval_count
-        run.save(
-            update_fields=[
-                "status",
-                "finished_at",
-                "duration_ms",
-                "response_tokens",
-                "updated_at",
-            ]
-        )
-
-        # Append model to Chunk.processed_by_models (Phase 1 reserved this field).
-        # Use select_for_update() so concurrent workers serialize their appends
-        # and none are lost (Fix 2: prevent lost-update race).
-        from papers.models import Chunk
-
-        chunk = Chunk.objects.select_for_update().get(pk=run.chunk_id)
-        if run.model_name not in chunk.processed_by_models:
-            chunk.processed_by_models = list(chunk.processed_by_models) + [run.model_name]
-            chunk.save(update_fields=["processed_by_models", "updated_at"])
-
-    return "done"
 
 
 @shared_task(name="extract.tasks.smoke_all_models")
@@ -223,15 +253,21 @@ def smoke_all_models(chunk_id: int) -> dict[str, int]:
     """Synchronously run one chunk through all 7 models in-process.
 
     Intended for operator smoke-testing and the live integration test.
-    Bypasses the queue: it calls ``run_ppi`` logic directly (creating
+    Bypasses the queue: it calls ``_execute_run`` directly (creating
     ExtractionRun rows and RawPPI rows) rather than dispatching to the
     per-model queues. This makes it usable from a shell or a test
     without requiring all workers to be running.
 
+    Uses ``_execute_run`` (the shared helper) so processed_by_models is
+    updated correctly for each model — preventing enqueue_pending_chunks
+    from re-enqueuing chunks already handled by this task (Fix C-2).
+
     Returns ``{model_name: raw_ppi_count}`` for each model.
     """
-    version = active_prompt_version()
+    # Fix Q-4: call upsert first (which internally reads active_prompt_version),
+    # then read version once — eliminates the double read / version-skew window.
     upsert_runs_for_chunk(chunk_id)
+    version = active_prompt_version()
 
     counts: dict[str, int] = {}
     for model_name in SUPPORTED_OLLAMA_MODELS:
@@ -250,56 +286,16 @@ def smoke_all_models(chunk_id: int) -> dict[str, int]:
             counts[model_name] = RawPPI.objects.filter(run=run).count()
             continue
 
-        from papers.models import Chunk as ChunkModel
-
-        chunk = ChunkModel.objects.get(pk=chunk_id)
-        prompt_text = build_prompt_text(chunk.text)
-
         try:
-            response_text, relation_logprob, eval_count = _ollama_generate(
-                model=model_name, prompt=prompt_text
-            )
-            import json as _json
-
-            parsed: dict[str, Any] = _json.loads(response_text)
-            from extract.schemas import PPIExtractionResponse
-
-            validated = PPIExtractionResponse.model_validate(parsed)
+            _execute_run(run)
         except Exception as exc:
-            run.status = ExtractionRun.Status.FAILED
-            run.error = f"{type(exc).__name__}: {exc}"[:2000]
-            run.finished_at = timezone.now()
-            run.save(update_fields=["status", "error", "finished_at", "updated_at"])
             logger.warning("smoke_all_models run failed model=%s: %s", model_name, exc)
             counts[model_name] = 0
             continue
 
-        raw_rows = [
-            RawPPI(
-                run=run,
-                subject=ppi.subject,
-                object=ppi.object,
-                relation=str(ppi.relation),
-                evidence_span=ppi.evidence_span,
-                evidence_offset_start=ppi.evidence_offset_start,
-                evidence_offset_end=ppi.evidence_offset_end,
-                cell_type=ppi.cell_type,
-                stimulus=ppi.stimulus,
-                confidence=ppi.confidence,
-                relation_logprob=relation_logprob,
-            )
-            for ppi in validated.ppis
-        ]
-        with transaction.atomic():
-            if raw_rows:
-                RawPPI.objects.bulk_create(raw_rows)
-            run.status = ExtractionRun.Status.DONE
-            run.finished_at = timezone.now()
-            run.response_tokens = eval_count
-            run.save(update_fields=["status", "finished_at", "response_tokens", "updated_at"])
-
-        counts[model_name] = len(raw_rows)
-        logger.info("smoke_all_models model=%s ppis=%d", model_name, len(raw_rows))
+        n = RawPPI.objects.filter(run=run).count()
+        counts[model_name] = n
+        logger.info("smoke_all_models model=%s ppis=%d", model_name, n)
 
     return counts
 

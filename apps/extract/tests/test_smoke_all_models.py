@@ -103,6 +103,73 @@ def test_smoke_all_models_unit_returns_ppi_counts_per_model(db):
         assert count >= 1, f"Expected ≥1 RawPPI for model {model}, got {count}"
 
 
+@pytest.mark.django_db
+def test_smoke_all_models_updates_processed_by_models(db):
+    """Fix C-2: smoke_all_models must append each model slug to
+    Chunk.processed_by_models so enqueue_pending_chunks does not
+    re-enqueue chunks that were already processed by smoke_all_models.
+    """
+    from corpus.models import Paper
+    from extract.models import PromptTemplate
+    from extract.tasks import smoke_all_models
+    from papers.models import Chunk, Section
+
+    PromptTemplate.objects.filter(is_active=True).delete()
+    PromptTemplate.objects.update_or_create(
+        version="1.0.0",
+        defaults={"body": "{{CHUNK_TEXT}}", "is_active": True},
+    )
+
+    paper = Paper.objects.create(
+        pmid="99999902",
+        title="smoke processed_by_models test",
+        abstract=CHUNK_TEXT,
+    )
+    section = Section.objects.create(
+        paper=paper,
+        doco_type="Results",
+        order_index=0,
+        body_text=CHUNK_TEXT,
+    )
+    chunk = Chunk.objects.create(
+        section=section,
+        chunk_index=0,
+        text=CHUNK_TEXT,
+        token_count=len(CHUNK_TEXT.split()),
+        char_offset_start=0,
+        char_offset_end=len(CHUNK_TEXT),
+    )
+
+    fake_ppi_json = json.dumps(
+        {
+            "ppis": [
+                {
+                    "subject": "IL1B",
+                    "object": "MMP13",
+                    "relation": "activates",
+                    "evidence_span": "IL-1β induced MMP-13",
+                    "evidence_offset_start": 0,
+                    "evidence_offset_end": 20,
+                    "cell_type": "nucleus pulposus",
+                    "stimulus": "IL-1β",
+                    "confidence": 0.9,
+                }
+            ]
+        }
+    )
+
+    with patch("extract.tasks._ollama_generate") as mock_gen:
+        mock_gen.return_value = (fake_ppi_json, -0.1, 42)
+        smoke_all_models(chunk_id=chunk.id)
+
+    chunk.refresh_from_db()
+    missing = [m for m in SUPPORTED_OLLAMA_MODELS if m not in chunk.processed_by_models]
+    assert not missing, (
+        f"smoke_all_models did not add these models to processed_by_models: {missing}. "
+        "Consequence: enqueue_pending_chunks will re-enqueue them on the next Beat tick."
+    )
+
+
 # ---- live integration test (skipped by default) ----
 
 
