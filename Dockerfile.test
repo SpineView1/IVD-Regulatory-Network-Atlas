@@ -7,3 +7,5 @@ RUN curl -sSL https://install.python-poetry.org | python3 -
 WORKDIR /app
 COPY pyproject.toml poetry.lock ./
 RUN poetry install --no-root
+# Pre-bake NLTK punkt_tab data so tests don't hit the network at runtime.
+RUN poetry run python -m nltk.downloader punkt_tab

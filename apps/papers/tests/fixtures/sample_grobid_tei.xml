@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <teiHeader>
+    <fileDesc>
+      <titleStmt><title>Sample paper</title></titleStmt>
+    </fileDesc>
+  </teiHeader>
+  <text>
+    <body>
+      <div xmlns="http://www.tei-c.org/ns/1.0">
+        <head>Introduction</head>
+        <p>Disc degeneration is studied here.</p>
+      </div>
+      <div xmlns="http://www.tei-c.org/ns/1.0">
+        <head>Results</head>
+        <p>HIF1A was upregulated.</p>
+      </div>
+    </body>
+  </text>
+</TEI>

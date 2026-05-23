@@ -1,0 +1,77 @@
+"""schedule.tasks — Beat-driven housekeeping tasks.
+
+`janitor_reset_stale_running`: scans every registered "long-running"
+model for rows in status='running' with stale heartbeats and resets them
+to status='queued'. Registry is empty in Phase 1 (no long-running tasks
+yet); Phase 2 (extract.ExtractionRun) registers itself with us.
+
+`refill_rate_limit_buckets`: calls `.refill()` on every bucket. The
+buckets self-refill on access, but a periodic refill smooths out
+edge cases where a provider is idle for hours.
+"""
+
+from __future__ import annotations
+
+import logging
+from collections.abc import Iterable
+from datetime import timedelta
+
+from django.apps import apps
+from django.db.models import Q
+from django.utils import timezone
+
+from celery import shared_task
+from schedule.models import RateLimitBucket
+
+logger = logging.getLogger(__name__)
+
+# Apps register their long-running model + status field here so the janitor
+# can sweep them. Tuple is (app_label, model_name, status_field, heartbeat_field).
+_JANITOR_REGISTRY: list[tuple[str, str, str, str]] = []
+
+
+def register_janitor_target(
+    app_label: str, model_name: str, status_field: str, heartbeat_field: str
+) -> None:
+    """Register a model for janitor sweeping. Called from each app's apps.py."""
+    entry = (app_label, model_name, status_field, heartbeat_field)
+    if entry not in _JANITOR_REGISTRY:
+        _JANITOR_REGISTRY.append(entry)
+
+
+def _janitor_targets() -> Iterable[tuple[str, str, str, str]]:
+    return list(_JANITOR_REGISTRY)
+
+
+@shared_task(name="schedule.tasks.janitor_reset_stale_running")
+def janitor_reset_stale_running(stale_minutes: int = 10) -> dict:
+    """Sweep every registered model; reset stale running rows to queued."""
+    cutoff = timezone.now() - timedelta(minutes=stale_minutes)
+    summary: dict[str, int] = {}
+    total = 0
+    for app_label, model_name, status_field, heartbeat_field in _janitor_targets():
+        try:
+            model = apps.get_model(app_label, model_name)
+        except LookupError:
+            logger.warning("janitor: unknown model %s.%s", app_label, model_name)
+            continue
+        qs = model.objects.filter(
+            Q(**{status_field: "running"})
+            & (Q(**{f"{heartbeat_field}__isnull": True}) | Q(**{f"{heartbeat_field}__lt": cutoff}))
+        )
+        count = qs.update(**{status_field: "queued", heartbeat_field: None})
+        summary[f"{app_label}.{model_name}"] = count
+        total += count
+    summary["total_reset"] = total
+    logger.info("janitor swept: %s", summary)
+    return summary
+
+
+@shared_task(name="schedule.tasks.refill_rate_limit_buckets")
+def refill_rate_limit_buckets() -> dict:
+    """Walk every bucket and call .refill()."""
+    refilled = 0
+    for bucket in RateLimitBucket.objects.all():
+        bucket.refill()
+        refilled += 1
+    return {"refilled": refilled}

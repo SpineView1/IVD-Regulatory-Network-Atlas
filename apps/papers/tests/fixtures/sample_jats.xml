@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<article xmlns="http://jats.nlm.nih.gov/ns/archiving/1.3/">
+  <front>
+    <article-meta>
+      <article-id pub-id-type="pmid">38000123</article-id>
+    </article-meta>
+  </front>
+  <body>
+    <sec sec-type="intro">
+      <title>Introduction</title>
+      <p>Intervertebral disc degeneration is a leading cause of low-back pain.</p>
+      <p>HIF1A is implicated in NP cell survival.</p>
+    </sec>
+    <sec sec-type="methods">
+      <title>Methods</title>
+      <p>Human NP cells were cultured under 1% O2.</p>
+    </sec>
+    <sec sec-type="results">
+      <title>Results</title>
+      <p>Hypoxia upregulated HIF1A 5-fold (p&lt;0.001).</p>
+      <p>NF-&#954;B signalling was suppressed under low oxygen.</p>
+      <sec>
+        <title>Sub-result A</title>
+        <p>SOX9 levels increased.</p>
+      </sec>
+    </sec>
+    <sec sec-type="conclusions">
+      <title>Conclusions</title>
+      <p>HIF1A drives NP-cell adaptation to hypoxia.</p>
+    </sec>
+  </body>
+</article>

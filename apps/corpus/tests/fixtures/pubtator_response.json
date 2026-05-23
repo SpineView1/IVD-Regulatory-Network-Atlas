@@ -1,0 +1,36 @@
+{
+  "PubTator3": [
+    {
+      "pmid": 38000123,
+      "passages": [
+        {
+          "infons": {"type": "title"},
+          "text": "A study of NP cells under hypoxia.",
+          "annotations": [
+            {
+              "text": "HIF1A",
+              "infons": {"type": "Gene", "identifier": "3091", "database": "NCBI Gene"},
+              "locations": [{"offset": 32, "length": 5}]
+            }
+          ]
+        },
+        {
+          "infons": {"type": "abstract"},
+          "text": "Hypoxic NP cells upregulate HIF1A and downregulate NFKB1.",
+          "annotations": [
+            {
+              "text": "HIF1A",
+              "infons": {"type": "Gene", "identifier": "3091"},
+              "locations": [{"offset": 28, "length": 5}]
+            },
+            {
+              "text": "NFKB1",
+              "infons": {"type": "Gene", "identifier": "4790"},
+              "locations": [{"offset": 51, "length": 5}]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

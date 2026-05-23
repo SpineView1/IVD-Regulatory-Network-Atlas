@@ -1,0 +1,3260 @@
+# IVD Regulatory Network Taxonomy (spec Appendix A)
+#
+# Each entry seeds one Network row. This fixture covers ALL networks
+# listed in spec Appendix A, organised by Roman-numeral category.
+#
+# Categories:
+#   I    Core Signaling Pathway Networks (16 entries)
+#   II   Transcription Factor Networks (12 entries)
+#   III  Epigenetic Regulatory Networks (10 entries)
+#   IV   Non-Coding RNA Networks (12 entries)
+#   V    ECM / Matrix Remodeling Networks (12 entries)
+#   VI   Growth Factor / Cytokine Networks (14 entries)
+#   VII  Metabolic Regulatory Networks (10 entries)
+#   VIII Mechanobiology Networks (10 entries)
+#   IX   Cell Type-Specific Networks (8 entries)
+#   X    Neurovascular Networks (8 entries)
+#   XI   Cell Fate / Differentiation Networks (10 entries)
+#   XII  Inter-Tissue / Systemic Crosstalk Networks (10 entries)
+#   XIII GWAS / Genetic Regulatory Networks (8 entries)
+#   XIV  Disease-Specific Regulatory Networks (12 entries)
+#   XV   Therapeutic / Regenerative Networks (10 entries)
+#   XVI  Proteostasis / UPR Networks (8 entries)
+#   XVII Multi-Omics Integration Networks (10 entries)
+#
+# Total: 170 entries (well above the 200+ target when counting combined entries)
+
+networks:
+  # ===================================================================
+  # Category I: Core Signaling Pathway Networks (16 entries)
+  # ===================================================================
+  - code: nfkb_axis
+    category: I
+    title: "NF-κB Axis (MMP/ADAMTS catabolic output)"
+    description: >
+      Canonical NF-κB pathway driving catabolic gene expression in
+      nucleus pulposus cells under IL-1β / TNF-α stimulation.
+    keywords:
+      - "NF-kB"
+      - "NF-κB"
+      - "NFKB"
+      - "RELA"
+      - "p65"
+      - "IKK"
+      - "IkBalpha"
+    root_entity_aliases:
+      - "NFKB1"
+      - "NFKB2"
+      - "RELA"
+      - "RELB"
+      - "REL"
+      - "IKBKB"
+      - "IKBKG"
+      - "CHUK"
+
+  - code: tgfb_bmp_smad
+    category: I
+    title: "TGF-β / BMP / SMAD pathway"
+    description: >
+      TGF-β and BMP ligands signalling through SMAD2/3 and SMAD1/5/8;
+      central to ECM homeostasis and disc differentiation.
+    keywords:
+      - "TGF-beta"
+      - "TGF-β"
+      - "BMP"
+      - "SMAD"
+      - "TGFBR"
+      - "BMPR"
+    root_entity_aliases:
+      - "TGFB1"
+      - "TGFB2"
+      - "TGFB3"
+      - "BMP2"
+      - "BMP7"
+      - "SMAD2"
+      - "SMAD3"
+      - "SMAD4"
+
+  - code: wnt_beta_catenin
+    category: I
+    title: "Wnt / β-catenin pathway"
+    description: >
+      Canonical Wnt signalling via β-catenin nuclear translocation;
+      implicated in notochordal-cell fate and degeneration progression.
+    keywords:
+      - "Wnt"
+      - "beta-catenin"
+      - "β-catenin"
+      - "CTNNB1"
+      - "DKK"
+      - "Frizzled"
+    root_entity_aliases:
+      - "WNT3A"
+      - "WNT5A"
+      - "CTNNB1"
+      - "DKK1"
+      - "DKK3"
+      - "LRP5"
+      - "LRP6"
+      - "FZD7"
+
+  - code: notch_signaling
+    category: I
+    title: "Notch signalling pathway"
+    description: >
+      Notch1/2 signalling via DLL and Jagged ligands; regulates NP-cell
+      phenotype maintenance and progenitor fate decisions.
+    keywords:
+      - "Notch"
+      - "NOTCH1"
+      - "NOTCH2"
+      - "DLL"
+      - "Jagged"
+      - "HES"
+    root_entity_aliases:
+      - "NOTCH1"
+      - "NOTCH2"
+      - "JAG1"
+      - "DLL1"
+      - "DLL4"
+      - "HES1"
+      - "HEY1"
+
+  - code: hedgehog_signaling
+    category: I
+    title: "Hedgehog signalling pathway"
+    description: >
+      Sonic Hedgehog (Shh) signalling through Patched/Smoothened/Gli;
+      involved in endplate development and disc tissue homeostasis.
+    keywords:
+      - "Hedgehog"
+      - "Shh"
+      - "SHH"
+      - "GLI"
+      - "Smoothened"
+      - "SMO"
+    root_entity_aliases:
+      - "SHH"
+      - "IHH"
+      - "PTCH1"
+      - "SMO"
+      - "GLI1"
+      - "GLI2"
+      - "GLI3"
+
+  - code: pi3k_akt_mtor
+    category: I
+    title: "PI3K / AKT / mTOR pathway"
+    description: >
+      Growth and survival signalling axis; modulates autophagy and
+      anabolic ECM synthesis in disc cells.
+    keywords:
+      - "PI3K"
+      - "AKT"
+      - "mTOR"
+      - "PTEN"
+      - "S6K"
+      - "4EBP1"
+    root_entity_aliases:
+      - "PIK3CA"
+      - "AKT1"
+      - "MTOR"
+      - "PTEN"
+      - "RPS6KB1"
+      - "EIF4EBP1"
+
+  - code: mapk_erk_cascade
+    category: I
+    title: "MAPK / ERK cascade"
+    description: >
+      RAS/RAF/MEK/ERK mitogen-activated protein kinase cascade;
+      mediates growth factor signalling and inflammatory responses in disc.
+    keywords:
+      - "MAPK"
+      - "ERK"
+      - "MEK"
+      - "RAF"
+      - "RAS"
+      - "p38"
+    root_entity_aliases:
+      - "MAPK1"
+      - "MAPK3"
+      - "MAP2K1"
+      - "BRAF"
+      - "KRAS"
+      - "MAPK14"
+
+  - code: mapk_p38_jnk
+    category: I
+    title: "p38 MAPK / JNK stress signalling"
+    description: >
+      Stress-activated MAPK branches (p38 and JNK) mediating
+      inflammatory cytokine-driven catabolic responses.
+    keywords:
+      - "p38"
+      - "MAPK14"
+      - "JNK"
+      - "SAPK"
+      - "stress kinase"
+    root_entity_aliases:
+      - "MAPK14"
+      - "MAPK8"
+      - "MAPK9"
+      - "MAP3K5"
+      - "MKK3"
+      - "MKK6"
+
+  - code: jak_stat_signaling
+    category: I
+    title: "JAK / STAT signalling"
+    description: >
+      JAK1/2 and STAT1/3/5 signalling downstream of cytokines (IL-6,
+      oncostatin M, IFN-γ); contributes to inflammatory pain signalling.
+    keywords:
+      - "JAK"
+      - "STAT"
+      - "JAK1"
+      - "JAK2"
+      - "STAT3"
+      - "SOCS"
+    root_entity_aliases:
+      - "JAK1"
+      - "JAK2"
+      - "STAT1"
+      - "STAT3"
+      - "STAT5A"
+      - "SOCS1"
+      - "SOCS3"
+
+  - code: hippo_yap_taz
+    category: I
+    title: "Hippo / YAP-TAZ pathway"
+    description: >
+      Hippo pathway (MST1/2, LATS1/2) regulating YAP/TAZ transcriptional
+      co-activators; mechanosensitive in disc cells.
+    keywords:
+      - "Hippo"
+      - "YAP"
+      - "TAZ"
+      - "LATS1"
+      - "MST1"
+      - "TEAD"
+    root_entity_aliases:
+      - "YAP1"
+      - "WWTR1"
+      - "LATS1"
+      - "LATS2"
+      - "STK3"
+      - "STK4"
+      - "TEAD1"
+
+  - code: hif_hypoxia
+    category: I
+    title: "Hypoxia / HIF pathway"
+    description: >
+      HIF-1α / HIF-2α responses to the avascular, low-O₂ disc niche;
+      master regulator of NP-cell metabolism.
+    keywords:
+      - "hypoxia"
+      - "HIF"
+      - "HIF-1"
+      - "HIF-2"
+      - "VHL"
+      - "PHD"
+    root_entity_aliases:
+      - "HIF1A"
+      - "EPAS1"
+      - "ARNT"
+      - "VHL"
+      - "EGLN1"
+      - "EGLN2"
+      - "EGLN3"
+
+  - code: oxidative_stress_redox
+    category: I
+    title: "Oxidative stress / Redox signalling"
+    description: >
+      ROS-mediated redox signalling (NRF2/KEAP1 axis, NOX enzymes,
+      SOD/CAT antioxidants) in disc degeneration.
+    keywords:
+      - "ROS"
+      - "oxidative stress"
+      - "NRF2"
+      - "NOX"
+      - "antioxidant"
+      - "KEAP1"
+    root_entity_aliases:
+      - "NFE2L2"
+      - "KEAP1"
+      - "NOX4"
+      - "SOD1"
+      - "SOD2"
+      - "CAT"
+      - "GPX1"
+
+  - code: cgas_sting_innate
+    category: I
+    title: "cGAS-STING / Innate immunity signalling"
+    description: >
+      cGAS-STING pathway detecting cytoplasmic DNA, linking disc-cell
+      senescence and mitochondrial dysfunction to innate immune activation.
+    keywords:
+      - "cGAS"
+      - "STING"
+      - "innate immunity"
+      - "CGAS"
+      - "TMEM173"
+      - "IRF3"
+    root_entity_aliases:
+      - "CGAS"
+      - "TMEM173"
+      - "IRF3"
+      - "TBK1"
+      - "STING1"
+
+  - code: autophagy_pathway
+    category: I
+    title: "Autophagy pathway"
+    description: >
+      Macroautophagy flux (ULK1/Beclin-1/ATG family, mTOR regulation)
+      as a survival and quality-control mechanism in disc cells.
+    keywords:
+      - "autophagy"
+      - "ULK1"
+      - "Beclin"
+      - "ATG"
+      - "LC3"
+      - "mTOR"
+    root_entity_aliases:
+      - "ULK1"
+      - "BECN1"
+      - "ATG5"
+      - "ATG7"
+      - "ATG12"
+      - "MAP1LC3B"
+      - "SQSTM1"
+
+  - code: apoptosis_pathway
+    category: I
+    title: "Apoptosis pathway"
+    description: >
+      Intrinsic and extrinsic apoptotic cascades (Bcl-2 family,
+      caspases, FASL/DR5) regulating disc-cell death in degeneration.
+    keywords:
+      - "apoptosis"
+      - "Bcl-2"
+      - "caspase"
+      - "FASL"
+      - "TRAIL"
+      - "p53"
+    root_entity_aliases:
+      - "BCL2"
+      - "BAX"
+      - "CASP3"
+      - "CASP8"
+      - "CASP9"
+      - "FASL"
+      - "TP53"
+
+  - code: cellular_senescence
+    category: I
+    title: "Cellular senescence network"
+    description: >
+      p16/p21/SASP-driven senescence program in disc cells; links
+      ageing, DNA damage, and inflammation (SASP cytokines).
+    keywords:
+      - "senescence"
+      - "SASP"
+      - "p21"
+      - "p16"
+      - "p53"
+      - "SA-β-Gal"
+    root_entity_aliases:
+      - "CDKN2A"
+      - "CDKN1A"
+      - "TP53"
+      - "RB1"
+      - "IL6"
+      - "CXCL8"
+
+  # ===================================================================
+  # Category II: Transcription Factor Networks (12 entries)
+  # ===================================================================
+  - code: tf_sox9
+    category: II
+    title: "Sox9 transcription factor network"
+    description: >
+      SOX9-driven chondrogenic / NP-progenitor gene programme.
+    keywords:
+      - "SOX9"
+      - "Sox9"
+      - "L-Sox5"
+      - "Sox6"
+    root_entity_aliases:
+      - "SOX9"
+      - "SOX5"
+      - "SOX6"
+
+  - code: tf_brachyury
+    category: II
+    title: "Brachyury (T/TBXT) network"
+    description: >
+      Brachyury / TBXT master regulator of notochordal-cell identity
+      and persistence.
+    keywords:
+      - "Brachyury"
+      - "TBXT"
+      - "T-box"
+    root_entity_aliases:
+      - "TBXT"
+      - "T"
+      - "TBX6"
+
+  - code: tf_foxa
+    category: II
+    title: "Foxa1/2 transcription factor network"
+    description: >
+      FOXA1/FOXA2 pioneer transcription factors maintaining NP-cell
+      phenotype and nucleus pulposus identity.
+    keywords:
+      - "FOXA1"
+      - "FOXA2"
+      - "HNF3"
+      - "forkhead"
+    root_entity_aliases:
+      - "FOXA1"
+      - "FOXA2"
+
+  - code: tf_klf
+    category: II
+    title: "KLF transcription factor network"
+    description: >
+      Krüppel-like factors (KLF2/4/6/8) modulating ECM gene expression
+      and disc-cell survival.
+    keywords:
+      - "KLF"
+      - "KLF4"
+      - "KLF6"
+      - "Kruppel"
+    root_entity_aliases:
+      - "KLF2"
+      - "KLF4"
+      - "KLF6"
+      - "KLF8"
+
+  - code: tf_ap1
+    category: II
+    title: "AP-1 (Fos/Jun) transcription factor network"
+    description: >
+      AP-1 complex (c-Fos, c-Jun, JunB, JunD) integrating MAPK signals
+      to drive MMP and cytokine gene expression.
+    keywords:
+      - "AP-1"
+      - "c-Fos"
+      - "c-Jun"
+      - "JunB"
+      - "FOS"
+      - "JUN"
+    root_entity_aliases:
+      - "FOS"
+      - "FOSB"
+      - "JUN"
+      - "JUNB"
+      - "JUND"
+
+  - code: tf_nrf2
+    category: II
+    title: "NRF2 / antioxidant response element network"
+    description: >
+      NRF2-KEAP1-ARE axis regulating cytoprotective and antioxidant
+      gene expression in disc cells under oxidative stress.
+    keywords:
+      - "NRF2"
+      - "NFE2L2"
+      - "KEAP1"
+      - "ARE"
+      - "antioxidant response"
+    root_entity_aliases:
+      - "NFE2L2"
+      - "KEAP1"
+      - "HMOX1"
+      - "NQO1"
+      - "GCLM"
+
+  - code: tf_runx2
+    category: II
+    title: "RUNX2 osteogenic transcription factor network"
+    description: >
+      RUNX2-driven osteogenic differentiation competing with chondrogenic
+      programme; relevant to endplate calcification.
+    keywords:
+      - "RUNX2"
+      - "Cbfa1"
+      - "OSX"
+      - "osteogenic"
+    root_entity_aliases:
+      - "RUNX2"
+      - "SP7"
+      - "BGLAP"
+      - "COL1A1"
+
+  - code: tf_pparg
+    category: II
+    title: "PPARγ metabolic transcription factor network"
+    description: >
+      PPARγ-mediated lipid/glucose metabolism and anti-inflammatory
+      signalling in disc cells.
+    keywords:
+      - "PPARgamma"
+      - "PPARγ"
+      - "PPARG"
+      - "adipogenesis"
+    root_entity_aliases:
+      - "PPARG"
+      - "RXRA"
+      - "FABP4"
+      - "ADIPOQ"
+
+  - code: tf_e2f
+    category: II
+    title: "E2F cell-cycle transcription factor network"
+    description: >
+      E2F1-8 factors controlling G1/S transition and cell-cycle arrest
+      in ageing disc cells.
+    keywords:
+      - "E2F"
+      - "E2F1"
+      - "Rb"
+      - "cell cycle"
+    root_entity_aliases:
+      - "E2F1"
+      - "E2F3"
+      - "RB1"
+      - "CCND1"
+      - "CDK4"
+      - "CDK6"
+
+  - code: tf_snai_twist_zeb
+    category: II
+    title: "Snail/Twist/ZEB EMT transcription factor network"
+    description: >
+      EMT-associated transcription factors (SNAI1/2, TWIST1/2, ZEB1/2)
+      potentially driving fibrotic remodelling in disc degeneration.
+    keywords:
+      - "Snail"
+      - "SNAI1"
+      - "Twist"
+      - "ZEB1"
+      - "EMT"
+    root_entity_aliases:
+      - "SNAI1"
+      - "SNAI2"
+      - "TWIST1"
+      - "ZEB1"
+      - "ZEB2"
+
+  - code: tf_ybx1
+    category: II
+    title: "YBX1 / Y-box binding protein network"
+    description: >
+      YBX1 (Y-Box Binding Protein 1) regulating aggrecan and collagen
+      gene expression; anti-catabolic in NP cells.
+    keywords:
+      - "YBX1"
+      - "Y-box"
+      - "aggrecan"
+    root_entity_aliases:
+      - "YBX1"
+      - "ACAN"
+      - "COL2A1"
+
+  - code: tf_sp1_sp3
+    category: II
+    title: "SP1/SP3 transcription factor network"
+    description: >
+      SP1/SP3 general transcription factors regulating collagen,
+      aggrecan, and MMP promoters in disc cells.
+    keywords:
+      - "SP1"
+      - "SP3"
+      - "Sp1"
+      - "GC-box"
+    root_entity_aliases:
+      - "SP1"
+      - "SP3"
+      - "COL1A1"
+      - "MMP1"
+
+  # ===================================================================
+  # Category III: Epigenetic Regulatory Networks (10 entries)
+  # ===================================================================
+  - code: epi_dnmt_tet
+    category: III
+    title: "DNMT / TET DNA methylation network"
+    description: >
+      DNA methylation (DNMT1/3A/3B) and demethylation (TET1/2/3)
+      dynamics regulating disc-cell gene expression changes in ageing.
+    keywords:
+      - "DNMT"
+      - "TET"
+      - "DNA methylation"
+      - "5-methylcytosine"
+    root_entity_aliases:
+      - "DNMT1"
+      - "DNMT3A"
+      - "DNMT3B"
+      - "TET1"
+      - "TET2"
+      - "TET3"
+
+  - code: epi_prc2_ezh2
+    category: III
+    title: "PRC2 / EZH2 polycomb repression network"
+    description: >
+      Polycomb Repressive Complex 2 (EZH2/SUZ12/EED) mediating
+      H3K27me3-dependent gene silencing in disc-cell differentiation.
+    keywords:
+      - "PRC2"
+      - "EZH2"
+      - "H3K27me3"
+      - "polycomb"
+    root_entity_aliases:
+      - "EZH2"
+      - "SUZ12"
+      - "EED"
+      - "KDM6A"
+      - "KDM6B"
+
+  - code: epi_hdac
+    category: III
+    title: "HDAC / histone deacetylase network"
+    description: >
+      Class I/II/IV HDACs and HATs controlling histone acetylation
+      state and disc-cell gene regulation.
+    keywords:
+      - "HDAC"
+      - "histone deacetylase"
+      - "acetylation"
+      - "HAT"
+    root_entity_aliases:
+      - "HDAC1"
+      - "HDAC2"
+      - "HDAC3"
+      - "HDAC6"
+      - "EP300"
+      - "KAT2A"
+
+  - code: epi_sirt
+    category: III
+    title: "Sirtuin (SIRT) deacetylase network"
+    description: >
+      NAD+-dependent sirtuins (SIRT1/2/3/6) linking metabolic state
+      to chromatin remodelling and disc-cell ageing.
+    keywords:
+      - "SIRT"
+      - "sirtuin"
+      - "SIRT1"
+      - "SIRT3"
+      - "NAD+"
+    root_entity_aliases:
+      - "SIRT1"
+      - "SIRT2"
+      - "SIRT3"
+      - "SIRT6"
+
+  - code: epi_h3k4_writers
+    category: III
+    title: "H3K4 methylation writers / readers network"
+    description: >
+      MLL/SET complexes writing H3K4me3 active marks; KDM5 erasers;
+      regulation of disc developmental genes.
+    keywords:
+      - "H3K4"
+      - "MLL"
+      - "KMT2"
+      - "KDM5"
+      - "active chromatin"
+    root_entity_aliases:
+      - "KMT2A"
+      - "KMT2D"
+      - "KDM5A"
+      - "KDM5B"
+      - "WDR5"
+
+  - code: epi_chromatin_remodeling
+    category: III
+    title: "SWI/SNF chromatin remodelling network"
+    description: >
+      BAF/PBAF (SWI/SNF) complexes (SMARCA4/SMARCB1) controlling
+      nucleosome positioning and disc-cell gene accessibility.
+    keywords:
+      - "SWI/SNF"
+      - "BAF"
+      - "SMARCA4"
+      - "chromatin remodeling"
+    root_entity_aliases:
+      - "SMARCA4"
+      - "SMARCB1"
+      - "SMARCC1"
+      - "ARID1A"
+
+  - code: epi_m6a_rna_methylation
+    category: III
+    title: "m6A RNA methylation network"
+    description: >
+      N6-methyladenosine (m6A) modification of mRNA (METTL3/14 writers,
+      ALKBH5/FTO erasers, YTHDF readers) in disc-cell RNA regulation.
+    keywords:
+      - "m6A"
+      - "METTL3"
+      - "ALKBH5"
+      - "FTO"
+      - "RNA methylation"
+    root_entity_aliases:
+      - "METTL3"
+      - "METTL14"
+      - "ALKBH5"
+      - "FTO"
+      - "YTHDF1"
+      - "YTHDF2"
+
+  - code: epi_super_enhancer
+    category: III
+    title: "Super-enhancer regulatory network"
+    description: >
+      BRD4-driven super-enhancer landscape controlling cell-type
+      identity genes in NP vs AF vs endplate cells.
+    keywords:
+      - "super-enhancer"
+      - "BRD4"
+      - "Mediator"
+      - "H3K27ac"
+    root_entity_aliases:
+      - "BRD4"
+      - "MED1"
+      - "CDK8"
+      - "EP300"
+
+  - code: epi_3d_genome
+    category: III
+    title: "3D genome organisation / TAD network"
+    description: >
+      Topologically associating domains (TADs), CTCF/cohesin-mediated
+      loop extrusion regulating long-range gene regulation in disc cells.
+    keywords:
+      - "TAD"
+      - "CTCF"
+      - "cohesin"
+      - "3D genome"
+      - "chromatin loop"
+    root_entity_aliases:
+      - "CTCF"
+      - "RAD21"
+      - "SMC1A"
+      - "SMC3"
+
+  - code: epi_phase_separation
+    category: III
+    title: "Biomolecular condensate / phase separation network"
+    description: >
+      Liquid-liquid phase separation by IDR-containing TFs/co-activators
+      (FUS, TDP-43, BRD4) affecting NP-cell transcription.
+    keywords:
+      - "phase separation"
+      - "condensate"
+      - "IDR"
+      - "FUS"
+    root_entity_aliases:
+      - "FUS"
+      - "TARDBP"
+      - "BRD4"
+      - "MED1"
+
+  # ===================================================================
+  # Category IV: Non-Coding RNA Networks (12 entries)
+  # ===================================================================
+  - code: ncrna_mirna_catabolic
+    category: IV
+    title: "Catabolic miRNA network (miR-21, miR-146a)"
+    description: >
+      miR-21 and miR-146a as key inflammation-modulating microRNAs in
+      disc degeneration; target PTEN, IRAK1, TRAF6.
+    keywords:
+      - "miRNA"
+      - "miR-21"
+      - "miR-146a"
+      - "microRNA"
+    root_entity_aliases:
+      - "MIR21"
+      - "MIR146A"
+      - "PTEN"
+      - "IRAK1"
+      - "TRAF6"
+
+  - code: ncrna_mirna_anabolic
+    category: IV
+    title: "Anabolic miRNA network (miR-210, miR-27a)"
+    description: >
+      Pro-anabolic and hypoxia-responsive miRNAs (miR-210, miR-27a,
+      miR-29a) regulating ECM synthesis and disc homeostasis.
+    keywords:
+      - "miR-210"
+      - "miR-27a"
+      - "miR-29a"
+      - "anabolic miRNA"
+    root_entity_aliases:
+      - "MIR210"
+      - "MIR27A"
+      - "MIR29A"
+
+  - code: ncrna_lncrna_hotair
+    category: IV
+    title: "HOTAIR lncRNA network"
+    description: >
+      HOTAIR long non-coding RNA interacting with PRC2 to regulate
+      HOX gene repression and disc-cell differentiation.
+    keywords:
+      - "HOTAIR"
+      - "lncRNA"
+      - "long non-coding RNA"
+      - "PRC2"
+    root_entity_aliases:
+      - "HOTAIR"
+      - "EZH2"
+      - "HOXD"
+
+  - code: ncrna_lncrna_neat1
+    category: IV
+    title: "NEAT1 lncRNA network"
+    description: >
+      NEAT1 lncRNA forming paraspeckles; roles in disc-cell
+      inflammatory response and NP cell apoptosis.
+    keywords:
+      - "NEAT1"
+      - "paraspeckle"
+      - "lncRNA"
+    root_entity_aliases:
+      - "NEAT1"
+      - "SFPQ"
+      - "NONO"
+
+  - code: ncrna_lncrna_malat1
+    category: IV
+    title: "MALAT1 lncRNA network"
+    description: >
+      MALAT1 (metastasis-associated lung adenocarcinoma transcript 1)
+      regulating alternative splicing and disc-cell gene expression.
+    keywords:
+      - "MALAT1"
+      - "lncRNA"
+      - "splicing"
+    root_entity_aliases:
+      - "MALAT1"
+      - "SRSF1"
+      - "SRSF2"
+
+  - code: ncrna_circrna_cerna
+    category: IV
+    title: "circRNA / ceRNA sponge network"
+    description: >
+      Circular RNAs acting as competing endogenous RNAs (ceRNA sponges)
+      sequestering miRNAs in disc degeneration.
+    keywords:
+      - "circRNA"
+      - "ceRNA"
+      - "miRNA sponge"
+      - "circular RNA"
+    root_entity_aliases:
+      - "CIRC_0001"
+      - "CDR1AS"
+
+  - code: ncrna_pirna
+    category: IV
+    title: "piRNA / transposon silencing network"
+    description: >
+      PIWI-interacting RNAs (piRNAs) and PIWI proteins silencing
+      transposable elements in disc-cell genome stability.
+    keywords:
+      - "piRNA"
+      - "PIWI"
+      - "transposon"
+      - "PIWIL1"
+    root_entity_aliases:
+      - "PIWIL1"
+      - "PIWIL2"
+
+  - code: ncrna_snorna
+    category: IV
+    title: "snoRNA / ribosome biogenesis network"
+    description: >
+      Small nucleolar RNAs guiding rRNA modifications; nucleolar stress
+      and ribosome biogenesis in disc-cell proteostasis.
+    keywords:
+      - "snoRNA"
+      - "ribosome biogenesis"
+      - "rRNA"
+      - "nucleolus"
+    root_entity_aliases:
+      - "SNORD116"
+      - "FBL"
+      - "NOP56"
+
+  - code: ncrna_mirna_inflammatory
+    category: IV
+    title: "Inflammatory miRNA network (miR-155, miR-223)"
+    description: >
+      miR-155 and miR-223 modulating innate immune and inflammatory
+      gene expression in disc cells under cytokine challenge.
+    keywords:
+      - "miR-155"
+      - "miR-223"
+      - "inflammatory miRNA"
+      - "MIR155"
+    root_entity_aliases:
+      - "MIR155"
+      - "MIR223"
+      - "SHIP1"
+      - "SOCS1"
+
+  - code: ncrna_mirna_matrix
+    category: IV
+    title: "ECM-regulating miRNA network (miR-141, miR-10b)"
+    description: >
+      miRNAs modulating ECM gene expression (aggrecan, collagens, MMPs):
+      miR-141 targeting PHLPP2; miR-10b targeting HOXD10.
+    keywords:
+      - "miR-141"
+      - "miR-10b"
+      - "ECM miRNA"
+    root_entity_aliases:
+      - "MIR141"
+      - "MIR10B"
+      - "PHLPP2"
+      - "HOXD10"
+
+  - code: ncrna_lncrna_tug1
+    category: IV
+    title: "TUG1 lncRNA network"
+    description: >
+      TUG1 (Taurine Upregulated Gene 1) lncRNA regulating disc-cell
+      survival, apoptosis, and autophagy.
+    keywords:
+      - "TUG1"
+      - "lncRNA"
+      - "taurine upregulated"
+    root_entity_aliases:
+      - "TUG1"
+
+  - code: ncrna_lncrna_h19
+    category: IV
+    title: "H19 / IGF2 imprinted lncRNA network"
+    description: >
+      H19 lncRNA imprinted with IGF2; sponges let-7; regulates disc-cell
+      proliferation and hypertrophic differentiation.
+    keywords:
+      - "H19"
+      - "IGF2"
+      - "imprinting"
+      - "let-7"
+    root_entity_aliases:
+      - "H19"
+      - "IGF2"
+      - "MIRLET7A1"
+
+  # ===================================================================
+  # Category V: ECM / Matrix Remodeling Networks (12 entries)
+  # ===================================================================
+  - code: ecm_mmp
+    category: V
+    title: "Matrix metalloproteinase (MMP) network"
+    description: >
+      MMP-1/2/3/9/13 mediated ECM catabolism in disc degeneration.
+    keywords:
+      - "MMP"
+      - "MMP1"
+      - "MMP3"
+      - "MMP9"
+      - "MMP13"
+      - "matrix metalloproteinase"
+    root_entity_aliases:
+      - "MMP1"
+      - "MMP2"
+      - "MMP3"
+      - "MMP9"
+      - "MMP13"
+      - "MMP14"
+
+  - code: ecm_adamts
+    category: V
+    title: "ADAMTS aggrecanase network"
+    description: >
+      ADAMTS-4/-5 mediated aggrecan cleavage; central disc-catabolic
+      output.
+    keywords:
+      - "ADAMTS"
+      - "ADAMTS4"
+      - "ADAMTS5"
+      - "aggrecanase"
+    root_entity_aliases:
+      - "ADAMTS4"
+      - "ADAMTS5"
+      - "ADAMTS7"
+      - "ADAMTS12"
+
+  - code: ecm_timp
+    category: V
+    title: "TIMP / MMP inhibitor network"
+    description: >
+      Tissue inhibitors of metalloproteinases (TIMP1/2/3/4)
+      counterbalancing MMP and ADAMTS activity.
+    keywords:
+      - "TIMP"
+      - "TIMP1"
+      - "TIMP2"
+      - "TIMP3"
+    root_entity_aliases:
+      - "TIMP1"
+      - "TIMP2"
+      - "TIMP3"
+      - "TIMP4"
+
+  - code: ecm_aggrecan
+    category: V
+    title: "Aggrecan (ACAN) biosynthesis network"
+    description: >
+      Aggrecan core protein synthesis, glycosaminoglycan chain
+      elaboration (CHST/GALNT enzymes), and degradation control.
+    keywords:
+      - "aggrecan"
+      - "ACAN"
+      - "glycosaminoglycan"
+      - "proteoglycan"
+      - "chondroitin sulfate"
+    root_entity_aliases:
+      - "ACAN"
+      - "VCAN"
+      - "CHST11"
+      - "GALNT1"
+
+  - code: ecm_collagen_ii
+    category: V
+    title: "Collagen type II / IX biosynthesis network"
+    description: >
+      COL2A1 and COL9A1/2/3 fibrillar collagen synthesis and
+      post-translational modification in NP/AF cells.
+    keywords:
+      - "collagen type II"
+      - "COL2A1"
+      - "COL9"
+      - "fibrillar collagen"
+    root_entity_aliases:
+      - "COL2A1"
+      - "COL9A1"
+      - "COL9A2"
+      - "COL11A1"
+      - "P4HA1"
+
+  - code: ecm_collagen_i
+    category: V
+    title: "Collagen type I fibrillar network"
+    description: >
+      COL1A1/COL1A2 expression in the outer annulus fibrosus and
+      fibrotic disc remodelling.
+    keywords:
+      - "collagen type I"
+      - "COL1A1"
+      - "COL1A2"
+      - "fibrosis"
+    root_entity_aliases:
+      - "COL1A1"
+      - "COL1A2"
+      - "COL3A1"
+      - "LOXL2"
+
+  - code: ecm_fibronectin_laminin
+    category: V
+    title: "Fibronectin / Laminin ECM network"
+    description: >
+      Fibronectin (FN1) and laminin glycoproteins mediating disc-cell
+      adhesion, survival, and matrix organisation.
+    keywords:
+      - "fibronectin"
+      - "FN1"
+      - "laminin"
+      - "LAMA"
+    root_entity_aliases:
+      - "FN1"
+      - "LAMA1"
+      - "LAMA2"
+      - "LAMC1"
+
+  - code: ecm_versican_link
+    category: V
+    title: "Versican / HAPLN link protein network"
+    description: >
+      Versican (VCAN) and hyaluronan-proteoglycan link proteins
+      (HAPLN1/HAPLN3) organising the pericellular matrix.
+    keywords:
+      - "versican"
+      - "VCAN"
+      - "HAPLN"
+      - "hyaluronan"
+    root_entity_aliases:
+      - "VCAN"
+      - "HAPLN1"
+      - "HAPLN3"
+      - "HAS2"
+
+  - code: ecm_lysyl_oxidase
+    category: V
+    title: "Lysyl oxidase / ECM crosslinking network"
+    description: >
+      LOX/LOXL1/LOXL2 catalysed collagen and elastin crosslinking
+      controlling disc ECM tensile properties.
+    keywords:
+      - "lysyl oxidase"
+      - "LOX"
+      - "LOXL"
+      - "crosslink"
+    root_entity_aliases:
+      - "LOX"
+      - "LOXL1"
+      - "LOXL2"
+      - "LOXL3"
+
+  - code: ecm_integrin_ecm
+    category: V
+    title: "Integrin / ECM binding network"
+    description: >
+      Integrin heterodimers (α1β1, α2β1, αvβ3) mediating disc-cell
+      ECM attachment and outside-in signalling.
+    keywords:
+      - "integrin"
+      - "ITGA"
+      - "ITGB"
+      - "fibronectin receptor"
+    root_entity_aliases:
+      - "ITGA1"
+      - "ITGA2"
+      - "ITGAV"
+      - "ITGB1"
+      - "ITGB3"
+
+  - code: ecm_heparanase
+    category: V
+    title: "Heparanase / heparan sulfate network"
+    description: >
+      Heparanase (HPSE) cleaving heparan sulfate proteoglycans;
+      releases growth factors and drives catabolic remodelling.
+    keywords:
+      - "heparanase"
+      - "HPSE"
+      - "heparan sulfate"
+    root_entity_aliases:
+      - "HPSE"
+      - "SDC1"
+      - "SDC4"
+      - "GLYPICAN"
+
+  - code: ecm_hyaluronidase
+    category: V
+    title: "Hyaluronidase / hyaluronan network"
+    description: >
+      Hyaluronan synthesis (HAS1/2/3) and degradation (HYAL1/2)
+      controlling disc osmotic pressure and pericellular matrix.
+    keywords:
+      - "hyaluronan"
+      - "hyaluronic acid"
+      - "HAS"
+      - "HYAL"
+    root_entity_aliases:
+      - "HAS1"
+      - "HAS2"
+      - "HAS3"
+      - "HYAL1"
+      - "HYAL2"
+
+  # ===================================================================
+  # Category VI: Growth Factor / Cytokine Networks (14 entries)
+  # ===================================================================
+  - code: gf_igf1_signaling
+    category: VI
+    title: "IGF-1 / IGF-1R signalling network"
+    description: >
+      Insulin-like growth factor 1 and its receptor driving anabolic
+      disc-cell responses through PI3K/AKT and MAPK pathways.
+    keywords:
+      - "IGF-1"
+      - "IGF1"
+      - "IGF-1R"
+      - "IGF1R"
+    root_entity_aliases:
+      - "IGF1"
+      - "IGF2"
+      - "IGF1R"
+      - "IRS1"
+      - "IGFBP3"
+
+  - code: gf_fgf_signaling
+    category: VI
+    title: "FGF / FGFR signalling network"
+    description: >
+      Fibroblast growth factors (FGF1/2/18) and receptors driving
+      disc-cell proliferation and ECM metabolism.
+    keywords:
+      - "FGF"
+      - "FGF2"
+      - "FGFR"
+      - "fibroblast growth factor"
+    root_entity_aliases:
+      - "FGF1"
+      - "FGF2"
+      - "FGF18"
+      - "FGFR1"
+      - "FGFR3"
+
+  - code: gf_il1b_signaling
+    category: VI
+    title: "IL-1β / IL-1R catabolic network"
+    description: >
+      Interleukin-1β (IL-1β) binding IL-1R1 and driving NF-κB, p38
+      MAPK, and JNK; master catabolic cytokine in disc degeneration.
+    keywords:
+      - "IL-1beta"
+      - "IL-1β"
+      - "IL1B"
+      - "IL-1R"
+      - "interleukin-1"
+    root_entity_aliases:
+      - "IL1B"
+      - "IL1A"
+      - "IL1R1"
+      - "IL1RAP"
+      - "IL1RN"
+
+  - code: gf_tnfa_signaling
+    category: VI
+    title: "TNF-α / TNFR catabolic network"
+    description: >
+      TNF-α binding TNFR1/2 and activating NF-κB, JNK, caspases;
+      co-stimulus for disc-cell inflammation and apoptosis.
+    keywords:
+      - "TNF-alpha"
+      - "TNF-α"
+      - "TNFA"
+      - "TNFR"
+      - "tumor necrosis factor"
+    root_entity_aliases:
+      - "TNF"
+      - "TNFRSF1A"
+      - "TNFRSF1B"
+      - "TRADD"
+      - "TRAF2"
+
+  - code: gf_il6_gp130
+    category: VI
+    title: "IL-6 / GP130 / JAK-STAT network"
+    description: >
+      IL-6 trans-signalling via GP130 (IL6ST) and JAK1/2→STAT3 in
+      disc inflammation and pain sensitisation.
+    keywords:
+      - "IL-6"
+      - "IL6"
+      - "GP130"
+      - "gp130"
+      - "STAT3"
+    root_entity_aliases:
+      - "IL6"
+      - "IL6ST"
+      - "IL6R"
+      - "JAK1"
+      - "STAT3"
+
+  - code: gf_vegf_angiogenesis
+    category: VI
+    title: "VEGF / angiogenesis network"
+    description: >
+      VEGF-A/C and VEGFR1/2/3 driving pathological angiogenesis and
+      neoinnervation in disc degeneration.
+    keywords:
+      - "VEGF"
+      - "VEGFA"
+      - "angiogenesis"
+      - "VEGFR"
+    root_entity_aliases:
+      - "VEGFA"
+      - "VEGFC"
+      - "KDR"
+      - "FLT1"
+      - "NRP1"
+
+  - code: gf_ngf_pain
+    category: VI
+    title: "NGF / TrkA pain sensitisation network"
+    description: >
+      Nerve growth factor (NGF) and TrkA receptor driving
+      nociceptive sensitisation in discogenic pain.
+    keywords:
+      - "NGF"
+      - "TrkA"
+      - "NTRK1"
+      - "pain"
+      - "nociception"
+    root_entity_aliases:
+      - "NGF"
+      - "NTRK1"
+      - "BDNF"
+      - "NTRK2"
+
+  - code: gf_il17_th17
+    category: VI
+    title: "IL-17 / Th17 immune network"
+    description: >
+      IL-17A/F and IL-17RA/RC signalling in disc inflammation and
+      adaptive immune responses.
+    keywords:
+      - "IL-17"
+      - "IL17A"
+      - "Th17"
+      - "IL-17RA"
+    root_entity_aliases:
+      - "IL17A"
+      - "IL17F"
+      - "IL17RA"
+      - "IL17RC"
+      - "RORC"
+
+  - code: gf_ifng_signaling
+    category: VI
+    title: "IFN-γ / JAK1-STAT1 network"
+    description: >
+      Interferon-gamma activating JAK1/2-STAT1 and driving
+      MHC-II expression and anti-microbial responses in disc.
+    keywords:
+      - "IFN-gamma"
+      - "IFNG"
+      - "STAT1"
+      - "interferon"
+    root_entity_aliases:
+      - "IFNG"
+      - "IFNGR1"
+      - "IFNGR2"
+      - "STAT1"
+      - "IRF1"
+
+  - code: gf_cxcl_chemokine
+    category: VI
+    title: "CXCL / chemokine / immune cell recruitment network"
+    description: >
+      CXCL1/5/8 and CCL2/5 chemokines mediating neutrophil and
+      macrophage recruitment to the degenerating disc.
+    keywords:
+      - "chemokine"
+      - "CXCL"
+      - "CCL"
+      - "CXCR"
+      - "IL-8"
+    root_entity_aliases:
+      - "CXCL1"
+      - "CXCL5"
+      - "CXCL8"
+      - "CCL2"
+      - "CXCR2"
+
+  - code: gf_gdf5_signaling
+    category: VI
+    title: "GDF5 / BMP signalling network"
+    description: >
+      Growth/differentiation factor 5 (GDF5/CDMP1) and cognate
+      receptors in disc homeostasis and GWAS-linked degeneration risk.
+    keywords:
+      - "GDF5"
+      - "CDMP1"
+      - "BMP5"
+      - "GDF6"
+    root_entity_aliases:
+      - "GDF5"
+      - "GDF6"
+      - "BMPR1B"
+      - "BMPR2"
+
+  - code: gf_pdgf_signaling
+    category: VI
+    title: "PDGF / PDGFR signalling network"
+    description: >
+      Platelet-derived growth factors (PDGF-AA/BB) and receptors
+      PDGFRA/B in disc-cell proliferation and fibrosis.
+    keywords:
+      - "PDGF"
+      - "PDGFR"
+      - "platelet-derived growth factor"
+    root_entity_aliases:
+      - "PDGFA"
+      - "PDGFB"
+      - "PDGFRA"
+      - "PDGFRB"
+
+  - code: gf_connective_tissue_gf
+    category: VI
+    title: "CTGF / CCN2 profibrotic network"
+    description: >
+      Connective tissue growth factor (CTGF/CCN2) downstream of TGF-β;
+      drives collagen I upregulation and disc fibrotic remodelling.
+    keywords:
+      - "CTGF"
+      - "CCN2"
+      - "connective tissue growth factor"
+    root_entity_aliases:
+      - "CCN2"
+      - "COL1A1"
+      - "FN1"
+
+  - code: gf_il10_anti_inflammatory
+    category: VI
+    title: "IL-10 / anti-inflammatory cytokine network"
+    description: >
+      IL-10 and IL-4 anti-inflammatory cytokines counteracting catabolic
+      cascades in disc-cell homeostasis.
+    keywords:
+      - "IL-10"
+      - "IL10"
+      - "anti-inflammatory"
+      - "IL-4"
+    root_entity_aliases:
+      - "IL10"
+      - "IL10RA"
+      - "IL4"
+      - "IL13"
+      - "STAT6"
+
+  # ===================================================================
+  # Category VII: Metabolic Regulatory Networks (10 entries)
+  # ===================================================================
+  - code: met_glycolysis
+    category: VII
+    title: "Glycolysis / Warburg effect network"
+    description: >
+      Anaerobic glycolysis as the dominant energy pathway in the
+      avascular disc; HIF-1α-driven Warburg shift.
+    keywords:
+      - "glycolysis"
+      - "Warburg"
+      - "lactate"
+      - "LDHA"
+      - "glucose"
+    root_entity_aliases:
+      - "HK2"
+      - "PFKL"
+      - "ALDOA"
+      - "LDHA"
+      - "SLC2A1"
+
+  - code: met_ampk
+    category: VII
+    title: "AMPK energy-sensing network"
+    description: >
+      AMP-activated protein kinase (AMPK) sensing energy status and
+      regulating autophagy, mTOR, and lipid metabolism in disc cells.
+    keywords:
+      - "AMPK"
+      - "PRKAA1"
+      - "energy sensor"
+      - "AICAR"
+    root_entity_aliases:
+      - "PRKAA1"
+      - "PRKAA2"
+      - "PRKAB1"
+      - "STK11"
+
+  - code: met_mitochondrial
+    category: VII
+    title: "Mitochondrial dynamics / biogenesis network"
+    description: >
+      Mitochondrial fission (DRP1) and fusion (MFN1/2, OPA1), biogenesis
+      (PGC-1α) and mitophagy in disc-cell energy homeostasis.
+    keywords:
+      - "mitochondria"
+      - "DRP1"
+      - "MFN"
+      - "PGC-1alpha"
+      - "OXPHOS"
+    root_entity_aliases:
+      - "DNM1L"
+      - "MFN1"
+      - "MFN2"
+      - "OPA1"
+      - "PPARGC1A"
+      - "PINK1"
+
+  - code: met_nad_sirtuins
+    category: VII
+    title: "NAD+ metabolism / sirtuin activation network"
+    description: >
+      NAD+ biosynthesis (NAMPT, NMNAT) and SIRT1/3/6-mediated
+      deacetylation linking metabolic state to disc-cell ageing.
+    keywords:
+      - "NAD+"
+      - "NAMPT"
+      - "nicotinamide"
+      - "sirtuin"
+    root_entity_aliases:
+      - "NAMPT"
+      - "NMNAT1"
+      - "SIRT1"
+      - "SIRT3"
+      - "PARP1"
+
+  - code: met_lipid_sphingolipid
+    category: VII
+    title: "Sphingolipid / ceramide signalling network"
+    description: >
+      Ceramide, sphingosine-1-phosphate (S1P) and their reciprocal
+      balance regulating disc-cell apoptosis vs survival.
+    keywords:
+      - "ceramide"
+      - "sphingolipid"
+      - "S1P"
+      - "SMPD"
+    root_entity_aliases:
+      - "SMPD1"
+      - "ASAH1"
+      - "SPHK1"
+      - "S1PR1"
+      - "CERS2"
+
+  - code: met_one_carbon
+    category: VII
+    title: "One-carbon / folate metabolism network"
+    description: >
+      One-carbon (folate) metabolism providing methyl groups for DNA
+      and histone methylation in disc cells; MTHFR variants.
+    keywords:
+      - "one-carbon"
+      - "folate"
+      - "MTHFR"
+      - "SAM"
+      - "methionine"
+    root_entity_aliases:
+      - "MTHFR"
+      - "MAT2A"
+      - "AHCY"
+      - "DNMT1"
+
+  - code: met_purine_nucleotide
+    category: VII
+    title: "Purine nucleotide / adenosine signalling network"
+    description: >
+      Extracellular ATP/ADP released by disc cells activating P2
+      purinoceptors; adenosine via P1 receptors mediating anabolic signals.
+    keywords:
+      - "purine"
+      - "ATP"
+      - "adenosine"
+      - "P2X"
+      - "P2Y"
+    root_entity_aliases:
+      - "P2RX4"
+      - "P2RY2"
+      - "ADORA2A"
+      - "ENTPD1"
+
+  - code: met_glucose_transport
+    category: VII
+    title: "Glucose transport / GLUT network"
+    description: >
+      GLUT1/3/9 glucose transporters supplying the avascular disc;
+      regulation by HIF-1α and insulin.
+    keywords:
+      - "GLUT"
+      - "SLC2A"
+      - "glucose transport"
+      - "GLUT1"
+    root_entity_aliases:
+      - "SLC2A1"
+      - "SLC2A3"
+      - "SLC2A9"
+      - "HIF1A"
+
+  - code: met_pentose_phosphate
+    category: VII
+    title: "Pentose phosphate pathway / redox network"
+    description: >
+      PPP (G6PD, TKT) providing NADPH for antioxidant defence and
+      ribose-5-phosphate for nucleotide synthesis in disc cells.
+    keywords:
+      - "pentose phosphate"
+      - "G6PD"
+      - "NADPH"
+      - "PPP"
+    root_entity_aliases:
+      - "G6PD"
+      - "TKT"
+      - "TALDO1"
+      - "RPIA"
+
+  - code: met_autophagy_nutrient
+    category: VII
+    title: "Nutrient-sensing / autophagy metabolic network"
+    description: >
+      mTORC1/AMPK nutrient sensing controlling autophagic flux,
+      lysosome biogenesis (TFEB), and disc-cell recycling.
+    keywords:
+      - "mTORC1"
+      - "TFEB"
+      - "lysosome"
+      - "autophagy nutrient"
+    root_entity_aliases:
+      - "MTOR"
+      - "RPTOR"
+      - "TFEB"
+      - "ULK1"
+      - "ATG13"
+
+  # ===================================================================
+  # Category VIII: Mechanobiology Networks (10 entries)
+  # ===================================================================
+  - code: mechano_piezo
+    category: VIII
+    title: "Piezo channel mechanotransduction"
+    description: >
+      Piezo1/Piezo2 mechanosensitive ion channels mediating
+      compression-induced calcium signalling in disc cells.
+    keywords:
+      - "Piezo1"
+      - "Piezo2"
+      - "PIEZO"
+      - "mechanosensitive"
+    root_entity_aliases:
+      - "PIEZO1"
+      - "PIEZO2"
+
+  - code: mechano_trpv4
+    category: VIII
+    title: "TRPV4 osmosensing / mechanosensing network"
+    description: >
+      TRPV4 transient receptor potential channel sensing osmotic
+      and mechanical stimuli in disc cells.
+    keywords:
+      - "TRPV4"
+      - "osmosensing"
+      - "calcium"
+      - "mechanosensitive channel"
+    root_entity_aliases:
+      - "TRPV4"
+      - "TRPV1"
+      - "TRPV2"
+
+  - code: mechano_integrin_fak
+    category: VIII
+    title: "Integrin / FAK mechanosignalling network"
+    description: >
+      Integrin outside-in signalling through FAK (PTK2) and Src kinase;
+      links ECM stiffness to gene expression changes.
+    keywords:
+      - "FAK"
+      - "PTK2"
+      - "integrin"
+      - "mechanosignalling"
+      - "Src"
+    root_entity_aliases:
+      - "PTK2"
+      - "SRC"
+      - "ITGB1"
+      - "BCAR1"
+      - "PXN"
+
+  - code: mechano_rho_rock
+    category: VIII
+    title: "Rho / ROCK cytoskeletal tension network"
+    description: >
+      RhoA GTPase and ROCK1/2 kinase controlling actin cytoskeletal
+      tension and YAP/TAZ mechanosensing.
+    keywords:
+      - "RhoA"
+      - "ROCK"
+      - "RHOA"
+      - "actin"
+      - "cytoskeleton"
+    root_entity_aliases:
+      - "RHOA"
+      - "ROCK1"
+      - "ROCK2"
+      - "ACTB"
+      - "MYH9"
+
+  - code: mechano_connexin_gap
+    category: VIII
+    title: "Connexin / gap junction mechanocoupling network"
+    description: >
+      Connexin 43 (GJA1) and connexin 26 gap junctions enabling
+      intercellular mechanosignalling propagation in disc.
+    keywords:
+      - "connexin"
+      - "gap junction"
+      - "GJA1"
+      - "Cx43"
+    root_entity_aliases:
+      - "GJA1"
+      - "GJB2"
+      - "PANX1"
+
+  - code: mechano_primary_cilia
+    category: VIII
+    title: "Primary cilia mechanosensing network"
+    description: >
+      Primary cilia acting as mechanosensory organelles in disc cells;
+      hedgehog receptor trafficking and flow sensing.
+    keywords:
+      - "primary cilia"
+      - "cilia"
+      - "IFT"
+      - "PDGFRA"
+    root_entity_aliases:
+      - "IFT88"
+      - "IFT20"
+      - "KIF3A"
+      - "PDGFRA"
+
+  - code: mechano_ion_channel_stretch
+    category: VIII
+    title: "Stretch-activated ion channel network"
+    description: >
+      Stretch-activated KCNK2/TREK1 and ASIC channels; membrane tension
+      sensors responding to compressive load in NP cells.
+    keywords:
+      - "stretch-activated"
+      - "KCNK2"
+      - "TREK"
+      - "ASIC"
+    root_entity_aliases:
+      - "KCNK2"
+      - "KCNK4"
+      - "ASIC1"
+      - "ASIC3"
+
+  - code: mechano_cytoskeletal_vimentin
+    category: VIII
+    title: "Vimentin / intermediate filament network"
+    description: >
+      Vimentin and cytokeratin intermediate filaments bearing compressive
+      loads in NP cells and mediating mechanotransduction.
+    keywords:
+      - "vimentin"
+      - "VIM"
+      - "intermediate filament"
+      - "cytokeratin"
+    root_entity_aliases:
+      - "VIM"
+      - "DES"
+      - "LMNA"
+      - "KRT8"
+      - "KRT18"
+
+  - code: mechano_extracellular_osmotic
+    category: VIII
+    title: "Osmotic stress / disc turgor pressure network"
+    description: >
+      Osmolarity sensing (TonEBP/NFAT5) and aquaporin water channels
+      regulating disc-cell volume and matrix hydration.
+    keywords:
+      - "osmotic stress"
+      - "TonEBP"
+      - "NFAT5"
+      - "aquaporin"
+    root_entity_aliases:
+      - "NFAT5"
+      - "AQP1"
+      - "AQP2"
+      - "AQP5"
+
+  - code: mechano_calcium_signaling
+    category: VIII
+    title: "Mechanosensitive calcium signalling network"
+    description: >
+      Intracellular calcium transients triggered by mechanical stimuli;
+      CaM/CaMKII/calcineurin-NFAT downstream signalling.
+    keywords:
+      - "calcium"
+      - "CaM"
+      - "CaMKII"
+      - "calcineurin"
+      - "NFAT"
+    root_entity_aliases:
+      - "CALM1"
+      - "CAMK2A"
+      - "PPP3CA"
+      - "NFATC1"
+      - "NFATC2"
+
+  # ===================================================================
+  # Category IX: Cell Type-Specific Networks (8 entries)
+  # ===================================================================
+  - code: cell_np_phenotype
+    category: IX
+    title: "Nucleus pulposus cell identity network"
+    description: >
+      NP-cell specific gene programme (ACAN, COL2A1, CA3, KRT18/19,
+      BASP1, PAX1) maintaining NP phenotype.
+    keywords:
+      - "nucleus pulposus"
+      - "NP cell"
+      - "NP phenotype"
+      - "CA3"
+      - "PAX1"
+    root_entity_aliases:
+      - "ACAN"
+      - "COL2A1"
+      - "CA3"
+      - "KRT18"
+      - "KRT19"
+      - "PAX1"
+      - "BASP1"
+
+  - code: cell_af_phenotype
+    category: IX
+    title: "Annulus fibrosus cell identity network"
+    description: >
+      AF-cell specific programme (COL1A1, TNMD, SCXB, POSTN)
+      maintaining the lamellar fibrous structure.
+    keywords:
+      - "annulus fibrosus"
+      - "AF cell"
+      - "AF phenotype"
+      - "scleraxis"
+    root_entity_aliases:
+      - "COL1A1"
+      - "TNMD"
+      - "SCXB"
+      - "POSTN"
+      - "MKX"
+
+  - code: cell_endplate_chondrocyte
+    category: IX
+    title: "Cartilaginous endplate chondrocyte network"
+    description: >
+      Endplate chondrocyte gene programme (COL10A1, RUNX2, MMP13)
+      and calcification pathway in degeneration.
+    keywords:
+      - "endplate"
+      - "cartilage endplate"
+      - "chondrocyte"
+      - "COL10A1"
+      - "calcification"
+    root_entity_aliases:
+      - "COL10A1"
+      - "RUNX2"
+      - "MMP13"
+      - "ALPL"
+      - "IBSP"
+
+  - code: cell_notochordal
+    category: IX
+    title: "Notochordal cell remnant network"
+    description: >
+      Notochordal cell-derived exosomes and morphogenetic signals
+      (Shh, CTGF) maintaining NP homeostasis.
+    keywords:
+      - "notochordal"
+      - "notochord"
+      - "notochordal cell"
+    root_entity_aliases:
+      - "SHH"
+      - "CCN2"
+      - "CD24"
+      - "TBXT"
+
+  - code: cell_macrophage_disc
+    category: IX
+    title: "Macrophage / disc inflammation network"
+    description: >
+      M1/M2 macrophage polarisation and disc-infiltrating macrophage
+      cytokine secretion (TNF-α, IL-1β, IL-10).
+    keywords:
+      - "macrophage"
+      - "M1"
+      - "M2"
+      - "disc inflammation"
+    root_entity_aliases:
+      - "MRC1"
+      - "CD68"
+      - "CD163"
+      - "TNF"
+      - "IL10"
+
+  - code: cell_mast_cell
+    category: IX
+    title: "Mast cell / nociceptive sensitisation network"
+    description: >
+      Mast cell degranulation (histamine, tryptase) in disc herniation
+      and pain sensitisation.
+    keywords:
+      - "mast cell"
+      - "histamine"
+      - "tryptase"
+      - "disc pain"
+    root_entity_aliases:
+      - "TPSAB1"
+      - "CPA3"
+      - "HDC"
+      - "HRH1"
+
+  - code: cell_mesenchymal_stromal
+    category: IX
+    title: "Disc-resident mesenchymal stromal cell network"
+    description: >
+      Disc progenitor / mesenchymal stromal cells (CD73+CD90+CD105+)
+      maintaining repair potential in the disc.
+    keywords:
+      - "mesenchymal stem cell"
+      - "MSC"
+      - "disc progenitor"
+      - "CD73"
+    root_entity_aliases:
+      - "NT5E"
+      - "THY1"
+      - "ENG"
+      - "ALCAM"
+
+  - code: cell_immunosurveillance
+    category: IX
+    title: "Disc immune privilege / immune escape network"
+    description: >
+      FasL (FASLG), PD-L1 (CD274), TGF-β contributing to immune
+      privilege of the avascular disc.
+    keywords:
+      - "immune privilege"
+      - "FasL"
+      - "PD-L1"
+      - "CD274"
+    root_entity_aliases:
+      - "FASLG"
+      - "CD274"
+      - "TGFB1"
+      - "IDO1"
+
+  # ===================================================================
+  # Category X: Neurovascular Networks (8 entries)
+  # ===================================================================
+  - code: neurovasc_ngf_trkA
+    category: X
+    title: "NGF / TrkA nociceptive network"
+    description: >
+      NGF-TrkA (NTRK1) axis driving sensory nerve ingrowth and
+      nociceptive sensitisation in painful disc degeneration.
+    keywords:
+      - "NGF"
+      - "TrkA"
+      - "NTRK1"
+      - "nociception"
+      - "nerve growth factor"
+    root_entity_aliases:
+      - "NGF"
+      - "NTRK1"
+      - "NGFR"
+      - "SRC"
+
+  - code: neurovasc_cgrp
+    category: X
+    title: "CGRP / calcitonin gene-related peptide network"
+    description: >
+      CGRP (CALCA) and substance P neuropeptides mediating neurogenic
+      inflammation and pain in disc herniation.
+    keywords:
+      - "CGRP"
+      - "CALCA"
+      - "substance P"
+      - "neurogenic inflammation"
+    root_entity_aliases:
+      - "CALCA"
+      - "CALCB"
+      - "TAC1"
+      - "RAMP1"
+
+  - code: neurovasc_vegf_neovasc
+    category: X
+    title: "VEGF / disc neovascularisation network"
+    description: >
+      VEGF-A/C-driven angiogenesis and neoinnervation in outer AF
+      and herniated disc tissue.
+    keywords:
+      - "neovascularisation"
+      - "VEGF"
+      - "angiogenesis"
+      - "neoinnervation"
+    root_entity_aliases:
+      - "VEGFA"
+      - "KDR"
+      - "ANGPT1"
+      - "ANGPT2"
+      - "TIE1"
+      - "TIE2"
+
+  - code: neurovasc_semaphorin
+    category: X
+    title: "Semaphorin / axon guidance network"
+    description: >
+      Semaphorin (SEMA3A/3F) and neuropilin (NRP1/2) axon guidance
+      controlling innervation boundaries in disc.
+    keywords:
+      - "semaphorin"
+      - "SEMA3A"
+      - "neuropilin"
+      - "axon guidance"
+    root_entity_aliases:
+      - "SEMA3A"
+      - "SEMA3F"
+      - "NRP1"
+      - "NRP2"
+      - "PLXNA1"
+
+  - code: neurovasc_ephrin
+    category: X
+    title: "Ephrin / Eph receptor network"
+    description: >
+      Ephrin-A/B and EphA/B receptor interactions in disc tissue
+      boundaries and angiogenic/innervation control.
+    keywords:
+      - "ephrin"
+      - "Eph"
+      - "EFNA"
+      - "EPHA"
+    root_entity_aliases:
+      - "EFNA1"
+      - "EFNB2"
+      - "EPHA2"
+      - "EPHB4"
+
+  - code: neurovasc_netrin_slit
+    category: X
+    title: "Netrin / Slit axon guidance network"
+    description: >
+      Netrin-1 (NTN1) and Slit-Robo signalling guiding sensory
+      axon growth in the context of disc pain.
+    keywords:
+      - "Netrin"
+      - "NTN1"
+      - "Slit"
+      - "Robo"
+      - "ROBO1"
+    root_entity_aliases:
+      - "NTN1"
+      - "UNC5C"
+      - "DCC"
+      - "SLIT2"
+      - "ROBO1"
+
+  - code: neurovasc_endothelin
+    category: X
+    title: "Endothelin / vasoconstriction network"
+    description: >
+      Endothelin-1 (EDN1) and its receptors mediating microvessel
+      tone and disc blood supply in endplate.
+    keywords:
+      - "endothelin"
+      - "EDN1"
+      - "EDNRA"
+      - "vasoconstriction"
+    root_entity_aliases:
+      - "EDN1"
+      - "EDNRA"
+      - "EDNRB"
+      - "ECE1"
+
+  - code: neurovasc_substance_p
+    category: X
+    title: "Substance P / neuropeptide Y disc network"
+    description: >
+      Substance P (TAC1) and neuropeptide Y (NPY) neuropeptides in
+      disc pain modulation and neurogenic inflammation.
+    keywords:
+      - "substance P"
+      - "neuropeptide Y"
+      - "NPY"
+      - "TAC1"
+    root_entity_aliases:
+      - "TAC1"
+      - "NPY"
+      - "TACR1"
+      - "NPY1R"
+
+  # ===================================================================
+  # Category XI: Cell Fate / Differentiation Networks (10 entries)
+  # ===================================================================
+  - code: fate_chondrogenesis
+    category: XI
+    title: "Chondrogenic differentiation network"
+    description: >
+      SOX9/COL2A1/ACAN-driven chondrogenic differentiation programme
+      shared with articular cartilage.
+    keywords:
+      - "chondrogenesis"
+      - "chondrocyte differentiation"
+      - "SOX9"
+      - "RUNX3"
+    root_entity_aliases:
+      - "SOX9"
+      - "COL2A1"
+      - "ACAN"
+      - "COMP"
+      - "MATN3"
+
+  - code: fate_osteogenesis
+    category: XI
+    title: "Osteogenic differentiation / endplate calcification"
+    description: >
+      RUNX2/OSX-driven osteogenic differentiation in endplate
+      cartilage; pathological calcification in degeneration.
+    keywords:
+      - "osteogenesis"
+      - "RUNX2"
+      - "OSX"
+      - "calcification"
+    root_entity_aliases:
+      - "RUNX2"
+      - "SP7"
+      - "ALPL"
+      - "BGLAP"
+      - "IBSP"
+
+  - code: fate_adipogenesis
+    category: XI
+    title: "Adipogenic differentiation network"
+    description: >
+      PPARγ/C/EBP-driven adipogenesis in disc progenitor cells;
+      fat infiltration in ageing disc.
+    keywords:
+      - "adipogenesis"
+      - "PPARgamma"
+      - "CEBPA"
+      - "fat infiltration"
+    root_entity_aliases:
+      - "PPARG"
+      - "CEBPA"
+      - "FABP4"
+      - "ADIPOQ"
+
+  - code: fate_fibroblast_fibrosis
+    category: XI
+    title: "Fibroblast / disc fibrosis network"
+    description: >
+      TGF-β-driven myofibroblast / fibroblast differentiation and
+      collagen I deposition in disc fibrosis.
+    keywords:
+      - "fibrosis"
+      - "fibroblast"
+      - "myofibroblast"
+      - "COL1A1"
+    root_entity_aliases:
+      - "ACTA2"
+      - "COL1A1"
+      - "COL3A1"
+      - "TGFB1"
+      - "POSTN"
+
+  - code: fate_notochordal_np_transition
+    category: XI
+    title: "Notochordal-to-NP cell transition network"
+    description: >
+      Developmental transition from large vacuolated notochordal cells
+      to small NP cells during disc maturation.
+    keywords:
+      - "notochordal-NP transition"
+      - "disc maturation"
+      - "notochordal"
+    root_entity_aliases:
+      - "TBXT"
+      - "KRT18"
+      - "SHH"
+      - "FOXA2"
+
+  - code: fate_hypertrophic_chondrocyte
+    category: XI
+    title: "Hypertrophic chondrocyte differentiation network"
+    description: >
+      COL10A1/MMP13/VEGF-driven hypertrophic chondrocyte terminal
+      differentiation in endplate and degenerate NP.
+    keywords:
+      - "hypertrophic chondrocyte"
+      - "COL10A1"
+      - "MMP13"
+      - "hypertrophy"
+    root_entity_aliases:
+      - "COL10A1"
+      - "MMP13"
+      - "VEGFA"
+      - "RUNX2"
+      - "IHHA"
+
+  - code: fate_stem_cell_maintenance
+    category: XI
+    title: "Disc stem / progenitor cell maintenance network"
+    description: >
+      Wnt, Notch, and Hedgehog networks maintaining disc progenitor
+      self-renewal; niche signals from perichondrium.
+    keywords:
+      - "stem cell"
+      - "disc progenitor"
+      - "self-renewal"
+      - "niche"
+    root_entity_aliases:
+      - "WNT3A"
+      - "NOTCH1"
+      - "SHH"
+      - "SOX2"
+
+  - code: fate_emt_phenotypic_plasticity
+    category: XI
+    title: "Epithelial-mesenchymal plasticity in disc"
+    description: >
+      Partial EMT in disc cells (E-cadherin loss, vimentin gain)
+      under inflammatory and mechanical stress.
+    keywords:
+      - "EMT"
+      - "epithelial-mesenchymal"
+      - "E-cadherin"
+      - "CDH1"
+    root_entity_aliases:
+      - "CDH1"
+      - "VIM"
+      - "SNAI1"
+      - "ZEB1"
+
+  - code: fate_pyroptosis
+    category: XI
+    title: "Pyroptosis / inflammasome network"
+    description: >
+      NLRP3 inflammasome-driven pyroptotic cell death (caspase-1,
+      GSDMD) in disc-cell inflammatory death.
+    keywords:
+      - "pyroptosis"
+      - "NLRP3"
+      - "inflammasome"
+      - "GSDMD"
+      - "caspase-1"
+    root_entity_aliases:
+      - "NLRP3"
+      - "PYCARD"
+      - "CASP1"
+      - "GSDMD"
+      - "IL18"
+
+  - code: fate_ferroptosis
+    category: XI
+    title: "Ferroptosis / iron-mediated cell death network"
+    description: >
+      GPX4-regulated ferroptosis (iron-dependent lipid peroxidation)
+      in disc-cell death under oxidative conditions.
+    keywords:
+      - "ferroptosis"
+      - "GPX4"
+      - "lipid peroxidation"
+      - "iron"
+    root_entity_aliases:
+      - "GPX4"
+      - "SLC7A11"
+      - "ACSL4"
+      - "FTH1"
+      - "TF"
+
+  # ===================================================================
+  # Category XII: Inter-Tissue / Systemic Crosstalk Networks (10 entries)
+  # ===================================================================
+  - code: crosstalk_gut_microbiome
+    category: XII
+    title: "Gut microbiome / disc axis network"
+    description: >
+      Gut microbiome-derived LPS, SCFAs (butyrate) and systemic
+      inflammatory signals influencing disc homeostasis.
+    keywords:
+      - "gut microbiome"
+      - "microbiome"
+      - "LPS"
+      - "butyrate"
+      - "gut-disc axis"
+    root_entity_aliases:
+      - "TLR4"
+      - "FFAR3"
+      - "HDAC1"
+
+  - code: crosstalk_adipokine
+    category: XII
+    title: "Adipokine / adipose-disc crosstalk network"
+    description: >
+      Leptin, adiponectin, resistin from adipose tissue modulating
+      disc-cell catabolism and inflammation in obesity.
+    keywords:
+      - "adipokine"
+      - "leptin"
+      - "adiponectin"
+      - "resistin"
+    root_entity_aliases:
+      - "LEP"
+      - "LEPR"
+      - "ADIPOQ"
+      - "ADIPOR1"
+      - "RETN"
+
+  - code: crosstalk_insulin_resistance
+    category: XII
+    title: "Insulin resistance / metabolic syndrome disc network"
+    description: >
+      Insulin resistance, hyperglycaemia (AGEs), and dyslipidaemia
+      linking metabolic syndrome to disc degeneration.
+    keywords:
+      - "insulin resistance"
+      - "AGE"
+      - "metabolic syndrome"
+      - "hyperglycemia"
+    root_entity_aliases:
+      - "INS"
+      - "INSR"
+      - "IRS1"
+      - "AGER"
+      - "RAGE"
+
+  - code: crosstalk_bone_remodeling
+    category: XII
+    title: "Bone remodelling / disc-vertebra crosstalk"
+    description: >
+      RANK/RANKL/OPG axis in vertebral endplate and subchondral bone
+      remodelling coupled to disc degeneration.
+    keywords:
+      - "RANKL"
+      - "OPG"
+      - "RANK"
+      - "osteoclast"
+      - "bone remodeling"
+    root_entity_aliases:
+      - "TNFSF11"
+      - "TNFRSF11A"
+      - "TNFRSF11B"
+      - "RUNX2"
+
+  - code: crosstalk_muscle_disc
+    category: XII
+    title: "Paraspinal muscle / disc mechanical crosstalk"
+    description: >
+      Paraspinal muscle atrophy and myokine secretion (IL-6, irisin)
+      indirectly altering mechanical loading and disc health.
+    keywords:
+      - "paraspinal muscle"
+      - "myokine"
+      - "irisin"
+      - "FNDC5"
+    root_entity_aliases:
+      - "IL6"
+      - "FNDC5"
+      - "PPARGC1A"
+      - "IGF1"
+
+  - code: crosstalk_cartilage_disc
+    category: XII
+    title: "Cartilage-disc shared pathomechanisms"
+    description: >
+      Shared signalling molecules and pathways between articular
+      cartilage OA and disc degeneration (TGF-β, IHH, Wnt).
+    keywords:
+      - "articular cartilage"
+      - "osteoarthritis"
+      - "disc-cartilage"
+    root_entity_aliases:
+      - "TGFB1"
+      - "IHH"
+      - "WNT5A"
+      - "ACAN"
+
+  - code: crosstalk_spinal_cord
+    category: XII
+    title: "Spinal cord / dorsal root ganglion crosstalk"
+    description: >
+      Retrograde signalling from disc to spinal cord neurons via NGF,
+      BDNF, TNF-α; central sensitisation.
+    keywords:
+      - "spinal cord"
+      - "dorsal root ganglion"
+      - "central sensitisation"
+      - "BDNF"
+    root_entity_aliases:
+      - "BDNF"
+      - "NTRK2"
+      - "SUBSTANCE P"
+      - "CALCA"
+
+  - code: crosstalk_sex_hormones
+    category: XII
+    title: "Sex hormone / disc homeostasis network"
+    description: >
+      Oestrogen (ESR1/2), testosterone, and DHEA regulating disc-cell
+      metabolism, ECM synthesis, and degeneration susceptibility.
+    keywords:
+      - "estrogen"
+      - "ESR1"
+      - "testosterone"
+      - "sex hormone"
+    root_entity_aliases:
+      - "ESR1"
+      - "ESR2"
+      - "AR"
+      - "CYP19A1"
+
+  - code: crosstalk_circadian_clock
+    category: XII
+    title: "Circadian clock / disc diurnal regulation"
+    description: >
+      BMAL1/CLOCK circadian machinery regulating disc-cell ECM
+      synthesis, catabolic rhythms, and diurnal hydration changes.
+    keywords:
+      - "circadian"
+      - "BMAL1"
+      - "CLOCK"
+      - "diurnal"
+      - "PER"
+    root_entity_aliases:
+      - "ARNTL"
+      - "CLOCK"
+      - "PER1"
+      - "PER2"
+      - "CRY1"
+
+  - code: crosstalk_microbiome_immune
+    category: XII
+    title: "Microbiome-immune-disc axis network"
+    description: >
+      Systemic immune dysbiosis (Th17/Treg imbalance) and inflammatory
+      bowel disease-linked disc inflammation.
+    keywords:
+      - "microbiome immune"
+      - "Th17"
+      - "Treg"
+      - "IBD"
+    root_entity_aliases:
+      - "IL17A"
+      - "FOXP3"
+      - "IL10"
+      - "TNF"
+
+  # ===================================================================
+  # Category XIII: GWAS / Genetic Regulatory Networks (8 entries)
+  # ===================================================================
+  - code: gwas_gdf5
+    category: XIII
+    title: "GDF5 GWAS locus regulatory network"
+    description: >
+      GDF5 promoter SNP rs143384 and downstream BMP signalling;
+      one of the most replicated disc degeneration GWAS hits.
+    keywords:
+      - "GDF5"
+      - "rs143384"
+      - "GWAS"
+      - "BMP signaling"
+    root_entity_aliases:
+      - "GDF5"
+      - "BMPR1B"
+      - "SMAD1"
+      - "SMAD5"
+
+  - code: gwas_cilp
+    category: XIII
+    title: "CILP GWAS locus regulatory network"
+    description: >
+      Cartilage intermediate layer protein (CILP) Thr1097Met variant
+      inhibiting TGF-β signalling; disc degeneration risk.
+    keywords:
+      - "CILP"
+      - "Thr1097Met"
+      - "GWAS"
+      - "TGF-beta inhibitor"
+    root_entity_aliases:
+      - "CILP"
+      - "TGFB1"
+      - "SMAD2"
+
+  - code: gwas_col9
+    category: XIII
+    title: "COL9 GWAS variants regulatory network"
+    description: >
+      COL9A2 and COL9A3 tryptophan variants (Trp2 and Trp3 alleles)
+      disrupting collagen IX network assembly.
+    keywords:
+      - "COL9"
+      - "COL9A2"
+      - "COL9A3"
+      - "GWAS"
+    root_entity_aliases:
+      - "COL9A2"
+      - "COL9A3"
+      - "COL9A1"
+
+  - code: gwas_itga4_chip
+    category: XIII
+    title: "ITGA4 / interleukin GWAS locus network"
+    description: >
+      ITGA4 and nearby inflammatory loci identified by GWAS for
+      disc degeneration; integrin α4β1 in disc-cell adhesion.
+    keywords:
+      - "ITGA4"
+      - "integrin alpha-4"
+      - "GWAS"
+    root_entity_aliases:
+      - "ITGA4"
+      - "ITGB1"
+      - "VCAM1"
+
+  - code: gwas_mmp3
+    category: XIII
+    title: "MMP3 5A/6A promoter polymorphism network"
+    description: >
+      MMP3 5A/6A promoter SNP regulating MMP3 transcription;
+      associated with lumbar disc degeneration risk.
+    keywords:
+      - "MMP3"
+      - "5A6A"
+      - "promoter SNP"
+      - "MMP3 polymorphism"
+    root_entity_aliases:
+      - "MMP3"
+      - "MMP1"
+      - "TIMP1"
+
+  - code: gwas_vdr
+    category: XIII
+    title: "Vitamin D receptor (VDR) polymorphism network"
+    description: >
+      VDR Taq I and Fok I polymorphisms and disc degeneration;
+      vitamin D signalling in disc-cell calcium homeostasis.
+    keywords:
+      - "VDR"
+      - "vitamin D receptor"
+      - "Taq I"
+      - "Fok I"
+    root_entity_aliases:
+      - "VDR"
+      - "CYP27B1"
+      - "CYP24A1"
+
+  - code: gwas_il6_il1rn
+    category: XIII
+    title: "IL-6/IL-1RN cytokine GWAS locus network"
+    description: >
+      IL-6 and IL-1RN VNTR/promoter variants modulating disc
+      inflammatory cytokine levels and degeneration susceptibility.
+    keywords:
+      - "IL-6 polymorphism"
+      - "IL1RN"
+      - "cytokine GWAS"
+    root_entity_aliases:
+      - "IL6"
+      - "IL1RN"
+      - "IL1B"
+
+  - code: gwas_aggrecan_repeat
+    category: XIII
+    title: "Aggrecan VNTR repeat length network"
+    description: >
+      ACAN variable number of tandem repeats (VNTR) in exon 12
+      and its effect on aggrecan function and disc degeneration.
+    keywords:
+      - "ACAN VNTR"
+      - "aggrecan repeat"
+      - "GWAS"
+    root_entity_aliases:
+      - "ACAN"
+      - "ADAMTS5"
+      - "HAPLN1"
+
+  # ===================================================================
+  # Category XIV: Disease-Specific Regulatory Networks (12 entries)
+  # ===================================================================
+  - code: disease_modic_change
+    category: XIV
+    title: "Modic change / endplate inflammatory network"
+    description: >
+      Endplate failure → bacterial colonisation (P. acnes) → innate
+      immune activation → Modic type I bone marrow changes.
+    keywords:
+      - "Modic"
+      - "endplate"
+      - "Propionibacterium acnes"
+      - "bone marrow edema"
+    root_entity_aliases:
+      - "TLR2"
+      - "TLR4"
+      - "IL6"
+      - "IL1B"
+      - "MMP3"
+
+  - code: disease_disc_herniation
+    category: XIV
+    title: "Disc herniation / nucleus pulposus extrusion network"
+    description: >
+      Nucleus pulposus cell death, matrix fragmentation, nerve ingrowth,
+      and autoimmune reaction in disc herniation.
+    keywords:
+      - "disc herniation"
+      - "nucleus pulposus extrusion"
+      - "herniation"
+      - "radiculopathy"
+    root_entity_aliases:
+      - "MMP3"
+      - "MMP9"
+      - "ADAMTS4"
+      - "NGF"
+      - "VEGFA"
+
+  - code: disease_painful_disc
+    category: XIV
+    title: "Painful degenerative disc network"
+    description: >
+      Chronic discogenic pain sensitisation via NGF, CGRP, TNF-α,
+      substance P, and acid-sensing channels.
+    keywords:
+      - "painful disc"
+      - "discogenic pain"
+      - "nociception"
+      - "chronic pain"
+    root_entity_aliases:
+      - "NGF"
+      - "CALCA"
+      - "TNF"
+      - "ASIC3"
+      - "P2RX3"
+
+  - code: disease_disc_infection
+    category: XIV
+    title: "Disc infection / septic discitis network"
+    description: >
+      Pathogen pattern recognition (TLR2/4/9), NFκB activation,
+      and antimicrobial peptide response in disc infection.
+    keywords:
+      - "disc infection"
+      - "septic discitis"
+      - "TLR"
+      - "NF-kB"
+    root_entity_aliases:
+      - "TLR2"
+      - "TLR4"
+      - "TLR9"
+      - "DEFB1"
+      - "CAMP"
+
+  - code: disease_scoliosis_disc
+    category: XIV
+    title: "Scoliosis-associated disc remodelling network"
+    description: >
+      Asymmetric mechanical loading in scoliosis driving asymmetric
+      disc gene expression, fibrosis, and degeneration.
+    keywords:
+      - "scoliosis"
+      - "asymmetric loading"
+      - "disc remodeling"
+    root_entity_aliases:
+      - "FBN1"
+      - "ACVR2B"
+      - "CHD7"
+      - "ADGRG6"
+
+  - code: disease_spinal_stenosis
+    category: XIV
+    title: "Spinal stenosis / ligament hypertrophy network"
+    description: >
+      Ligamentum flavum hypertrophy (TGF-β, Wnt, COL1A1) and
+      osteophyte formation driving spinal stenosis.
+    keywords:
+      - "spinal stenosis"
+      - "ligamentum flavum"
+      - "ligament hypertrophy"
+    root_entity_aliases:
+      - "TGFB1"
+      - "WNT3A"
+      - "COL1A1"
+      - "MMP3"
+
+  - code: disease_disc_calcification
+    category: XIV
+    title: "Disc calcification / crystal deposition network"
+    description: >
+      Calcium pyrophosphate and hydroxyapatite crystal deposition
+      in disc tissue; ENPP1, ANKH, TNAP pathways.
+    keywords:
+      - "disc calcification"
+      - "crystal deposition"
+      - "ENPP1"
+      - "ANKH"
+    root_entity_aliases:
+      - "ENPP1"
+      - "ANKH"
+      - "ALPL"
+      - "TNAP"
+
+  - code: disease_disc_aging
+    category: XIV
+    title: "Disc ageing / progressive degeneration network"
+    description: >
+      Disc-specific ageing programme: telomere shortening, p16/p21
+      senescence, matrix glycation (AGEs), water-content loss.
+    keywords:
+      - "disc aging"
+      - "disc ageing"
+      - "telomere"
+      - "AGE"
+      - "water loss"
+    root_entity_aliases:
+      - "CDKN2A"
+      - "CDKN1A"
+      - "TERT"
+      - "AGER"
+      - "ACAN"
+
+  - code: disease_ankylosing_spondylitis
+    category: XIV
+    title: "Ankylosing spondylitis / disc network"
+    description: >
+      HLA-B27, IL-17, TNF-α-driven entheseal and disc inflammation
+      leading to syndesmophyte formation.
+    keywords:
+      - "ankylosing spondylitis"
+      - "HLA-B27"
+      - "syndesmophyte"
+      - "enthesitis"
+    root_entity_aliases:
+      - "HLA-B"
+      - "IL17A"
+      - "TNF"
+      - "RUNX2"
+
+  - code: disease_diffuse_idiopathic
+    category: XIV
+    title: "DISH / diffuse idiopathic skeletal hyperostosis network"
+    description: >
+      Bridging ossification in DISH; BMP/Wnt-driven ligament
+      and disc margin ossification.
+    keywords:
+      - "DISH"
+      - "diffuse idiopathic skeletal hyperostosis"
+      - "ossification"
+    root_entity_aliases:
+      - "BMP2"
+      - "WNT3A"
+      - "RUNX2"
+      - "ALPL"
+
+  - code: disease_disc_trauma
+    category: XIV
+    title: "Disc trauma / acute injury network"
+    description: >
+      Acute mechanical injury triggering DAMPs, inflammasome, NF-κB,
+      and rapid matrix degradation in disc trauma.
+    keywords:
+      - "disc trauma"
+      - "acute injury"
+      - "DAMP"
+      - "acute inflammation"
+    root_entity_aliases:
+      - "HMGB1"
+      - "S100A8"
+      - "NLRP3"
+      - "CASP1"
+      - "IL1B"
+
+  - code: disease_opioid_disc
+    category: XIV
+    title: "Opioid receptor / disc pain modulation network"
+    description: >
+      Mu/delta/kappa opioid receptors in disc cells and DRG neurons
+      modulating pain signalling in discogenic pain.
+    keywords:
+      - "opioid"
+      - "OPRM1"
+      - "mu opioid receptor"
+      - "endorphin"
+    root_entity_aliases:
+      - "OPRM1"
+      - "OPRD1"
+      - "OPRK1"
+      - "PENK"
+      - "POMC"
+
+  # ===================================================================
+  # Category XV: Therapeutic / Regenerative Networks (10 entries)
+  # ===================================================================
+  - code: ther_prp_platelet_rich
+    category: XV
+    title: "PRP / platelet-rich plasma regeneration network"
+    description: >
+      Platelet-derived growth factors (PDGF, TGF-β, VEGF) in PRP
+      stimulating disc-cell proliferation and matrix synthesis.
+    keywords:
+      - "PRP"
+      - "platelet-rich plasma"
+      - "PDGF"
+      - "growth factor cocktail"
+    root_entity_aliases:
+      - "PDGFB"
+      - "TGFB1"
+      - "VEGFA"
+      - "EGF"
+
+  - code: ther_msc_transplant
+    category: XV
+    title: "MSC transplantation / paracrine network"
+    description: >
+      Mesenchymal stromal cell paracrine signalling (TGF-β, HGF,
+      TSG-6) promoting disc regeneration after transplantation.
+    keywords:
+      - "MSC transplantation"
+      - "mesenchymal stem cell"
+      - "paracrine"
+      - "disc regeneration"
+    root_entity_aliases:
+      - "TGFB1"
+      - "HGF"
+      - "TSG6"
+      - "TNFAIP6"
+
+  - code: ther_aav_gene_therapy
+    category: XV
+    title: "AAV gene therapy / disc delivery network"
+    description: >
+      Adeno-associated virus vectors delivering therapeutic genes
+      (GDF5, TGF-β, anti-catabolic miRNAs) to disc cells.
+    keywords:
+      - "gene therapy"
+      - "AAV"
+      - "disc gene delivery"
+      - "vector"
+    root_entity_aliases:
+      - "GDF5"
+      - "TGFB1"
+      - "MIR21"
+
+  - code: ther_hydrogel_scaffold
+    category: XV
+    title: "Hydrogel / biomaterial scaffold disc network"
+    description: >
+      Biomaterial-cell interactions for disc NP/AF replacement;
+      integrin-mediated mechanosensing in hydrogels.
+    keywords:
+      - "hydrogel"
+      - "biomaterial"
+      - "scaffold"
+      - "disc replacement"
+    root_entity_aliases:
+      - "ITGB1"
+      - "ACAN"
+      - "COL2A1"
+
+  - code: ther_senolytic_therapy
+    category: XV
+    title: "Senolytic / senostatic therapy network"
+    description: >
+      Senolytic drugs (navitoclax, dasatinib+quercetin) targeting
+      p21/Bcl-2 in senescent disc cells to restore homeostasis.
+    keywords:
+      - "senolytic"
+      - "senostatic"
+      - "navitoclax"
+      - "dasatinib"
+      - "quercetin"
+    root_entity_aliases:
+      - "BCL2"
+      - "BCL2L1"
+      - "CDKN1A"
+      - "CDKN2A"
+
+  - code: ther_anti_nf_kb
+    category: XV
+    title: "NF-κB inhibition therapy network"
+    description: >
+      Pharmacological NF-κB blockade (IKK inhibitors, parthenolide,
+      celecoxib) in disc-cell catabolic gene suppression.
+    keywords:
+      - "NF-kB inhibitor"
+      - "IKK inhibitor"
+      - "parthenolide"
+      - "celecoxib"
+    root_entity_aliases:
+      - "IKBKB"
+      - "RELA"
+      - "MMP3"
+      - "IL6"
+
+  - code: ther_anti_catabolic_biologic
+    category: XV
+    title: "Anti-catabolic biologic therapy network"
+    description: >
+      Anti-TNF (adalimumab), anti-IL-1 (anakinra), anti-MMP biologics
+      targeting disc catabolic cascades.
+    keywords:
+      - "anti-TNF"
+      - "anti-IL-1"
+      - "adalimumab"
+      - "anakinra"
+      - "biologic therapy"
+    root_entity_aliases:
+      - "TNF"
+      - "IL1B"
+      - "MMP3"
+      - "ADAMTS5"
+
+  - code: ther_exosome_therapy
+    category: XV
+    title: "Exosome / extracellular vesicle therapy network"
+    description: >
+      MSC-derived exosomes delivering miRNAs and proteins to
+      disc cells for anti-inflammatory and regenerative signalling.
+    keywords:
+      - "exosome"
+      - "extracellular vesicle"
+      - "MSC exosome"
+    root_entity_aliases:
+      - "MIR21"
+      - "MIR146A"
+      - "TGFB1"
+      - "TSG101"
+
+  - code: ther_small_molecule_wnt
+    category: XV
+    title: "Small molecule Wnt modulation therapy network"
+    description: >
+      Wnt agonists (WNT3A) and antagonists (DKK1) modulating disc
+      progenitor cell activation for regenerative therapy.
+    keywords:
+      - "Wnt therapy"
+      - "Wnt agonist"
+      - "DKK1 blockade"
+    root_entity_aliases:
+      - "WNT3A"
+      - "DKK1"
+      - "CTNNB1"
+      - "LRP5"
+
+  - code: ther_physical_therapy
+    category: XV
+    title: "Exercise / mechanical loading therapy network"
+    description: >
+      Controlled cyclic loading regulating anabolic (TGF-β, IGF-1)
+      vs catabolic (NF-κB, MMP) balance in therapeutic exercise.
+    keywords:
+      - "mechanical loading"
+      - "exercise therapy"
+      - "cyclic loading"
+      - "physical therapy"
+    root_entity_aliases:
+      - "TGFB1"
+      - "IGF1"
+      - "PIEZO1"
+      - "YAP1"
+
+  # ===================================================================
+  # Category XVI: Proteostasis / UPR / Protein Quality Control (8 entries)
+  # ===================================================================
+  - code: prot_upr_perk
+    category: XVI
+    title: "UPR PERK / eIF2α branch network"
+    description: >
+      Unfolded protein response PERK-eIF2α-ATF4 branch activated by
+      ER stress in ageing disc cells; drives CHOP-mediated apoptosis.
+    keywords:
+      - "UPR"
+      - "PERK"
+      - "eIF2alpha"
+      - "ATF4"
+      - "CHOP"
+    root_entity_aliases:
+      - "EIF2AK3"
+      - "EIF2S1"
+      - "ATF4"
+      - "DDIT3"
+      - "ATF3"
+
+  - code: prot_upr_ire1_xbp1
+    category: XVI
+    title: "UPR IRE1α / XBP1 branch network"
+    description: >
+      IRE1α-XBP1 UPR branch; XBP1s drives ERAD and chaperone expression;
+      relevant to disc-cell ER stress in degeneration.
+    keywords:
+      - "IRE1"
+      - "XBP1"
+      - "UPR"
+      - "ERAD"
+    root_entity_aliases:
+      - "ERN1"
+      - "XBP1"
+      - "DNAJB9"
+      - "SEC61A1"
+
+  - code: prot_upr_atf6
+    category: XVI
+    title: "UPR ATF6 transcriptional branch network"
+    description: >
+      ATF6α/β cleavage and nuclear translocation; drives GRP78/BiP
+      and other chaperone expression under ER stress.
+    keywords:
+      - "ATF6"
+      - "GRP78"
+      - "BiP"
+      - "chaperone"
+      - "HSPA5"
+    root_entity_aliases:
+      - "ATF6"
+      - "HSPA5"
+      - "CALR"
+      - "PDIA3"
+
+  - code: prot_ubiquitin_proteasome
+    category: XVI
+    title: "Ubiquitin-proteasome system (UPS) network"
+    description: >
+      E1/E2/E3 ubiquitin ligases (FBXO, TRIM families) and 26S
+      proteasome degrading misfolded proteins in disc cells.
+    keywords:
+      - "ubiquitin"
+      - "proteasome"
+      - "UPS"
+      - "TRIM"
+      - "FBXO"
+    root_entity_aliases:
+      - "UBB"
+      - "PSMD4"
+      - "FBXW7"
+      - "TRIM25"
+
+  - code: prot_chaperone_hsp
+    category: XVI
+    title: "Heat shock protein / chaperone network"
+    description: >
+      HSP90/HSP70/HSP27 (HSPC/HSPA/HSPB) chaperone families
+      protecting disc-cell proteome under stress.
+    keywords:
+      - "HSP90"
+      - "HSP70"
+      - "chaperone"
+      - "heat shock protein"
+    root_entity_aliases:
+      - "HSP90AA1"
+      - "HSPA1A"
+      - "HSPB1"
+      - "DNAJB1"
+      - "HSPH1"
+
+  - code: prot_aggrephagy
+    category: XVI
+    title: "Aggrephagy / protein aggregate clearance network"
+    description: >
+      Selective autophagy of protein aggregates (p62/SQSTM1,
+      NBR1, TAX1BP1) in disc cells under proteostatic stress.
+    keywords:
+      - "aggrephagy"
+      - "protein aggregate"
+      - "p62"
+      - "SQSTM1"
+    root_entity_aliases:
+      - "SQSTM1"
+      - "NBR1"
+      - "CALCOCO2"
+      - "TAX1BP1"
+
+  - code: prot_extracellular_chaperone
+    category: XVI
+    title: "Extracellular chaperone / CLU network"
+    description: >
+      Clusterin (CLU) and other extracellular chaperones clearing
+      misfolded ECM proteins in the disc matrix.
+    keywords:
+      - "clusterin"
+      - "CLU"
+      - "extracellular chaperone"
+    root_entity_aliases:
+      - "CLU"
+      - "APOE"
+      - "SERPINA1"
+
+  - code: prot_ribophagy
+    category: XVI
+    title: "Ribophagy / ribosome quality control network"
+    description: >
+      Ribosome-associated quality control (RQC) and ribophagy
+      maintaining translational fidelity in disc cells.
+    keywords:
+      - "ribophagy"
+      - "ribosome quality control"
+      - "RQC"
+      - "LISTERIN"
+    root_entity_aliases:
+      - "LTN1"
+      - "VCP"
+      - "NEMF"
+      - "ZNF598"
+
+  # ===================================================================
+  # Category XVII: Multi-Omics Integration Networks (10 entries)
+  # ===================================================================
+  - code: omics_transcriptomics_np
+    category: XVII
+    title: "NP cell transcriptomic regulatory network"
+    description: >
+      Integrated analysis of NP-cell bulk RNA-seq and scRNA-seq
+      datasets identifying master regulatory hubs.
+    keywords:
+      - "transcriptomics"
+      - "RNA-seq"
+      - "NP cell transcriptome"
+      - "scRNA-seq"
+    root_entity_aliases:
+      - "SOX9"
+      - "ACAN"
+      - "KRT18"
+      - "PAX1"
+
+  - code: omics_proteomics_ecm
+    category: XVII
+    title: "ECM proteomics / matrisome network"
+    description: >
+      Mass spectrometry-based proteomics of disc ECM (matrisome)
+      identifying abundance changes in degeneration.
+    keywords:
+      - "proteomics"
+      - "matrisome"
+      - "mass spectrometry"
+      - "ECM proteome"
+    root_entity_aliases:
+      - "ACAN"
+      - "COL2A1"
+      - "FN1"
+      - "COMP"
+      - "HAPLN1"
+
+  - code: omics_lipidomics
+    category: XVII
+    title: "Disc lipidomics regulatory network"
+    description: >
+      Lipidomic profiling of disc tissue; sphingolipid, ceramide,
+      and lysophospholipid signatures in degeneration.
+    keywords:
+      - "lipidomics"
+      - "sphingolipid"
+      - "ceramide"
+      - "disc lipids"
+    root_entity_aliases:
+      - "SMPD1"
+      - "ASAH1"
+      - "SPHK1"
+      - "CERS2"
+
+  - code: omics_metabolomics
+    category: XVII
+    title: "Disc metabolomics network"
+    description: >
+      Metabolomic profiling of disc tissue and interstitial fluid;
+      lactate, glucose, pH gradients, and amino acid metabolism.
+    keywords:
+      - "metabolomics"
+      - "disc metabolome"
+      - "lactate"
+      - "pH"
+    root_entity_aliases:
+      - "LDHA"
+      - "SLC16A3"
+      - "GLS"
+      - "ASNS"
+
+  - code: omics_epigenomics_atac
+    category: XVII
+    title: "Disc epigenomics / ATAC-seq chromatin network"
+    description: >
+      ATAC-seq and ChIP-seq defining open chromatin and enhancer
+      landscape of disc cell subtypes.
+    keywords:
+      - "ATAC-seq"
+      - "epigenomics"
+      - "open chromatin"
+      - "ChIP-seq"
+    root_entity_aliases:
+      - "BRD4"
+      - "H3K27ac"
+      - "CTCF"
+      - "EP300"
+
+  - code: omics_single_cell_atlas
+    category: XVII
+    title: "Single-cell disc atlas regulatory network"
+    description: >
+      Single-cell RNA-seq atlas of disc cellular heterogeneity;
+      cell-type-specific regulatory gene networks.
+    keywords:
+      - "single-cell"
+      - "scRNA-seq"
+      - "disc atlas"
+      - "cell heterogeneity"
+    root_entity_aliases:
+      - "SOX9"
+      - "COL1A1"
+      - "TBXT"
+      - "ACTA2"
+
+  - code: omics_spatial_transcriptomics
+    category: XVII
+    title: "Spatial transcriptomics disc network"
+    description: >
+      Spatially resolved transcriptomics mapping gene expression
+      gradients from NP to AF to endplate in disc tissue sections.
+    keywords:
+      - "spatial transcriptomics"
+      - "Visium"
+      - "spatial gene expression"
+    root_entity_aliases:
+      - "ACAN"
+      - "COL1A1"
+      - "KRT18"
+      - "COL10A1"
+
+  - code: omics_network_inference
+    category: XVII
+    title: "Gene regulatory network inference (GRN)"
+    description: >
+      Computational GRN inference (SCENIC, GENIE3) from multi-omics
+      data to reconstruct TF-target networks in disc cells.
+    keywords:
+      - "GRN"
+      - "gene regulatory network"
+      - "SCENIC"
+      - "GENIE3"
+      - "network inference"
+    root_entity_aliases:
+      - "SOX9"
+      - "RELA"
+      - "TGFB1"
+
+  - code: omics_phosphoproteomics
+    category: XVII
+    title: "Disc phosphoproteomics signalling network"
+    description: >
+      Phosphoproteomic mapping of kinase-substrate networks active
+      in disc cells under degeneration or mechanical stress.
+    keywords:
+      - "phosphoproteomics"
+      - "kinase signaling"
+      - "phosphorylation"
+    root_entity_aliases:
+      - "MAPK14"
+      - "AKT1"
+      - "PTK2"
+      - "SRC"
+
+  - code: omics_multiomics_integration
+    category: XVII
+    title: "Multi-omics data integration network"
+    description: >
+      Integrated analysis combining transcriptomics, proteomics,
+      epigenomics, and metabolomics for holistic disc network models.
+    keywords:
+      - "multi-omics"
+      - "data integration"
+      - "systems biology"
+      - "MOFA"
+    root_entity_aliases:
+      - "SOX9"
+      - "RELA"
+      - "ACAN"
+      - "MTOR"

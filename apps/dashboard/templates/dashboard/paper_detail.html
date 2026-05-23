@@ -1,0 +1,47 @@
+{% extends "dashboard/base.html" %}
+{% block title %}PMID {{ paper.pmid }} — IVD Atlas{% endblock %}
+{% block content %}
+<h1>{{ paper.title }}</h1>
+<p>
+  PMID <strong>{{ paper.pmid }}</strong>
+  {% if paper.doi %}· DOI <code>{{ paper.doi }}</code>{% endif %}
+  {% if paper.pmcid %}· PMC <code>{{ paper.pmcid }}</code>{% endif %}
+</p>
+<p><em>{{ paper.journal }}{% if paper.publication_date %}, {{ paper.publication_date|date:"Y-m-d" }}{% endif %}</em></p>
+
+<h2>Status</h2>
+<ul>
+  <li>Ingest status: {{ paper.ingest_status }}</li>
+  <li>Full-text status: {{ paper.full_text_status }}</li>
+  <li>Is original:
+    {% if paper.is_original is None %}unclassified
+    {% else %}{{ paper.is_original|yesno:"yes,no" }}
+      ({{ paper.classification_confidence|default:"" }})
+    {% endif %}
+  </li>
+</ul>
+
+<h2>Abstract</h2>
+<p>{{ paper.abstract|default:"(none)" }}</p>
+
+<h2>Network relevances</h2>
+<table>
+  <tr><th>Network</th><th>Score</th><th>Classified by</th></tr>
+  {% for r in relevances %}
+    <tr>
+      <td>{{ r.network.code }} — {{ r.network.title }}</td>
+      <td>{{ r.score|floatformat:3 }}</td>
+      <td>{{ r.classified_by }}</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="3"><em>No relevance records yet.</em></td></tr>
+  {% endfor %}
+</table>
+
+<h2>MeSH terms</h2>
+<ul>
+  {% for term in paper.mesh_terms %}
+    <li>{{ term }}</li>
+  {% endfor %}
+</ul>
+{% endblock %}

@@ -34,6 +34,11 @@ INSTALLED_APPS = [
     "django_celery_results",
     # Local apps
     "core",
+    "networks",
+    "corpus",
+    "papers",
+    "schedule",
+    "dashboard",
 ]
 
 MIDDLEWARE = [
@@ -101,11 +106,57 @@ CELERY_CACHE_BACKEND = "django-cache"
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 60 * 60  # 1 hour hard limit
 CELERY_TASK_SOFT_TIME_LIMIT = 60 * 50  # soft 50 min — task can clean up
+CELERY_TASK_DEFAULT_QUEUE = "q.io"
 CELERY_TASK_ROUTES = {
     # Route all core tasks (including smoke_ping) to the io worker.
     # Later phases add extract queues for ML-intensive work.
     "core.tasks.*": {"queue": "q.io"},
+    "corpus.tasks.refresh_pubmed": {"queue": "q.io"},
+    "corpus.tasks.refresh_pubmed_full": {"queue": "q.io"},
+    "corpus.tasks.ingest_paper": {"queue": "q.io"},
+    "corpus.tasks.triage_relevance_cheap": {"queue": "q.io"},
+    "corpus.tasks.triage_relevance_llm": {"queue": "q.fast"},
+    "papers.tasks.classify_pending": {"queue": "q.io"},
+    "papers.tasks.classify_original": {"queue": "q.fast"},
+    "papers.tasks.fetch_fulltext_pending": {"queue": "q.io"},
+    "papers.tasks.fetch_fulltext": {"queue": "q.io"},
+    "papers.tasks.section_pending": {"queue": "q.io"},
+    "papers.tasks.section_and_chunk": {"queue": "q.io"},
+    "schedule.tasks.janitor_reset_stale_running": {"queue": "q.io"},
+    "schedule.tasks.refill_rate_limit_buckets": {"queue": "q.io"},
 }
+
+# === MinIO / S3-compatible object store ===
+MINIO_ENDPOINT_URL = os.environ.get("MINIO_ENDPOINT_URL", "http://minio:9000")
+MINIO_ACCESS_KEY = os.environ.get("MINIO_ROOT_USER", "interactome")
+MINIO_SECRET_KEY = os.environ.get("MINIO_ROOT_PASSWORD", "interactome")
+MINIO_BUCKET_PAPERS = os.environ.get("MINIO_BUCKET_PAPERS", "papers")
+MINIO_BUCKET_SBML = os.environ.get("MINIO_BUCKET_SBML", "sbml-artifacts")
+MINIO_REGION = "us-east-1"  # placeholder; MinIO ignores it
+
+# === Ollama gateway (behind Authelia) ===
+OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE", "https://ollama.simbiosys.sb.upf.edu")
+OLLAMA_AUTHELIA_BASE = os.environ.get("AUTHELIA_BASE", "https://authelia.simbiosys.sb.upf.edu")
+OLLAMA_USER = os.environ.get("OLLAMA_USER", "")
+OLLAMA_PASSWORD = os.environ.get("OLLAMA_PASSWORD", "")
+OLLAMA_DEFAULT_TIMEOUT = float(os.environ.get("OLLAMA_DEFAULT_TIMEOUT", "120"))
+OLLAMA_KEEP_ALIVE = os.environ.get("OLLAMA_KEEP_ALIVE", "2h")
+
+# === NCBI E-utilities ===
+NCBI_API_KEY = os.environ.get("NCBI_API_KEY", "")
+NCBI_TOOL_NAME = "interactome-disc-atlas"
+NCBI_CONTACT_EMAIL = os.environ.get("NCBI_CONTACT_EMAIL", "francis.chemorion@upf.edu")
+
+# === Europe PMC ===
+EUROPE_PMC_BASE_URL = "https://www.ebi.ac.uk/europepmc/webservices/rest"
+EUROPE_PMC_OAI_URL = "https://europepmc.org/oai.cgi"
+
+# === PubTator3 ===
+PUBTATOR3_BASE_URL = "https://www.ncbi.nlm.nih.gov/research/pubtator3-api"
+
+# === GROBID ===
+GROBID_BASE_URL = os.environ.get("GROBID_BASE_URL", "http://grobid:8070")
+GROBID_TIMEOUT = float(os.environ.get("GROBID_TIMEOUT", "300"))
 
 # Logging
 LOGGING = {
@@ -132,3 +183,9 @@ LOGGING = {
         "celery": {"handlers": ["console"], "level": "INFO", "propagate": False},
     },
 }
+
+# === Celery Beat schedule (Phase 1) ===
+from schedule.beat_schedule import PHASE_1_BEAT_SCHEDULE  # noqa: E402
+
+CELERY_BEAT_SCHEDULE = PHASE_1_BEAT_SCHEDULE
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
