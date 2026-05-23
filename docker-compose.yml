@@ -86,6 +86,111 @@ services:
     healthcheck:
       disable: true
 
+  # === Phase 2: per-model extractor workers ===
+  # Per spec §6, each Ollama model gets its own dedicated worker with
+  # concurrency=1 so the GPU box doesn't thrash through mmap/munmap as
+  # Ollama swaps weight files. Combined with OLLAMA_KEEP_ALIVE=2h and
+  # OLLAMA_MAX_LOADED_MODELS=2, two models stay resident; the other
+  # five queues accumulate; Ollama rotates models in as VRAM frees.
+
+  worker_extract_medgemma_27b:
+    image: interactome:dev
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:-2h}
+      OLLAMA_MAX_LOADED_MODELS: ${OLLAMA_MAX_LOADED_MODELS:-2}
+    depends_on:
+      web:
+        condition: service_healthy
+    command: celery -A interactome worker -Q q.extract.medgemma_27b -c 1 -n medgemma@%h -l info
+    healthcheck:
+      disable: true
+
+  worker_extract_phi4_14b:
+    image: interactome:dev
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:-2h}
+      OLLAMA_MAX_LOADED_MODELS: ${OLLAMA_MAX_LOADED_MODELS:-2}
+    depends_on:
+      web:
+        condition: service_healthy
+    command: celery -A interactome worker -Q q.extract.phi4_14b -c 1 -n phi4@%h -l info
+    healthcheck:
+      disable: true
+
+  worker_extract_qwen3_8b:
+    image: interactome:dev
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:-2h}
+      OLLAMA_MAX_LOADED_MODELS: ${OLLAMA_MAX_LOADED_MODELS:-2}
+    depends_on:
+      web:
+        condition: service_healthy
+    command: celery -A interactome worker -Q q.extract.qwen3_8b -c 1 -n qwen3@%h -l info
+    healthcheck:
+      disable: true
+
+  worker_extract_gemma3_12b:
+    image: interactome:dev
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:-2h}
+      OLLAMA_MAX_LOADED_MODELS: ${OLLAMA_MAX_LOADED_MODELS:-2}
+    depends_on:
+      web:
+        condition: service_healthy
+    command: celery -A interactome worker -Q q.extract.gemma3_12b -c 1 -n gemma3@%h -l info
+    healthcheck:
+      disable: true
+
+  worker_extract_deepseek_r1_32b:
+    image: interactome:dev
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:-2h}
+      OLLAMA_MAX_LOADED_MODELS: ${OLLAMA_MAX_LOADED_MODELS:-2}
+    depends_on:
+      web:
+        condition: service_healthy
+    command: celery -A interactome worker -Q q.extract.deepseek_r1_32b -c 1 -n deepseek@%h -l info
+    healthcheck:
+      disable: true
+
+  worker_extract_devstral_24b:
+    image: interactome:dev
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:-2h}
+      OLLAMA_MAX_LOADED_MODELS: ${OLLAMA_MAX_LOADED_MODELS:-2}
+    depends_on:
+      web:
+        condition: service_healthy
+    command: celery -A interactome worker -Q q.extract.devstral_24b -c 1 -n devstral@%h -l info
+    healthcheck:
+      disable: true
+
+  worker_extract_llama3_1_8b:
+    image: interactome:dev
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:-2h}
+      OLLAMA_MAX_LOADED_MODELS: ${OLLAMA_MAX_LOADED_MODELS:-2}
+    depends_on:
+      web:
+        condition: service_healthy
+    command: celery -A interactome worker -Q q.extract.llama3_1_8b -c 1 -n llama3@%h -l info
+    healthcheck:
+      disable: true
+
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
