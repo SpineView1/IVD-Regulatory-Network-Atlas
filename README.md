@@ -9,6 +9,7 @@ Ollama gateway.
 - [Full design specification](docs/superpowers/specs/2026-05-19-disc-interactome-app-design.md)
 - [Phase 0 implementation plan](docs/superpowers/plans/2026-05-19-phase-0-foundation.md)
 - [Phase 1 implementation plan (master corpus — complete)](docs/superpowers/plans/2026-05-19-phase-1-master-corpus.md)
+- [Phase 4 implementation plan (SBML-qual emission — complete)](docs/superpowers/plans/2026-05-19-phase-4-sbml-emission.md)
 
 ## Prerequisites
 
@@ -66,13 +67,53 @@ poetry run ruff format --check .
 poetry run mypy apps interactome
 ```
 
+## Phase 4 — SBML-qual Emission (complete)
+
+Phase 4 adds the `sbml` app, which converts accepted `Edge` records from the
+graph into versioned SBML-qual model files:
+
+- `ModelVersion` — one row per `(network, semver)` snapshot, frozen after upload
+- `ExportArtifact` — append-only download audit log
+- `sbml.tasks.regenerate` — builds SBML-qual + `edges.csv` + `evidence.csv` + ZIP, uploads to MinIO, creates+freezes `ModelVersion`
+- `sbml.tasks.regenerate_stale_networks` — daily Beat task that enqueues all stale networks
+- Download endpoint: `GET /networks/<code>/v/<semver>/download?type=zip|sbml|edges_csv|evidence_csv`
+- MinIO bucket bootstrap via `minio_bootstrap` compose service (idempotent)
+
+### Downloading SBML artifacts
+
+```bash
+# Download the latest ZIP for a network (requires Authelia auth header in prod)
+curl -H 'Remote-User: fchemorion' \
+  'https://interactome.simbiosys.sb.upf.edu/networks/nfkb_axis/v/0.1.0/download?type=zip' \
+  -L -o nfkb_v0.1.0.zip
+
+# Or just the SBML file
+curl -H 'Remote-User: fchemorion' \
+  'https://interactome.simbiosys.sb.upf.edu/networks/nfkb_axis/v/0.1.0/download?type=sbml' \
+  -L -o model.sbml
+```
+
+### Running the MinIO end-to-end test
+
+```bash
+# Bring up MinIO locally first
+docker compose up -d minio minio_bootstrap
+
+# Then run the minio marker tests
+MINIO_TEST_ENDPOINT=http://localhost:9000 \
+MINIO_TEST_ACCESS_KEY=interactome \
+MINIO_TEST_SECRET_KEY=interactome \
+  poetry run pytest -m minio -v
+```
+
 ## Project layout
 
 See [the design spec](docs/superpowers/specs/2026-05-19-disc-interactome-app-design.md#2-django-apps-and-module-boundaries)
 for the full architecture. Phase 0 provides the `core` app; Phase 1 (complete)
 adds `networks`, `corpus`, `papers`, `schedule`, and `dashboard` — including
 the full PubMed→SBML pipeline and `/corpus/export.csv` master corpus export.
-Subsequent phases add `extract`, `graph`, `sbml`, and `verify`.
+Phase 4 (complete) adds `sbml` — SBML-qual emission, versioning, and artifact
+download. Subsequent phases add `verify` and `graph analysis`.
 
 ## Corpus export (Phase 1 deliverable)
 
