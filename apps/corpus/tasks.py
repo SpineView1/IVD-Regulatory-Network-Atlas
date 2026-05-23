@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from typing import Any
 
 from django.utils import timezone
@@ -210,6 +211,19 @@ def triage_pending() -> dict:
     return {"queued": queued}
 
 
+def _keyword_matches(keyword: str, haystack: str) -> bool:
+    """True if keyword appears as a whole word (or phrase) in haystack.
+
+    Uses word-boundary regex so that "RELA" does NOT match "unrelated"
+    but DOES match "RELA is upregulated".  The keyword itself may contain
+    spaces/hyphens (e.g. "NF-kB"), so we use ``\\b`` only at the outer
+    edges of the pattern.
+    """
+    # Escape the keyword for regex, then wrap in word boundaries.
+    pattern = r"\b" + re.escape(keyword.lower()) + r"\b"
+    return bool(re.search(pattern, haystack))
+
+
 @shared_task(name="corpus.tasks.triage_relevance_cheap")
 def triage_relevance_cheap(paper_id: int) -> dict:
     """Cheap pass: keyword + PubTator alias matching against every active network."""
@@ -218,7 +232,7 @@ def triage_relevance_cheap(paper_id: int) -> dict:
     pubtator_texts = {(e.get("text") or "").upper() for e in (paper.pubtator_entities or [])}
     matched = 0
     for network in Network.objects.filter(is_active=True):
-        keyword_hit = any(kw.lower() in haystack for kw in (network.keywords or []))
+        keyword_hit = any(_keyword_matches(kw, haystack) for kw in (network.keywords or []))
         alias_hit = any(
             alias.upper() in pubtator_texts for alias in (network.root_entity_aliases or [])
         )
