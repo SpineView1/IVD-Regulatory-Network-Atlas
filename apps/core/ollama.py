@@ -319,3 +319,42 @@ class OllamaClient:
 
     def close(self) -> None:
         self._client.close()
+
+
+def refresh_authelia_session(
+    *,
+    authelia_url: str,
+    username: str,
+    password: str,
+    timeout_sec: float = 15.0,
+) -> str:
+    """Re-authenticate against Authelia ``/api/firstfactor`` and return
+    the new ``authelia_session`` cookie value.
+
+    This is a thin stateless helper that wraps the same auth flow as
+    ``OllamaClient._login()``. It exists so external callers (management
+    commands, periodic tasks) can mint a fresh session cookie without
+    constructing a full ``OllamaClient`` instance.
+
+    ``OllamaClient`` already self-refreshes on 401 responses via
+    ``_post_with_auth`` and ``generate_structured``; this helper is the
+    standalone variant for use cases outside the client lifecycle.
+
+    Raises ``OllamaError`` (alias ``OllamaResponseError``) on non-200 or
+    when Authelia returns 200 but omits the cookie.
+    """
+    response = httpx.post(
+        f"{authelia_url.rstrip('/')}/api/firstfactor",
+        json={"username": username, "password": password, "keepMeLoggedIn": True},
+        timeout=timeout_sec,
+    )
+    if response.status_code != 200:
+        raise OllamaError(
+            f"authelia refresh failed: {response.status_code} {response.text[:200]}"
+        )
+    set_cookie = response.headers.get("Set-Cookie", "")
+    for part in set_cookie.split(";"):
+        part = part.strip()
+        if part.startswith("authelia_session="):
+            return part.split("=", 1)[1]
+    raise OllamaError("authelia refresh succeeded but no authelia_session cookie returned")

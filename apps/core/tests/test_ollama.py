@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import json
+from unittest.mock import patch
 
+import httpx
 import pytest
 from pytest_httpx import HTTPXMock
 
-from core.ollama import OllamaAuthError, OllamaClient, OllamaResponseError
+from core.ollama import OllamaAuthError, OllamaClient, OllamaError, OllamaResponseError
 
 
 @pytest.fixture
@@ -175,3 +177,41 @@ def test_ollama_client_chat_endpoint(client, httpx_mock: HTTPXMock):
         messages=[{"role": "user", "content": "hi"}],
     )
     assert result["message"]["content"] == "hello"
+
+
+# ---- Task 15: refresh_authelia_session ----
+
+
+def test_authelia_refresh_returns_new_cookie():
+    from core.ollama import refresh_authelia_session
+
+    with patch("httpx.post") as p:
+        p.return_value = httpx.Response(
+            status_code=200,
+            request=httpx.Request("POST", "https://auth.example/api/firstfactor"),
+            headers={"Set-Cookie": "authelia_session=NEW; Path=/; HttpOnly"},
+            content=b'{"status":"OK"}',
+        )
+        cookie = refresh_authelia_session(
+            authelia_url="https://auth.example",
+            username="svc-interactome",
+            password="hunter2",
+        )
+    assert cookie == "NEW"
+
+
+def test_authelia_refresh_raises_on_failure():
+    from core.ollama import refresh_authelia_session
+
+    with patch("httpx.post") as p:
+        p.return_value = httpx.Response(
+            status_code=401,
+            request=httpx.Request("POST", "https://auth.example/api/firstfactor"),
+            content=b'{"status":"KO"}',
+        )
+        with pytest.raises(OllamaError):
+            refresh_authelia_session(
+                authelia_url="https://auth.example",
+                username="x",
+                password="y",
+            )

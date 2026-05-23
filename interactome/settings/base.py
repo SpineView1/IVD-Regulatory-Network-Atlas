@@ -143,6 +143,11 @@ OLLAMA_PASSWORD = os.environ.get("OLLAMA_PASSWORD", "")
 OLLAMA_DEFAULT_TIMEOUT = float(os.environ.get("OLLAMA_DEFAULT_TIMEOUT", "120"))
 OLLAMA_KEEP_ALIVE = os.environ.get("OLLAMA_KEEP_ALIVE", "2h")
 
+# === Authelia service-account credentials (for session refresh on 401) ===
+# Populated at deploy time; left blank in dev where Ollama is not reachable.
+AUTHELIA_SVC_USER = os.environ.get("AUTHELIA_SVC_USER", "")
+AUTHELIA_SVC_PASSWORD = os.environ.get("AUTHELIA_SVC_PASSWORD", "")
+
 # === NCBI E-utilities ===
 NCBI_API_KEY = os.environ.get("NCBI_API_KEY", "")
 NCBI_TOOL_NAME = "interactome-disc-atlas"
