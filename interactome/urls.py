@@ -1,4 +1,5 @@
 """Top-level URL conf. Each app contributes via its own ``urls.py``."""
+
 from __future__ import annotations
 
 from django.contrib import admin

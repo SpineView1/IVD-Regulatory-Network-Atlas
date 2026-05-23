@@ -1,4 +1,5 @@
 """Development settings."""
+
 from __future__ import annotations
 
 from interactome.settings.base import *  # noqa: F401,F403

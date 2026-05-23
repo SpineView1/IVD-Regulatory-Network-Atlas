@@ -9,12 +9,14 @@ In development, falls back to ``settings.AUTHELIA_DEV_FAKE_USER`` if
 no header is present, so the app remains usable when run outside
 docker-compose.
 """
+
 from __future__ import annotations
 
-from typing import Callable
+from collections.abc import Callable
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import AnonymousUser, Group
 from django.http import HttpRequest, HttpResponse
 
@@ -39,7 +41,9 @@ class AutheliaRemoteUserMiddleware:
                 full_name=request.META.get("HTTP_REMOTE_NAME", ""),
                 groups_csv=request.META.get("HTTP_REMOTE_GROUPS", ""),
             )
-            request.user = user
+            # AbstractBaseUser is the parent of get_user_model(); HttpRequest.user
+            # is typed as the concrete user model — the assignment is safe at runtime.
+            request.user = user  # type: ignore[assignment]
         else:
             request.user = AnonymousUser()
 
@@ -52,7 +56,7 @@ class AutheliaRemoteUserMiddleware:
         email: str,
         full_name: str,
         groups_csv: str,
-    ) -> User:
+    ) -> AbstractBaseUser:
         user, _ = User.objects.get_or_create(username=username)
         changed = False
 

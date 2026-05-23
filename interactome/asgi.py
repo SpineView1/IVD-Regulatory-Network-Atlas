@@ -1,4 +1,5 @@
 """ASGI config — for future async views."""
+
 from __future__ import annotations
 
 import os

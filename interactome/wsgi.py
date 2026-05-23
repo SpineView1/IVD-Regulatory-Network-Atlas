@@ -1,4 +1,5 @@
 """WSGI config — gunicorn's entrypoint in production."""
+
 from __future__ import annotations
 
 import os

@@ -1,4 +1,5 @@
 """Tests for core.middleware.AutheliaRemoteUserMiddleware."""
+
 from __future__ import annotations
 
 import pytest

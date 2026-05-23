@@ -4,6 +4,7 @@ The Celery app is the single point of task discovery and broker
 configuration. Every Django app exposes its tasks via a ``tasks.py``
 module that ``autodiscover_tasks`` will find.
 """
+
 from __future__ import annotations
 
 import os
@@ -18,5 +19,5 @@ app.autodiscover_tasks()
 
 
 @app.task(bind=True)
-def debug_task(self) -> None:
+def debug_task(self: Celery) -> None:
     print(f"Request: {self.request!r}")

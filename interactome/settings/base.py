@@ -3,6 +3,7 @@
 Subclasses (``dev.py``, ``production.py``) override the few values
 that differ per environment.
 """
+
 from __future__ import annotations
 
 import os

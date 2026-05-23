@@ -1,4 +1,5 @@
 """Production settings — everything secret comes from the environment."""
+
 from __future__ import annotations
 
 import os

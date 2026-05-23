@@ -1,4 +1,5 @@
 """Shared pytest fixtures for the core app."""
+
 from __future__ import annotations
 
 import pytest

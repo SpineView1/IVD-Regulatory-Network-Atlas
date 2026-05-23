@@ -1,7 +1,6 @@
 """Tests for core.tasks."""
-from __future__ import annotations
 
-import pytest
+from __future__ import annotations
 
 from core.tasks import smoke_ping
 
