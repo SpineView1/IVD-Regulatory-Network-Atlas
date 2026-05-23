@@ -87,6 +87,35 @@ def test_enqueue_skips_chunks_already_processed_by_all_models(db, two_chunks):
     assert m.call_count == 0
 
 
+def test_enqueue_partial_completion_still_fans_out_remaining_models(db, two_chunks):
+    """Fix 1: A Results chunk with 1 of 7 models DONE must still be enqueued
+    for the other 6 models.  The old .exclude() would silently drop the whole
+    chunk after the first model finishes; the count-annotation must enqueue
+    exactly 6 more tasks for that chunk (plus 7 for the untouched chunk = 13).
+    """
+    from extract.services import upsert_runs_for_chunk
+
+    # Mark the first chunk as done for ONE model only.
+    upsert_runs_for_chunk(two_chunks[0].id)
+    first_run = ExtractionRun.objects.filter(
+        chunk=two_chunks[0], model_name=SUPPORTED_OLLAMA_MODELS[0]
+    ).first()
+    assert first_run is not None
+    first_run.status = ExtractionRun.Status.DONE
+    first_run.save()
+
+    with patch("extract.tasks.run_ppi.apply_async") as m:
+        enqueue_pending_chunks()
+
+    # chunk[0]: 6 remaining models still QUEUED → 6 dispatches
+    # chunk[1]: all 7 models QUEUED → 7 dispatches
+    # total = 13
+    assert m.call_count == 13, (
+        f"Expected 13 dispatches (6+7), got {m.call_count}. "
+        "This fails with the old .exclude() but should pass after count-annotation fix."
+    )
+
+
 def test_enqueue_only_targets_results_sections(db, prompt):
     from corpus.models import Paper
     from papers.models import Chunk, Section

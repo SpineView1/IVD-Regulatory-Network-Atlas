@@ -71,6 +71,26 @@ def test_heartbeat_thread_stops_after_exception(fake_row):
     assert fake_row.save.call_count == n_saves_after_raise
 
 
+def test_heartbeat_skips_write_for_done_status(fake_row):
+    """Fix 6: If the row has status='done' or 'failed', the heartbeat decorator
+    must not update its heartbeat field.  The caller (run_ppi) relies on this
+    so that idempotency short-circuits don't stomp already-done rows."""
+    fake_row.status = "done"
+    save_count_before = fake_row.save.call_count
+
+    @with_heartbeat(interval_sec=60, fetch=lambda _id: fake_row)
+    def my_task(row_id: int) -> str:
+        return "already_done"
+
+    result = my_task(row_id=1)
+    assert result == "already_done"
+    # No new save calls should have occurred for a done row.
+    assert fake_row.save.call_count == save_count_before, (
+        "Heartbeat wrote to a done/failed row — Fix 6 requires skipping "
+        "the heartbeat update when row.status is done or failed."
+    )
+
+
 def test_heartbeat_passes_through_kwargs(fake_row):
     captured: dict = {}
 

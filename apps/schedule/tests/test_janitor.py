@@ -82,6 +82,50 @@ def test_janitor_resets_stale_extractionrun_to_queued(db):
     assert run.heartbeat is None
 
 
+def test_janitor_increments_attempts_on_reset(db):
+    """Fix 5: When the janitor reclaims a stale ExtractionRun, it must also
+    increment the 'attempts' field (spec Task 13: run.attempts == 1 after sweep)."""
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from corpus.models import Paper
+    from extract.models import ExtractionRun, PromptTemplate
+    from papers.models import Chunk, Section
+
+    PromptTemplate.objects.update_or_create(
+        version="1.0.0", defaults={"body": "{{CHUNK_TEXT}}", "is_active": True}
+    )
+    paper = Paper.objects.create(pmid=77777777, title="t3", abstract="a3")
+    section = Section.objects.create(paper=paper, doco_type="Results", order_index=0, body_text="z")
+    chunk = Chunk.objects.create(
+        section=section,
+        chunk_index=0,
+        text="z",
+        token_count=1,
+        char_offset_start=0,
+        char_offset_end=1,
+    )
+    run = ExtractionRun.objects.create(
+        chunk=chunk,
+        model_name="qwen3:8b",
+        prompt_version="1.0.0",
+        status=ExtractionRun.Status.RUNNING,
+        heartbeat=timezone.now() - timedelta(minutes=15),
+        attempts=0,
+    )
+
+    janitor_reset_stale_running.delay().get(timeout=1)
+
+    run.refresh_from_db()
+    assert run.status == ExtractionRun.Status.QUEUED
+    assert run.heartbeat is None
+    assert run.attempts == 1, (
+        f"Expected attempts==1 after janitor sweep, got {run.attempts}. "
+        "Fix 5: janitor must increment attempts_field when provided."
+    )
+
+
 def test_janitor_summary_includes_extractionrun(db):
     """The janitor result dict must contain extract.ExtractionRun as a key."""
     from datetime import timedelta
