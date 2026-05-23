@@ -62,14 +62,14 @@ def test_export_csv_returns_csv_content_type(db, client, seed_corpus):
 
 def test_export_csv_default_returns_all_papers(db, client, seed_corpus):
     resp = client.get("/corpus/export.csv")
-    rows = list(csv.DictReader(io.StringIO(resp.content.decode())))
+    rows = list(csv.DictReader(io.StringIO(b"".join(resp.streaming_content).decode())))
     pmids = {int(r["pmid"]) for r in rows}
     assert pmids == {1, 2, 3}
 
 
 def test_export_csv_full_format_includes_classifier_and_fulltext(db, client, seed_corpus):
     resp = client.get("/corpus/export.csv?format=full")
-    rows = list(csv.DictReader(io.StringIO(resp.content.decode())))
+    rows = list(csv.DictReader(io.StringIO(b"".join(resp.streaming_content).decode())))
     headers = rows[0].keys()
     assert "is_original" in headers
     assert "full_text_status" in headers
@@ -79,7 +79,7 @@ def test_export_csv_full_format_includes_classifier_and_fulltext(db, client, see
 
 def test_export_csv_network_filter(db, client, seed_corpus):
     resp = client.get("/corpus/export.csv?network=nfkb_axis")
-    rows = list(csv.DictReader(io.StringIO(resp.content.decode())))
+    rows = list(csv.DictReader(io.StringIO(b"".join(resp.streaming_content).decode())))
     pmids = {int(r["pmid"]) for r in rows}
     # Only papers with relevance > 0.5 for the requested network.
     assert pmids == {1}
@@ -92,7 +92,7 @@ def test_export_csv_unknown_network_returns_400(db, client, seed_corpus):
 
 def test_export_csv_threshold_query_param(db, client, seed_corpus):
     resp = client.get("/corpus/export.csv?network=mechano_piezo&threshold=0.05")
-    rows = list(csv.DictReader(io.StringIO(resp.content.decode())))
+    rows = list(csv.DictReader(io.StringIO(b"".join(resp.streaming_content).decode())))
     pmids = {int(r["pmid"]) for r in rows}
     assert pmids == {1, 2}  # both relevances above 0.05
 

@@ -4,14 +4,22 @@ from __future__ import annotations
 
 import csv
 import json
+from collections.abc import Generator
 
-from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest
+from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest, StreamingHttpResponse
 
 from corpus.models import Paper, PaperRelevance
 from networks.models import Network
 
 
-def export_csv(request: HttpRequest) -> HttpResponse:
+class Echo:
+    """Pseudo-buffer that returns values directly for StreamingHttpResponse."""
+
+    def write(self, value: str) -> str:
+        return value
+
+
+def export_csv(request: HttpRequest) -> HttpResponse | StreamingHttpResponse:
     """Stream the corpus as CSV.
 
     Query params:
@@ -42,13 +50,16 @@ def export_csv(request: HttpRequest) -> HttpResponse:
         qs = Paper.objects.all().order_by("pmid")
         filename = "corpus_full.csv" if full else "corpus.csv"
 
-    response = HttpResponse(content_type="text/csv")
-    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    pseudo_buffer = Echo()
+    writer = csv.writer(pseudo_buffer)
 
-    writer = csv.writer(response)
-    writer.writerow(_csv_headers(full=full))
-    for paper in qs.iterator(chunk_size=500):
-        writer.writerow(_csv_row(paper, full=full))
+    def rows() -> Generator[str, None, None]:
+        yield writer.writerow(_csv_headers(full=full))
+        for paper in qs.iterator(chunk_size=500):
+            yield writer.writerow(_csv_row(paper, full=full))
+
+    response = StreamingHttpResponse(rows(), content_type="text/csv")
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
     return response
 
 
