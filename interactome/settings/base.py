@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "graph",
     "schedule",
     "dashboard",
+    "sbml",
 ]
 
 MIDDLEWARE = [
@@ -141,6 +142,8 @@ MINIO_SECRET_KEY = os.environ.get("MINIO_ROOT_PASSWORD", "interactome")
 MINIO_BUCKET_PAPERS = os.environ.get("MINIO_BUCKET_PAPERS", "papers")
 MINIO_BUCKET_SBML = os.environ.get("MINIO_BUCKET_SBML", "sbml-artifacts")
 MINIO_REGION = "us-east-1"  # placeholder; MinIO ignores it
+# Presigned URL TTL (seconds).  900 = 15 min, used by sbml download view.
+MINIO_PRESIGN_EXPIRY_SECONDS = int(os.environ.get("MINIO_PRESIGN_EXPIRY_SECONDS", "900"))
 
 # === Ollama gateway (behind Authelia) ===
 OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE", "https://ollama.simbiosys.sb.upf.edu")

@@ -11,4 +11,5 @@ urlpatterns = [
     path("", include("corpus.urls")),
     path("", include("dashboard.urls")),
     path("graph/", include("graph.urls")),
+    path("", include("sbml.urls")),
 ]
