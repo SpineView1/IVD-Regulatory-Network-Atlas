@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import date
 
 import pytest
+from django.core.cache import cache
 from django.test import Client
 
 from corpus.models import Paper, PaperRelevance
@@ -14,6 +15,13 @@ from networks.models import Network
 @pytest.fixture
 def client():
     return Client(HTTP_REMOTE_USER="fchemorion")
+
+
+@pytest.fixture(autouse=True)
+def clear_cache():
+    cache.clear()
+    yield
+    cache.clear()
 
 
 @pytest.fixture
