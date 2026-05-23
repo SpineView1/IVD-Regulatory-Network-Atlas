@@ -7,7 +7,8 @@ Ollama gateway.
 ## Documentation
 
 - [Full design specification](docs/superpowers/specs/2026-05-19-disc-interactome-app-design.md)
-- [Phase 0 implementation plan (this is what's been built)](docs/superpowers/plans/2026-05-19-phase-0-foundation.md)
+- [Phase 0 implementation plan](docs/superpowers/plans/2026-05-19-phase-0-foundation.md)
+- [Phase 1 implementation plan (master corpus — complete)](docs/superpowers/plans/2026-05-19-phase-1-master-corpus.md)
 
 ## Prerequisites
 
@@ -43,7 +44,7 @@ middleware reads the `Remote-User` header from Authelia.)
 
 ```bash
 docker-compose up -d
-docker-compose ps         # check all 8 services are healthy
+docker-compose ps         # check all 9 services are healthy (Phase 1 added worker_fast)
 docker-compose logs -f web
 ```
 
@@ -68,9 +69,30 @@ poetry run mypy apps interactome
 ## Project layout
 
 See [the design spec](docs/superpowers/specs/2026-05-19-disc-interactome-app-design.md#2-django-apps-and-module-boundaries)
-for the full architecture. Phase 0 contains only the `core` app; subsequent
-phases add `networks`, `corpus`, `papers`, `extract`, `graph`, `sbml`,
-`verify`, `schedule`, and `dashboard`.
+for the full architecture. Phase 0 provides the `core` app; Phase 1 (complete)
+adds `networks`, `corpus`, `papers`, `schedule`, and `dashboard` — including
+the full PubMed→SBML pipeline and `/corpus/export.csv` master corpus export.
+Subsequent phases add `extract`, `graph`, `sbml`, and `verify`.
+
+## Corpus export (Phase 1 deliverable)
+
+```bash
+# All papers as CSV
+curl -H 'Remote-User: fchemorion' https://interactome.simbiosys.sb.upf.edu/corpus/export.csv -o corpus.csv
+
+# Network-filtered (score >= 0.5 by default)
+curl -H 'Remote-User: fchemorion' \
+  'https://interactome.simbiosys.sb.upf.edu/corpus/export.csv?network=nfkb_axis' \
+  -o nfkb.csv
+
+# Wide format with classifier and full-text columns
+curl -H 'Remote-User: fchemorion' \
+  'https://interactome.simbiosys.sb.upf.edu/corpus/export.csv?format=full' \
+  -o corpus_full.csv
+
+# Corpus statistics dashboard
+curl -H 'Remote-User: fchemorion' https://interactome.simbiosys.sb.upf.edu/corpus/stats
+```
 
 ## Deployment
 
