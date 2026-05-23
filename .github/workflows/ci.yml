@@ -41,6 +41,7 @@ jobs:
       POSTGRES_PORT: 5432
       REDIS_URL: redis://localhost:6379/0
       DJANGO_SETTINGS_MODULE: interactome.settings.dev
+      POETRY_VIRTUALENVS_IN_PROJECT: "true"
 
     steps:
       - uses: actions/checkout@v4

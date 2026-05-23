@@ -13,14 +13,17 @@ docker-compose.
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import AnonymousUser, Group
 from django.http import HttpRequest, HttpResponse
 
-User = get_user_model()
+if TYPE_CHECKING:
+    from django.contrib.auth.models import User
+
+_User = get_user_model()
 
 
 class AutheliaRemoteUserMiddleware:
@@ -41,9 +44,7 @@ class AutheliaRemoteUserMiddleware:
                 full_name=request.META.get("HTTP_REMOTE_NAME", ""),
                 groups_csv=request.META.get("HTTP_REMOTE_GROUPS", ""),
             )
-            # AbstractBaseUser is the parent of get_user_model(); HttpRequest.user
-            # is typed as the concrete user model — the assignment is safe at runtime.
-            request.user = user  # type: ignore[assignment]
+            request.user = user
         else:
             request.user = AnonymousUser()
 
@@ -56,8 +57,8 @@ class AutheliaRemoteUserMiddleware:
         email: str,
         full_name: str,
         groups_csv: str,
-    ) -> AbstractBaseUser:
-        user, _ = User.objects.get_or_create(username=username)
+    ) -> User:
+        user, _ = _User.objects.get_or_create(username=username)
         changed = False
 
         if email and user.email != email:
