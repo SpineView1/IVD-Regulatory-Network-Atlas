@@ -69,6 +69,17 @@ services:
     healthcheck:
       disable: true
 
+  worker_fast:
+    image: interactome:dev
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      web:
+        condition: service_healthy
+    command: celery -A interactome worker -Q q.fast -c 2 -n fast@%h -l info
+    healthcheck:
+      disable: true
+
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
