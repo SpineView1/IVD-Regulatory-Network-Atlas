@@ -18,6 +18,7 @@ from typing import Any
 
 from django.conf import settings
 from django.db import transaction
+from django.db.transaction import on_commit
 
 from celery import shared_task
 from core.minio_client import MinioClient, paper_object_key
@@ -132,6 +133,17 @@ def classify_original(pmid: int) -> str:
         logger.warning("LLM classify fell back to rule for pmid=%s: %s", pmid, exc)
         is_original = True  # conservative — keep in pipeline
         reason = f"llm_fallback: {exc}"
+    except Exception as exc:
+        # Network/Ollama errors: log with pmid, keep paper retryable at
+        # ingest_status='ingested' (do NOT save any state), then re-raise so
+        # Celery can retry.
+        logger.warning(
+            "LLM classify raised unexpected error for pmid=%s (%s: %s); re-raising for retry",
+            pmid,
+            type(exc).__name__,
+            exc,
+        )
+        raise
 
     _save_classification(
         paper,
@@ -187,7 +199,9 @@ def fetch_fulltext_pending() -> dict:
     """Beat entrypoint — enqueue fetch_fulltext for classified originals."""
     queued = 0
     for pmid in Paper.objects.filter(
-        ingest_status="classified", is_original=True, full_text_status="none"
+        ingest_status="classified",
+        is_original=True,
+        full_text_status__in=["none", "fetch_failed"],
     ).values_list("pmid", flat=True):
         fetch_fulltext.delay(pmid)
         queued += 1
@@ -316,10 +330,11 @@ def _section_abstract_only(paper: Paper) -> str:
     _persist_chunks(section, text)
     paper.ingest_status = "chunked"
     paper.save(update_fields=["ingest_status", "updated_at"])
-    # Enqueue triage.
+    # Enqueue triage after commit to avoid the Celery-in-transaction race.
     from corpus.tasks import triage_relevance_cheap  # noqa: PLC0415
 
-    triage_relevance_cheap.delay(paper.pmid)
+    _pmid = paper.pmid
+    on_commit(lambda: triage_relevance_cheap.delay(_pmid))
     return "chunked_abstract"
 
 
@@ -348,10 +363,11 @@ def _section_from_jats(paper: Paper) -> str:
             _persist_chunks(section, ps.body_text)
     paper.ingest_status = "chunked"
     paper.save(update_fields=["ingest_status", "updated_at"])
-    # Enqueue triage.
+    # Enqueue triage after commit to avoid the Celery-in-transaction race.
     from corpus.tasks import triage_relevance_cheap  # noqa: PLC0415
 
-    triage_relevance_cheap.delay(paper.pmid)
+    _pmid = paper.pmid
+    on_commit(lambda: triage_relevance_cheap.delay(_pmid))
     return "chunked_jats"
 
 

@@ -82,15 +82,21 @@ def refresh_pubmed_full(self: Any) -> dict:
     """
     client = NcbiClient()
     run = IngestRun.objects.create(source="pubmed_full", query=MASTER_IDD_QUERY)
-    pmids = client.esearch(query=MASTER_IDD_QUERY, retmax=100000)
-    existing = set(Paper.objects.filter(pmid__in=pmids).values_list("pmid", flat=True))
-    new_pmids = [p for p in pmids if p not in existing]
-    for pmid in new_pmids:
-        ingest_paper.delay(pmid)
-    run.n_pmids_seen = len(pmids)
-    run.finished_at = timezone.now()
-    run.save()
-    return {"n_pmids_seen": len(pmids), "n_new": len(new_pmids)}
+    try:
+        pmids = client.esearch(query=MASTER_IDD_QUERY, retmax=100000)
+        existing = set(Paper.objects.filter(pmid__in=pmids).values_list("pmid", flat=True))
+        new_pmids = [p for p in pmids if p not in existing]
+        for pmid in new_pmids:
+            ingest_paper.delay(pmid)
+        run.n_pmids_seen = len(pmids)
+        run.finished_at = timezone.now()
+        run.save()
+        return {"n_pmids_seen": len(pmids), "n_new": len(new_pmids)}
+    except Exception as exc:
+        run.error = str(exc)[:4000]
+        run.finished_at = timezone.now()
+        run.save()
+        raise
 
 
 # ---------------------------------------------------------------------------
@@ -130,7 +136,7 @@ def ingest_paper(self: Any, pmid: int) -> str:
         if not results:
             paper.ingest_status = "ingest_failed"
             paper.ingest_error = "efetch returned no records"
-            paper.save(update_fields=["ingest_status", "ingest_error"])
+            paper.save(update_fields=["ingest_status", "ingest_error", "updated_at"])
             return "ingest_failed"
         meta = results[0]
         paper.title = meta.title
@@ -162,7 +168,7 @@ def ingest_paper(self: Any, pmid: int) -> str:
     except Exception as exc:
         paper.ingest_status = "ingest_failed"
         paper.ingest_error = str(exc)[:4000]
-        paper.save(update_fields=["ingest_status", "ingest_error"])
+        paper.save(update_fields=["ingest_status", "ingest_error", "updated_at"])
         raise
 
 
@@ -273,6 +279,7 @@ def triage_relevance_llm(self: Any, paper_id: int, network_id: int) -> dict:
     relevant = True
     confidence = 0.5
     reason = ""
+    llm_parse_failed = False
     try:
         client = OllamaClient()
         raw = client.generate(
@@ -292,8 +299,14 @@ def triage_relevance_llm(self: Any, paper_id: int, network_id: int) -> dict:
             network_id,
             exc,
         )
-        confidence = 0.4
-        reason = f"llm_fallback: {exc}"
+        llm_parse_failed = True
+
+    if llm_parse_failed:
+        # Do NOT downgrade: preserve the existing cheap-pass score (>= 0.5) so
+        # the paper is not silently dropped from the corpus on an LLM malfunction.
+        existing = PaperRelevance.objects.filter(paper=paper, network=network).first()
+        existing_score = existing.score if existing else 0.5
+        return {"score": existing_score, "relevant": True, "llm_parse_failed": True}
 
     final_score = confidence if relevant else (1.0 - confidence)
     PaperRelevance.objects.update_or_create(
