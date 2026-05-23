@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "django_celery_results",
     # Local apps
     "core",
+    "extract",
     "networks",
     "corpus",
     "papers",
@@ -124,6 +125,11 @@ CELERY_TASK_ROUTES = {
     "papers.tasks.section_and_chunk": {"queue": "q.io"},
     "schedule.tasks.janitor_reset_stale_running": {"queue": "q.io"},
     "schedule.tasks.refill_rate_limit_buckets": {"queue": "q.io"},
+    # extract — non-dynamic tasks go to the io worker (spec §6).
+    # extract.tasks.run_ppi is routed dynamically by enqueue_pending_chunks
+    # via apply_async(queue=queue_for_model(...)); no static route here.
+    "extract.tasks.enqueue_pending_chunks": {"queue": "q.io"},
+    "extract.tasks.smoke_all_models": {"queue": "q.io"},
 }
 
 # === MinIO / S3-compatible object store ===
@@ -137,10 +143,28 @@ MINIO_REGION = "us-east-1"  # placeholder; MinIO ignores it
 # === Ollama gateway (behind Authelia) ===
 OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE", "https://ollama.simbiosys.sb.upf.edu")
 OLLAMA_AUTHELIA_BASE = os.environ.get("AUTHELIA_BASE", "https://authelia.simbiosys.sb.upf.edu")
+# OLLAMA_USER / OLLAMA_PASSWORD — the per-model worker credentials used by
+# OllamaClient in task workers (run_ppi, smoke_all_models). Workers self-refresh
+# on 401 via OllamaClient._login().
 OLLAMA_USER = os.environ.get("OLLAMA_USER", "")
 OLLAMA_PASSWORD = os.environ.get("OLLAMA_PASSWORD", "")
 OLLAMA_DEFAULT_TIMEOUT = float(os.environ.get("OLLAMA_DEFAULT_TIMEOUT", "120"))
 OLLAMA_KEEP_ALIVE = os.environ.get("OLLAMA_KEEP_ALIVE", "2h")
+# OLLAMA_SESSION_COOKIE — optional pre-seeded Authelia session cookie value.
+# When set, OllamaClient can skip the initial /api/firstfactor login on first
+# use (useful for operator smoke tests and management commands).
+OLLAMA_SESSION_COOKIE = os.environ.get("OLLAMA_SESSION_COOKIE", "")
+
+# === Authelia service-account credentials (for standalone session refresh) ===
+# AUTHELIA_SVC_USER / AUTHELIA_SVC_PASSWORD — used exclusively by the standalone
+# refresh_authelia_session() helper (management commands, periodic re-auth tasks).
+# These are the SAME account as OLLAMA_USER/OLLAMA_PASSWORD in environments
+# where one service account is used for all Ollama/Authelia operations. In
+# environments with separate accounts, OLLAMA_USER/PASSWORD is the per-worker
+# credential and AUTHELIA_SVC_* is the management/refresh credential.
+# Populated at deploy time; left blank in dev where Ollama is not reachable.
+AUTHELIA_SVC_USER = os.environ.get("AUTHELIA_SVC_USER", "")
+AUTHELIA_SVC_PASSWORD = os.environ.get("AUTHELIA_SVC_PASSWORD", "")
 
 # === NCBI E-utilities ===
 NCBI_API_KEY = os.environ.get("NCBI_API_KEY", "")
@@ -184,8 +208,8 @@ LOGGING = {
     },
 }
 
-# === Celery Beat schedule (Phase 1) ===
-from schedule.beat_schedule import PHASE_1_BEAT_SCHEDULE  # noqa: E402
+# === Celery Beat schedule (merged Phase 1 + Phase 2) ===
+from schedule.beat_schedule import BEAT_SCHEDULE  # noqa: E402
 
-CELERY_BEAT_SCHEDULE = PHASE_1_BEAT_SCHEDULE
+CELERY_BEAT_SCHEDULE = BEAT_SCHEDULE
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
