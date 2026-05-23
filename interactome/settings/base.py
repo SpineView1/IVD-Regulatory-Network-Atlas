@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "schedule",
     "dashboard",
     "sbml",
+    "verify",
 ]
 
 MIDDLEWARE = [
