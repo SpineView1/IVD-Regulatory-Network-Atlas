@@ -10,4 +10,5 @@ urlpatterns = [
     path("", include("core.urls")),
     path("", include("corpus.urls")),
     path("", include("dashboard.urls")),
+    path("graph/", include("graph.urls")),
 ]
