@@ -55,3 +55,4 @@ pgdata/
 redisdata/
 miniodata/
 backupdata/
+.claude/
