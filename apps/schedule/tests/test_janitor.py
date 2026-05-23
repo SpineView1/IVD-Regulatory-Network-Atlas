@@ -41,3 +41,83 @@ def test_janitor_resets_stale_running_extraction_runs(db):
     assert isinstance(result, dict)
     assert "total_reset" in result
     assert result["total_reset"] == 0
+
+
+def test_janitor_resets_stale_extractionrun_to_queued(db):
+    """Phase 2 wiring: stale-running ExtractionRun rows must be re-queued."""
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from corpus.models import Paper
+    from extract.models import ExtractionRun, PromptTemplate
+    from papers.models import Chunk, Section
+
+    # Ensure a clean prompt (seed migration already inserts 1.0.0 active).
+    PromptTemplate.objects.update_or_create(
+        version="1.0.0", defaults={"body": "{{CHUNK_TEXT}}", "is_active": True}
+    )
+    paper = Paper.objects.create(pmid=55555555, title="t", abstract="a")
+    section = Section.objects.create(
+        paper=paper, doco_type="Results", order_index=0, body_text="x"
+    )
+    chunk = Chunk.objects.create(
+        section=section,
+        chunk_index=0,
+        text="x",
+        token_count=1,
+        char_offset_start=0,
+        char_offset_end=1,
+    )
+    run = ExtractionRun.objects.create(
+        chunk=chunk,
+        model_name="qwen3:8b",
+        prompt_version="1.0.0",
+        status=ExtractionRun.Status.RUNNING,
+        heartbeat=timezone.now() - timedelta(minutes=15),
+    )
+
+    janitor_reset_stale_running.delay().get(timeout=1)
+
+    run.refresh_from_db()
+    assert run.status == ExtractionRun.Status.QUEUED
+    assert run.heartbeat is None
+
+
+def test_janitor_summary_includes_extractionrun(db):
+    """The janitor result dict must contain extract.ExtractionRun as a key."""
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from corpus.models import Paper
+    from extract.models import ExtractionRun, PromptTemplate
+    from papers.models import Chunk, Section
+
+    PromptTemplate.objects.update_or_create(
+        version="1.0.0", defaults={"body": "{{CHUNK_TEXT}}", "is_active": True}
+    )
+    paper = Paper.objects.create(pmid=55555556, title="t2", abstract="a2")
+    section = Section.objects.create(
+        paper=paper, doco_type="Results", order_index=0, body_text="y"
+    )
+    chunk = Chunk.objects.create(
+        section=section,
+        chunk_index=0,
+        text="y",
+        token_count=1,
+        char_offset_start=0,
+        char_offset_end=1,
+    )
+    ExtractionRun.objects.create(
+        chunk=chunk,
+        model_name="qwen3:8b",
+        prompt_version="1.0.0",
+        status=ExtractionRun.Status.RUNNING,
+        heartbeat=timezone.now() - timedelta(minutes=15),
+    )
+
+    result = janitor_reset_stale_running.delay().get(timeout=1)
+
+    assert "extract.ExtractionRun" in result
+    assert result["extract.ExtractionRun"] >= 1
