@@ -95,6 +95,10 @@ def test_ollama_env_vars_present_in_settings():
     assert hasattr(settings, "OLLAMA_USER")
     assert hasattr(settings, "OLLAMA_PASSWORD")
     assert hasattr(settings, "OLLAMA_KEEP_ALIVE")
+    assert hasattr(settings, "OLLAMA_SESSION_COOKIE"), (
+        "OLLAMA_SESSION_COOKIE must be a Django setting; .env.example documents it "
+        "but base.py lacked the corresponding os.environ.get() assignment."
+    )
     assert hasattr(settings, "AUTHELIA_SVC_USER")
     assert hasattr(settings, "AUTHELIA_SVC_PASSWORD")
 
