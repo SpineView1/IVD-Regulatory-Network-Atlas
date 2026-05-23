@@ -5,14 +5,16 @@ mid-sentence. Adjacent chunks overlap by ``overlap_tokens`` to preserve
 context for the extractor.
 
 Token counting uses tiktoken's cl100k_base encoding. NLTK's
-``punkt_tab`` sentence tokenizer provides the sentence boundaries; we
-lazy-download it on first use so production containers don't have to
-pre-bake the resource.
+``punkt_tab`` sentence tokenizer provides the sentence boundaries; the
+pre-trained English model (with learned abbreviations) is loaded once and
+cached so biomedical abbreviations like "e.g.", "Fig.", "vs." do not cause
+spurious sentence splits.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 import nltk
 import tiktoken
@@ -29,16 +31,20 @@ class ChunkRecord:
 
 _ENCODER = tiktoken.get_encoding("cl100k_base")
 _NLTK_READY = False
+_TOKENIZER: Any = None
 
 
 def _ensure_nltk() -> None:
-    global _NLTK_READY
+    global _NLTK_READY, _TOKENIZER
     if _NLTK_READY:
         return
     try:
         nltk.data.find("tokenizers/punkt_tab")
     except LookupError:
         nltk.download("punkt_tab", quiet=True)
+    # Load the pre-trained English punkt_tab tokenizer so its learned
+    # abbreviations (e.g., "e.g.", "Fig.", "vs.") are in effect.
+    _TOKENIZER = nltk.data.load("tokenizers/punkt_tab/english.pickle")
     _NLTK_READY = True
 
 
@@ -49,10 +55,8 @@ def _count_tokens(s: str) -> int:
 def _sentences_with_offsets(text: str) -> list[tuple[str, int, int]]:
     """Return list of (sentence_text, char_start, char_end)."""
     _ensure_nltk()
-    from nltk.tokenize import PunktSentenceTokenizer
-
-    tokenizer = PunktSentenceTokenizer()
-    spans = list(tokenizer.span_tokenize(text))
+    assert _TOKENIZER is not None
+    spans = list(_TOKENIZER.span_tokenize(text))
     return [(text[start:end], start, end) for start, end in spans]
 
 

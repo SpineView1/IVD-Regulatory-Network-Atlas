@@ -34,8 +34,8 @@ def test_map_jats_conclusions_to_doco_conclusion():
 def test_map_jats_unknown_falls_to_other():
     label, iri = map_jats_sec_type("custom-xyz")
     assert label == "Other"
-    # doco:Section is the catch-all IRI (no doco:Other in the ontology)
-    assert iri.startswith(DOCO_IRI_PREFIX)
+    # doco:Section is the correct catch-all IRI (no doco:Other in the ontology)
+    assert iri == f"{DOCO_IRI_PREFIX}Section"
 
 
 def test_map_jats_none_returns_other():

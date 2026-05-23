@@ -55,3 +55,27 @@ def test_chunk_text_chunk_index_is_sequential():
     text = " ".join(f"S{i}." for i in range(200))
     chunks = chunk_text(text, max_tokens=20, overlap_tokens=2)
     assert [c.chunk_index for c in chunks] == list(range(len(chunks)))
+
+
+def test_biomedical_abbreviations_not_split():
+    """Biomedical abbreviations mid-sentence must NOT cause spurious splits.
+
+    A blank (untrained) PunktSentenceTokenizer splits at "vs." mid-sentence,
+    producing 3 spans from a 2-sentence text. The pre-trained punkt_tab model
+    recognises "vs." as an abbreviation and keeps the two sentences intact
+    (2 spans). We use max_tokens=10 so each sentence-span becomes its own
+    chunk: trained → 2 chunks; blank → 3 chunks.
+
+    Verified by manual inspection:
+      blank : [(0,34), (35,66), (67,92)]  — 3 spans
+      trained: [(0,66), (67,92)]          — 2 spans
+    """
+    text = (
+        "We measured COL2A1 expression (vs. control samples) in all groups. "
+        "Results were significant."
+    )
+    chunks = chunk_text(text, max_tokens=10, overlap_tokens=0)
+    assert len(chunks) == 2, (
+        f"Expected exactly 2 chunks (trained tokenizer keeps 'vs.' in sentence), "
+        f"got {len(chunks)}: " + "; ".join(repr(c.text) for c in chunks)
+    )

@@ -8,6 +8,8 @@ PaperClassification: persisted output of the is_original classifier.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+
 from django.db import models
 
 from core.models import TimestampedModel
@@ -62,10 +64,12 @@ class Chunk(TimestampedModel):
         force_insert: bool = False,
         force_update: bool = False,
         using: str | None = None,
-        update_fields: None = None,
+        update_fields: Iterable[str] | None = None,
     ) -> None:
         if self.section_id and not self.paper_id:
             self.paper_id = self.section.paper_id
+            if update_fields is not None and "paper" not in update_fields:
+                update_fields = list(update_fields) + ["paper"]
         super().save(
             force_insert=force_insert,
             force_update=force_update,

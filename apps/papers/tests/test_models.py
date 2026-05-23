@@ -92,3 +92,28 @@ def test_paper_classification_one_per_paper(db, paper):
         PaperClassification.objects.create(
             paper=paper, is_original=False, confidence=0.9, classifier="llm:qwen3:8b"
         )
+
+
+def test_chunk_save_with_update_fields_persists_paper_id(db, paper):
+    """When update_fields is passed and paper_id is not yet set, the save()
+    override must add 'paper' to update_fields so the denormalised FK is
+    written to the database (not silently omitted).
+    """
+    s = Section.objects.create(paper=paper, order_index=1, doco_type="Results", body_text="x")
+    # Create chunk fully so it has a PK (paper_id will be auto-set on first save).
+    c = Chunk.objects.create(
+        section=s,
+        chunk_index=0,
+        text="initial text",
+        token_count=2,
+        char_offset_start=0,
+        char_offset_end=12,
+    )
+    # Simulate a caller that resets paper_id and saves with explicit update_fields.
+    c.paper_id = None  # type: ignore[assignment]
+    c.text = "updated text"
+    c.save(update_fields=["text"])
+    c.refresh_from_db()
+    assert (
+        c.paper_id == paper.pmid
+    ), "paper_id must be persisted even when update_fields=['text'] is passed"
