@@ -200,11 +200,13 @@ class Conflict(TimestampedModel):
         ("human_resolved", "human-resolved"),
     ]
 
+    # on_delete=CASCADE is intentional: a conflict is meaningless without both parties.
     edge_a = models.ForeignKey(
         Edge,
         on_delete=models.CASCADE,
         related_name="conflicts_as_a",
     )
+    # on_delete=CASCADE is intentional: a conflict is meaningless without both parties.
     edge_b = models.ForeignKey(
         Edge,
         on_delete=models.CASCADE,

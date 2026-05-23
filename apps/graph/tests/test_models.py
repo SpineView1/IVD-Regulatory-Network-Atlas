@@ -33,6 +33,16 @@ def test_entity_has_primary_identifier(db, il1b_ontology_entity):
     assert ident.scheme == "HGNC"
 
 
+def test_entity_primary_identifier_returns_none_when_no_identifiers(db):
+    """primary_identifier is typed Identifier | None — must return None when empty."""
+    from core.models import OntologyEntity  # noqa: PLC0415
+
+    oe = OntologyEntity.objects.create(entity_type="protein", preferred_label="OrphanGene")
+    # No Identifier rows for this entity
+    e = Entity.objects.create(ontology_entity=oe)
+    assert e.primary_identifier is None
+
+
 def test_entity_proxy_symbol_returns_preferred_label(db, il1b_ontology_entity):
     """Phase 4 proxy property contract — reconciliation doc §5/§8."""
     e = Entity.objects.create(ontology_entity=il1b_ontology_entity)
