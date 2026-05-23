@@ -18,9 +18,7 @@ def test_enqueue_pending_chunks_schedule_is_five_minutes():
 
     schedule = settings.CELERY_BEAT_SCHEDULE
     entry = next(
-        v
-        for v in schedule.values()
-        if v["task"] == "extract.tasks.enqueue_pending_chunks"
+        v for v in schedule.values() if v["task"] == "extract.tasks.enqueue_pending_chunks"
     )
     assert isinstance(entry["schedule"], crontab)
     # crontab(minute="*/5") has minute='*/5' in its human_seconds repr

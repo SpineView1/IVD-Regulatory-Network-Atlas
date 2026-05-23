@@ -9,6 +9,7 @@ Per spec §4 the prompt asks the LLM to emit
 we additionally require character offsets into the chunk so the graph
 phase can recover the exact evidence text without re-scanning.
 """
+
 from __future__ import annotations
 
 from enum import StrEnum
@@ -47,7 +48,7 @@ class PPITuple(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0)
 
     @model_validator(mode="after")
-    def _check_offsets(self) -> "PPITuple":
+    def _check_offsets(self) -> PPITuple:
         if self.evidence_offset_end <= self.evidence_offset_start:
             raise ValueError(
                 "evidence_offset_end must be strictly greater than evidence_offset_start"

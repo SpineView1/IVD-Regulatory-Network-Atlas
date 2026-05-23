@@ -14,7 +14,9 @@ from extract.tasks import enqueue_pending_chunks
 @pytest.fixture
 def prompt(db):
     PromptTemplate.objects.all().update(is_active=False)
-    return PromptTemplate.objects.create(version="1.0.0-enq", body="p {{CHUNK_TEXT}}", is_active=True)
+    return PromptTemplate.objects.create(
+        version="1.0.0-enq", body="p {{CHUNK_TEXT}}", is_active=True
+    )
 
 
 @pytest.fixture
@@ -23,9 +25,7 @@ def two_chunks(db, prompt):
     from papers.models import Chunk, Section
 
     paper = Paper.objects.create(pmid=33333333, title="t", abstract="a")
-    section = Section.objects.create(
-        paper=paper, doco_type="Results", order_index=0, body_text="x"
-    )
+    section = Section.objects.create(paper=paper, doco_type="Results", order_index=0, body_text="x")
     return [
         Chunk.objects.create(
             section=section,
@@ -60,9 +60,7 @@ def test_enqueue_routes_each_model_to_its_queue(db, two_chunks):
 
     counts = Counter(queues_used)
     for model in SUPPORTED_OLLAMA_MODELS:
-        slug = (
-            model.lower().replace(":", "_").replace(".", "_").replace("-", "_")
-        )
+        slug = model.lower().replace(":", "_").replace(".", "_").replace("-", "_")
         assert counts[f"q.extract.{slug}"] == 2
 
 
@@ -70,7 +68,7 @@ def test_enqueue_is_idempotent(db, two_chunks):
     with patch("extract.tasks.run_ppi.apply_async"):
         enqueue_pending_chunks()
     n_before = ExtractionRun.objects.count()
-    with patch("extract.tasks.run_ppi.apply_async") as m:
+    with patch("extract.tasks.run_ppi.apply_async"):
         enqueue_pending_chunks()
     # No new ExtractionRun rows; messages still re-dispatched for queued rows.
     assert ExtractionRun.objects.count() == n_before

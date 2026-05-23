@@ -1,7 +1,6 @@
 """Tests for extract.prompts — versioned PPI prompt text and renderer."""
-from __future__ import annotations
 
-import pytest
+from __future__ import annotations
 
 from extract.prompts import (
     PROMPT_V1_BODY,
@@ -20,8 +19,15 @@ def test_prompt_version_is_semver_string():
 
 def test_prompt_body_mentions_all_required_fields():
     body = PROMPT_V1_BODY.lower()
-    for field in ("subject", "object", "relation", "evidence_span",
-                  "cell_type", "stimulus", "confidence"):
+    for field in (
+        "subject",
+        "object",
+        "relation",
+        "evidence_span",
+        "cell_type",
+        "stimulus",
+        "confidence",
+    ):
         assert field in body, f"prompt missing field: {field}"
 
 

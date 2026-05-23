@@ -6,6 +6,7 @@ later does not invalidate prior extractions — old rows stay; new rows
 appear alongside under a new version. Never edit ``PROMPT_V1_BODY`` in
 place after first deploy; bump to ``PROMPT_V2_BODY`` instead.
 """
+
 from __future__ import annotations
 
 PROMPT_V1_VERSION = "1.0.0"

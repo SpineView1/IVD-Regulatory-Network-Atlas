@@ -57,10 +57,10 @@ def with_heartbeat(
     def decorator(fn: Callable[P, R]) -> Callable[P, R]:
         @wraps(fn)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            row_id = kwargs.get("row_id")
-            if row_id is None and args:
-                row_id = args[0]
-            row = fetch(int(row_id))  # type: ignore[arg-type]
+            row_id_raw: Any = kwargs.get("row_id")
+            if row_id_raw is None and args:
+                row_id_raw = args[0]
+            row = fetch(int(row_id_raw))
             row.heartbeat = timezone.now()
             if _supports_update_fields(row):
                 row.save(update_fields=["heartbeat"])
@@ -88,6 +88,6 @@ def with_heartbeat(
                 stop.set()
                 thread.join(timeout=interval_sec + 1)
 
-        return wrapper  # type: ignore[return-value]
+        return wrapper
 
     return decorator

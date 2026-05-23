@@ -58,9 +58,7 @@ def test_janitor_resets_stale_extractionrun_to_queued(db):
         version="1.0.0", defaults={"body": "{{CHUNK_TEXT}}", "is_active": True}
     )
     paper = Paper.objects.create(pmid=55555555, title="t", abstract="a")
-    section = Section.objects.create(
-        paper=paper, doco_type="Results", order_index=0, body_text="x"
-    )
+    section = Section.objects.create(paper=paper, doco_type="Results", order_index=0, body_text="x")
     chunk = Chunk.objects.create(
         section=section,
         chunk_index=0,
@@ -98,9 +96,7 @@ def test_janitor_summary_includes_extractionrun(db):
         version="1.0.0", defaults={"body": "{{CHUNK_TEXT}}", "is_active": True}
     )
     paper = Paper.objects.create(pmid=55555556, title="t2", abstract="a2")
-    section = Section.objects.create(
-        paper=paper, doco_type="Results", order_index=0, body_text="y"
-    )
+    section = Section.objects.create(paper=paper, doco_type="Results", order_index=0, body_text="y")
     chunk = Chunk.objects.create(
         section=section,
         chunk_index=0,

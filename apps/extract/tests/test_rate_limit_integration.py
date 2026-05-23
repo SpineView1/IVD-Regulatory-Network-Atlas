@@ -65,6 +65,6 @@ def test_all_seven_ollama_buckets_start_full():
     ]
     for provider in providers:
         bucket = RateLimitBucket.objects.get(provider=provider)
-        assert bucket.current_tokens == pytest.approx(bucket.capacity), (
-            f"{provider}: current_tokens={bucket.current_tokens} != capacity={bucket.capacity}"
-        )
+        assert bucket.current_tokens == pytest.approx(
+            bucket.capacity
+        ), f"{provider}: current_tokens={bucket.current_tokens} != capacity={bucket.capacity}"

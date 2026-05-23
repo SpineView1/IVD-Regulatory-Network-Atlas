@@ -17,13 +17,13 @@ import logging
 import time
 from typing import Any
 
-from celery import shared_task
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
+from celery import shared_task
 from core.heartbeat import with_heartbeat
-from core.ollama import OllamaClient, OllamaError
+from core.ollama import OllamaClient
 from extract.models import ExtractionRun, RawPPI
 from extract.prompts import SUPPORTED_OLLAMA_MODELS
 from extract.routing import MODEL_TO_QUEUE, queue_for_model
@@ -73,7 +73,9 @@ def _provider_for_model(model_name: str) -> str:
     Provider naming convention: ``ollama_<slug>`` where slug is the
     result of MODEL_TO_QUEUE mapping (same slugification as queue names).
     """
-    slug = MODEL_TO_QUEUE.get(model_name, model_name.lower().replace(":", "_").replace(".", "_").replace("-", "_"))
+    slug = MODEL_TO_QUEUE.get(
+        model_name, model_name.lower().replace(":", "_").replace(".", "_").replace("-", "_")
+    )
     return f"ollama_{slug}"
 
 
@@ -97,8 +99,6 @@ def run_ppi(row_id: int) -> str:
     7. Mark status='done'.
     On failure: status='failed' with error.
     """
-    from schedule.ratelimit import RateLimitExceeded, require_token
-
     run = _fetch_run(row_id)
     if run.status == ExtractionRun.Status.DONE:
         return "already_done"

@@ -15,7 +15,9 @@ from extract.tasks import run_ppi
 def prompt(db):
     # The seed migration inserts 1.0.0 as active; deactivate it and use ours.
     PromptTemplate.objects.all().update(is_active=False)
-    return PromptTemplate.objects.create(version="1.0.0-test", body="p {{CHUNK_TEXT}}", is_active=True)
+    return PromptTemplate.objects.create(
+        version="1.0.0-test", body="p {{CHUNK_TEXT}}", is_active=True
+    )
 
 
 @pytest.fixture
