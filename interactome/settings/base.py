@@ -101,6 +101,11 @@ CELERY_CACHE_BACKEND = "django-cache"
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 60 * 60  # 1 hour hard limit
 CELERY_TASK_SOFT_TIME_LIMIT = 60 * 50  # soft 50 min — task can clean up
+CELERY_TASK_ROUTES = {
+    # Route all core tasks (including smoke_ping) to the io worker.
+    # Later phases add extract queues for ML-intensive work.
+    "core.tasks.*": {"queue": "q.io"},
+}
 
 # Logging
 LOGGING = {

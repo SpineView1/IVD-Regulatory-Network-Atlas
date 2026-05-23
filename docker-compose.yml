@@ -55,6 +55,8 @@ services:
       web:
         condition: service_healthy
     command: celery -A interactome beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    healthcheck:
+      disable: true
 
   worker_io:
     image: interactome:dev
@@ -64,6 +66,8 @@ services:
       web:
         condition: service_healthy
     command: celery -A interactome worker -Q q.io -c 8 -n io@%h -l info
+    healthcheck:
+      disable: true
 
   postgres:
     image: postgres:16-alpine
