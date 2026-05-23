@@ -261,13 +261,21 @@ def _gather_pmids(edge: Any) -> list[str]:
 
     Chain: EdgeEvidence → RawPPI → ExtractionRun → Chunk → Section → Paper
     (raw_ppi.run.chunk.section.paper.pmid per reconciliation doc)
+
+    Iterates ``edge.evidence.all()`` to reuse the prefetch cache populated by
+    ``_accepted_edges_for``'s ``prefetch_related("evidence__raw_ppi__run__chunk
+    __section__paper")``.  Using ``values_list(...)`` would bypass the cache
+    and issue a fresh query per edge (N+1).
     """
-    pmids = (
-        edge.evidence.values_list("raw_ppi__run__chunk__section__paper__pmid", flat=True)
-        .distinct()
-        .order_by("raw_ppi__run__chunk__section__paper__pmid")
-    )
-    return [str(p) for p in pmids if p is not None]
+    seen: set[str] = set()
+    for ev in edge.evidence.all():
+        try:
+            pmid = ev.raw_ppi.run.chunk.section.paper.pmid
+            if pmid is not None:
+                seen.add(str(pmid))
+        except AttributeError:
+            pass
+    return sorted(seen)
 
 
 def _has_reviewer_signoff(edge: Any) -> bool:
