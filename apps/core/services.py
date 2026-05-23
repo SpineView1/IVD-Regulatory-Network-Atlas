@@ -19,8 +19,7 @@ This means tests NEVER trigger a Gilda resource download.
 from __future__ import annotations
 
 import logging
-from types import ModuleType
-from typing import Optional
+from typing import Any, Protocol, runtime_checkable
 
 from django.db import transaction
 
@@ -72,7 +71,15 @@ _GILDA_DB_TO_ENTITY_TYPE: dict[str, str] = {
 }
 
 
-def _default_grounder() -> ModuleType:
+@runtime_checkable
+class _Grounder(Protocol):
+    """Minimal grounder protocol — implemented by both the real gilda module
+    and the MagicMock stubs used in tests."""
+
+    def ground(self, text: str) -> list[Any]: ...
+
+
+def _default_grounder() -> _Grounder:
     """Return the real gilda module (imported lazily to avoid startup cost)."""
     import gilda  # noqa: PLC0415 — lazy import intentional
 
@@ -82,9 +89,9 @@ def _default_grounder() -> ModuleType:
 def ground_mention(
     text: str,
     *,
-    entity_type_hint: Optional[str] = None,
-    grounder: Optional[object] = None,
-) -> Optional[OntologyEntity]:
+    entity_type_hint: str | None = None,
+    grounder: _Grounder | None = None,
+) -> OntologyEntity | None:
     """Ground a free-text mention to an OntologyEntity via Gilda.
 
     Returns the (created or pre-existing) OntologyEntity on success, or
@@ -110,10 +117,10 @@ def ground_mention(
     if not text or not text.strip():
         return None
 
-    _grounder = grounder if grounder is not None else _default_grounder()
+    _g: _Grounder = grounder if grounder is not None else _default_grounder()
 
     try:
-        matches = _grounder.ground(text.strip())
+        matches = _g.ground(text.strip())
     except Exception as exc:  # gilda's resource load can fail on cold worker
         logger.warning("grounder.ground failed for %r: %s", text, exc)
         return None
@@ -126,9 +133,7 @@ def ground_mention(
         return None
 
     scheme = _GILDA_DB_TO_SCHEME.get(top.term.db.upper(), "OTHER")
-    entity_type = entity_type_hint or _GILDA_DB_TO_ENTITY_TYPE.get(
-        top.term.db.upper(), "other"
-    )
+    entity_type = entity_type_hint or _GILDA_DB_TO_ENTITY_TYPE.get(top.term.db.upper(), "other")
 
     with transaction.atomic():
         # Look up by the primary identifier we're about to create — that is

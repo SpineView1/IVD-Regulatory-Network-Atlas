@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from django.urls import path
+from django.urls import URLPattern
 
 app_name = "graph"
-urlpatterns: list = []
+urlpatterns: list[URLPattern] = []

@@ -108,6 +108,9 @@ class Identifier(TimestampedModel):
             models.Index(fields=["scheme", "value"]),
         ]
 
+    def __str__(self) -> str:
+        return f"{self.scheme}:{self.value}"
+
     def as_iri(self) -> str:
         """Return the canonical identifiers.org IRI for this identifier."""
         prefix = self.scheme.lower()
@@ -117,6 +120,3 @@ class Identifier(TimestampedModel):
         else:
             value = self.value
         return f"https://identifiers.org/{prefix}:{value}"
-
-    def __str__(self) -> str:
-        return f"{self.scheme}:{self.value}"

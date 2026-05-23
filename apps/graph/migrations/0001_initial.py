@@ -5,24 +5,35 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('core', '0001_ontology_entity_identifier'),
+        ("core", "0001_ontology_entity_identifier"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Entity',
+            name="Entity",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('updated_at', models.DateTimeField(auto_now=True, db_index=True)),
-                ('ontology_entity', models.OneToOneField(on_delete=django.db.models.deletion.PROTECT, related_name='graph_entity', to='core.ontologyentity')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True, db_index=True)),
+                ("updated_at", models.DateTimeField(auto_now=True, db_index=True)),
+                (
+                    "ontology_entity",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="graph_entity",
+                        to="core.ontologyentity",
+                    ),
+                ),
             ],
             options={
-                'verbose_name_plural': 'entities',
+                "verbose_name_plural": "entities",
             },
         ),
     ]

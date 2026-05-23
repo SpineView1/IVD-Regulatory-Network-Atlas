@@ -63,7 +63,9 @@ def test_membership_reverse_on_edge_is_network_memberships(
     tgt = Entity.objects.create(ontology_entity=nfkb1_ontology_entity)
     e = Edge.objects.create(source=src, target=tgt, relation="activates")
     NetworkEdgeMembership.objects.create(network=nfkb_network, edge=e, relevance=0.8)
-    assert e.network_memberships.first().relevance == pytest.approx(0.8)
+    membership = e.network_memberships.first()
+    assert membership is not None
+    assert membership.relevance == pytest.approx(0.8)
 
 
 def test_membership_cascade_delete_with_network(

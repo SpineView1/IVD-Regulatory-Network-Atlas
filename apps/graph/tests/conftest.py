@@ -66,9 +66,7 @@ def paper_factory(db):
 def chunk_factory(db, paper_factory):
     from papers.models import Chunk, Section  # noqa: PLC0415
 
-    def _make(
-        *, paper=None, text: str = "IL1B activates NFKB1.", index: int = 0
-    ):
+    def _make(*, paper=None, text: str = "IL1B activates NFKB1.", index: int = 0):
         paper = paper or paper_factory(pmid=str(abs(hash(text)) % 999999 + 1))
         section, _ = Section.objects.get_or_create(
             paper=paper,

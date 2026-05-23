@@ -27,8 +27,10 @@ def test_entity_preferred_label_derives_from_ontology(db, il1b_ontology_entity):
 
 def test_entity_has_primary_identifier(db, il1b_ontology_entity):
     e = Entity.objects.create(ontology_entity=il1b_ontology_entity)
-    assert e.primary_identifier.value == "5992"
-    assert e.primary_identifier.scheme == "HGNC"
+    ident = e.primary_identifier
+    assert ident is not None
+    assert ident.value == "5992"
+    assert ident.scheme == "HGNC"
 
 
 def test_entity_proxy_symbol_returns_preferred_label(db, il1b_ontology_entity):
@@ -53,9 +55,7 @@ def test_entity_proxy_miriam_uris_for_hgnc(db, il1b_ontology_entity):
 # ---------------------------------------------------------------------------
 
 
-def test_edge_unique_on_source_target_relation(
-    db, il1b_ontology_entity, nfkb1_ontology_entity
-):
+def test_edge_unique_on_source_target_relation(db, il1b_ontology_entity, nfkb1_ontology_entity):
     src = Entity.objects.create(ontology_entity=il1b_ontology_entity)
     tgt = Entity.objects.create(ontology_entity=nfkb1_ontology_entity)
     Edge.objects.create(source=src, target=tgt, relation="activates")
@@ -72,9 +72,7 @@ def test_edge_allows_same_pair_with_different_relation(
     Edge.objects.create(source=src, target=tgt, relation="binds")  # OK
 
 
-def test_edge_defaults_to_candidate_status(
-    db, il1b_ontology_entity, nfkb1_ontology_entity
-):
+def test_edge_defaults_to_candidate_status(db, il1b_ontology_entity, nfkb1_ontology_entity):
     src = Entity.objects.create(ontology_entity=il1b_ontology_entity)
     tgt = Entity.objects.create(ontology_entity=nfkb1_ontology_entity)
     e = Edge.objects.create(source=src, target=tgt, relation="activates")
@@ -119,9 +117,7 @@ def test_edge_evidence_reverse_name_is_evidence(
     assert e.evidence.count() == 1
 
 
-def test_conflict_records_two_edges_and_status(
-    db, il1b_ontology_entity, nfkb1_ontology_entity
-):
+def test_conflict_records_two_edges_and_status(db, il1b_ontology_entity, nfkb1_ontology_entity):
     src = Entity.objects.create(ontology_entity=il1b_ontology_entity)
     tgt = Entity.objects.create(ontology_entity=nfkb1_ontology_entity)
     e1 = Edge.objects.create(source=src, target=tgt, relation="activates")
@@ -136,9 +132,7 @@ def test_conflict_records_two_edges_and_status(
     assert c.conflict_type == "inter_model"
 
 
-def test_conflict_unique_per_edge_pair_and_type(
-    db, il1b_ontology_entity, nfkb1_ontology_entity
-):
+def test_conflict_unique_per_edge_pair_and_type(db, il1b_ontology_entity, nfkb1_ontology_entity):
     src = Entity.objects.create(ontology_entity=il1b_ontology_entity)
     tgt = Entity.objects.create(ontology_entity=nfkb1_ontology_entity)
     e1 = Edge.objects.create(source=src, target=tgt, relation="activates")

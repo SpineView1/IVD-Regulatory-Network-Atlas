@@ -9,6 +9,7 @@ Tests pass a ``MagicMock`` that mimics the Gilda API surface:
   mock_grounder.ground(text) -> list[ScoredMatch]
   match.term.db, match.term.id, match.term.entry_name, match.score
 """
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock
@@ -76,9 +77,7 @@ def test_ground_mention_is_idempotent(db, stub_grounder):
 
 def test_ground_mention_uses_entity_type_hint_when_provided(db, make_match):
     grounder = MagicMock()
-    grounder.ground.return_value = [
-        make_match("MIRBASE", "MIMAT0000076", "miR-21", 0.92)
-    ]
+    grounder.ground.return_value = [make_match("MIRBASE", "MIMAT0000076", "miR-21", 0.92)]
     entity = ground_mention("miR-21", entity_type_hint="mirna", grounder=grounder)
     assert entity is not None
     assert entity.entity_type == "mirna"
