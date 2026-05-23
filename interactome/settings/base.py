@@ -185,8 +185,8 @@ LOGGING = {
     },
 }
 
-# === Celery Beat schedule (Phase 1) ===
-from schedule.beat_schedule import PHASE_1_BEAT_SCHEDULE  # noqa: E402
+# === Celery Beat schedule (merged Phase 1 + Phase 2) ===
+from schedule.beat_schedule import BEAT_SCHEDULE  # noqa: E402
 
-CELERY_BEAT_SCHEDULE = PHASE_1_BEAT_SCHEDULE
+CELERY_BEAT_SCHEDULE = BEAT_SCHEDULE
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
