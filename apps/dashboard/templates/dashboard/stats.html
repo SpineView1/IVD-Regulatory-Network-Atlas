@@ -1,0 +1,47 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Corpus stats — IVD Atlas{% endblock %}
+{% block content %}
+<h1>Corpus stats</h1>
+
+<p><strong>Total papers:</strong> {{ total }}</p>
+
+<h2>Original vs review (classification)</h2>
+<table>
+  <tr><th>Class</th><th>Count</th></tr>
+  <tr><td>Original (primary research)</td><td>{{ original_breakdown.original }}</td></tr>
+  <tr><td>Review or secondary</td><td>{{ original_breakdown.review_or_secondary }}</td></tr>
+  <tr><td>Unclassified</td><td>{{ original_breakdown.unclassified }}</td></tr>
+</table>
+
+<h2>Full-text coverage</h2>
+<table>
+  <tr><th>Status</th><th>Count</th></tr>
+  {% for row in fulltext_breakdown %}
+    <tr><td>{{ row.full_text_status }}</td><td>{{ row.n }}</td></tr>
+  {% endfor %}
+</table>
+
+<h2>By publication year</h2>
+<table>
+  <tr><th>Year</th><th>Papers</th></tr>
+  {% for row in by_year %}
+    <tr><td>{{ row.year }}</td><td>{{ row.n }}</td></tr>
+  {% endfor %}
+</table>
+
+<h2>Top 25 journals</h2>
+<table>
+  <tr><th>Journal</th><th>Papers</th></tr>
+  {% for row in by_journal %}
+    <tr><td>{{ row.journal }}</td><td>{{ row.n }}</td></tr>
+  {% endfor %}
+</table>
+
+<h2>Top 25 MeSH terms</h2>
+<table>
+  <tr><th>MeSH term</th><th>Papers</th></tr>
+  {% for term, count in top_mesh %}
+    <tr><td>{{ term }}</td><td>{{ count }}</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

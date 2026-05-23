@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>{% block title %}IVD Atlas{% endblock %}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 1000px; margin: 2em auto; padding: 0 1em; }
+    h1 { border-bottom: 1px solid #ccc; padding-bottom: .3em; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border-bottom: 1px solid #eee; padding: .4em .6em; text-align: left; }
+    nav a { margin-right: 1em; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/corpus/stats">Corpus stats</a>
+    <a href="/corpus/export.csv">Export CSV</a>
+  </nav>
+  {% block content %}{% endblock %}
+</body>
+</html>
