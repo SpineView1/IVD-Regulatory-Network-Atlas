@@ -34,10 +34,11 @@ INSTALLED_APPS = [
     "django_celery_results",
     # Local apps
     "core",
-    "extract",
     "networks",
     "corpus",
     "papers",
+    "extract",
+    "graph",
     "schedule",
     "dashboard",
 ]
@@ -130,6 +131,7 @@ CELERY_TASK_ROUTES = {
     # via apply_async(queue=queue_for_model(...)); no static route here.
     "extract.tasks.enqueue_pending_chunks": {"queue": "q.io"},
     "extract.tasks.smoke_all_models": {"queue": "q.io"},
+    "graph.integrate_pending": {"queue": "q.io"},
 }
 
 # === MinIO / S3-compatible object store ===

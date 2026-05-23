@@ -1,0 +1,98 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ network.title }} — dev graph view</title>
+  <script src="https://unpkg.com/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
+  <style>
+    body { font-family: -apple-system, system-ui, sans-serif; margin: 0; padding: 0; }
+    header { padding: 12px 20px; background: #1f2937; color: #fff; }
+    header h1 { margin: 0; font-size: 18px; }
+    header .meta { font-size: 12px; opacity: 0.8; margin-top: 4px; }
+    #cy { width: 100vw; height: calc(100vh - 60px); background: #f9fafb; }
+    .legend { position: absolute; right: 16px; top: 76px; background: #fff;
+              border: 1px solid #d1d5db; border-radius: 6px; padding: 8px 12px;
+              font-size: 12px; }
+    .legend .row { display: flex; align-items: center; gap: 6px; margin: 2px 0; }
+    .swatch { width: 14px; height: 4px; border-radius: 2px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>{{ network.title }}</h1>
+    <div class="meta">
+      code: <code>{{ network.code }}</code> ·
+      status: <strong>{{ network.pipeline_status }}</strong> ·
+      Phase 3 dev view (full verification UI: Phase 5)
+    </div>
+  </header>
+  <div id="cy"></div>
+  <div class="legend">
+    <div class="row"><span class="swatch" style="background:#16a34a"></span> accepted</div>
+    <div class="row"><span class="swatch" style="background:#6b7280"></span> candidate</div>
+    <div class="row"><span class="swatch" style="background:#dc2626"></span> conflicted</div>
+    <div class="row"><span class="swatch" style="background:#9ca3af; opacity:0.5"></span> rejected</div>
+  </div>
+  <script>
+    var STATUS_COLORS = {
+      accepted: '#16a34a',
+      candidate: '#6b7280',
+      conflicted: '#dc2626',
+      rejected: '#9ca3af'
+    };
+    fetch("{% url 'graph:dev-network-edges-json' code=network.code %}")
+      .then(function(r) { return r.json(); })
+      .then(function(graph) {
+        cytoscape({
+          container: document.getElementById("cy"),
+          elements: { nodes: graph.nodes, edges: graph.edges },
+          style: [
+            {
+              selector: "node",
+              style: {
+                "label": "data(label)",
+                "background-color": "#3b82f6",
+                "color": "#111",
+                "text-valign": "center",
+                "text-halign": "center",
+                "font-size": 12,
+                "width": "label",
+                "height": 32,
+                "padding": "6px",
+                "shape": "round-rectangle"
+              }
+            },
+            {
+              selector: "edge",
+              style: {
+                "label": "data(relation)",
+                "font-size": 10,
+                "curve-style": "bezier",
+                "target-arrow-shape": "triangle",
+                "width": "mapData(belief, 0, 1, 1, 4)"
+              }
+            },
+            {
+              selector: "edge[status = 'accepted']",
+              style: { "line-color": "#16a34a", "target-arrow-color": "#16a34a" }
+            },
+            {
+              selector: "edge[status = 'candidate']",
+              style: { "line-color": "#6b7280", "target-arrow-color": "#6b7280" }
+            },
+            {
+              selector: "edge[status = 'conflicted']",
+              style: { "line-color": "#dc2626", "target-arrow-color": "#dc2626" }
+            },
+            {
+              selector: "edge[status = 'rejected']",
+              style: { "line-color": "#9ca3af", "target-arrow-color": "#9ca3af", "opacity": 0.4 }
+            }
+          ],
+          layout: { name: "cose", animate: false }
+        });
+      });
+  </script>
+</body>
+</html>

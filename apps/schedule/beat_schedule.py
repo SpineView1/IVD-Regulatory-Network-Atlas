@@ -59,8 +59,18 @@ PHASE_2_BEAT_SCHEDULE: dict[str, dict] = {
     },
 }
 
+# Phase 3: graph integration (per spec §6 Beat schedule).
+PHASE_3_BEAT_SCHEDULE: dict[str, dict] = {
+    "graph-integrate-pending": {
+        "task": "graph.integrate_pending",
+        "schedule": 60 * 10,  # every 10 min — spec §6
+        "options": {"queue": "q.io"},
+    },
+}
+
 # Canonical merged schedule — wired into CELERY_BEAT_SCHEDULE in settings.base.
 BEAT_SCHEDULE: dict[str, dict] = {
     **PHASE_1_BEAT_SCHEDULE,
     **PHASE_2_BEAT_SCHEDULE,
+    **PHASE_3_BEAT_SCHEDULE,
 }
