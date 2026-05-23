@@ -17,6 +17,24 @@ Cross-plan field names used here (authoritative per reconciliation doc):
 
 from __future__ import annotations
 
+__all__ = [
+    "BAYES_PRIOR",
+    "BELIEF_THRESHOLD_ACCEPTED",
+    "BELIEF_THRESHOLD_REJECTED",
+    "INTER_MODEL_CONSENSUS_MIN",
+    "OPPOSITE_RELATIONS",
+    "RECENCY_HALFLIFE_DAYS",
+    "bayes_belief",
+    "detect_inter_model_conflicts",
+    "detect_inter_paper_conflicts",
+    "detect_intra_paper_conflicts",
+    "mean_recency_for_dates",
+    "normalize_and_integrate",
+    "reassign_network_membership",
+    "recency_weight_for_date",
+    "recompute_edge_belief",
+]
+
 import logging
 import math
 from collections.abc import Iterable, Sequence
