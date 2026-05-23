@@ -102,3 +102,66 @@ def accepted_edges(db, network, entities) -> list[Edge]:
 @pytest.fixture
 def reviewer(db):
     return User.objects.create_user(username="curator", email="curator@upf.edu", password="x")
+
+
+@pytest.fixture
+def evidence_rows(db, accepted_edges):
+    """Minimal EdgeEvidence chain from Phase 2/3.
+
+    Real field names per cross-plan reconciliation:
+    - RawPPI.run (FK to ExtractionRun, NOT extraction_run)
+    - RawPPI.subject / object / relation
+    - RawPPI.evidence_offset_start / evidence_offset_end
+    - RawPPI.relation_logprob (NOT logprob)
+    - No direct RawPPI.chunk FK — chain goes raw_ppi.run.chunk
+    - Section.order_index (NOT order)
+    - Chunk.chunk_index (NOT order)
+    """
+    from corpus.models import Paper
+    from extract.models import ExtractionRun, RawPPI
+    from graph.models import EdgeEvidence
+    from papers.models import Chunk, Section
+
+    paper = Paper.objects.create(
+        pmid=12345678,
+        title="IL-1β drives NF-κB signalling in IDD",
+        abstract="IL1B activates NFKB1.",
+        is_original=True,
+        ingest_status="done",
+    )
+    section = Section.objects.create(
+        paper=paper,
+        doco_type="doco:Results",
+        order_index=0,
+        body_text="... IL1B activates NFKB1 via canonical signalling ...",
+    )
+    chunk = Chunk.objects.create(
+        section=section,
+        paper=paper,
+        text="... IL1B activates NFKB1 ...",
+        token_count=8,
+        chunk_index=0,
+        char_offset_start=0,
+        char_offset_end=27,
+    )
+    run = ExtractionRun.objects.create(
+        chunk=chunk,
+        model_name="qwen3:8b",
+        prompt_version="v1",
+        status="done",
+    )
+    rppi = RawPPI.objects.create(
+        run=run,
+        subject="IL1B",
+        object="NFKB1",
+        relation="activates",
+        evidence_span="IL1B activates NFKB1",
+        evidence_offset_start=5,
+        evidence_offset_end=27,
+        confidence=0.9,
+        relation_logprob=-0.21,
+    )
+    rows = []
+    for e in accepted_edges:
+        rows.append(EdgeEvidence.objects.create(edge=e, raw_ppi=rppi))
+    return rows
