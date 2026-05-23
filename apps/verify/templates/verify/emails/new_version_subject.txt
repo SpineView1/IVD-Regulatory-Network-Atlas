@@ -1,0 +1,1 @@
+[Interactome] New version available for {{ network.title }}

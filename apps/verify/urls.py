@@ -5,7 +5,5 @@ exposes the POST-and-swap endpoints that HTMX clicks target.
 """
 from __future__ import annotations
 
-from django.urls import path
-
 app_name = "verify"
 urlpatterns: list = []

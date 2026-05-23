@@ -57,6 +57,7 @@ def test_latest_review_for_edge_wins(db, reviewer, edge):
     Review.objects.create(reviewer=reviewer, edge=edge, decision="approve", comment="")
     Review.objects.create(reviewer=reviewer, edge=edge, decision="reject", comment="changed my mind")
     latest = Review.objects.filter(edge=edge).order_by("-created_at").first()
+    assert latest is not None
     assert latest.decision == "reject"
 
 

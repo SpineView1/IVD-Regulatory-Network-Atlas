@@ -214,8 +214,19 @@ LOGGING = {
     },
 }
 
-# === Celery Beat schedule (merged Phase 1 + Phase 2) ===
+# === Celery Beat schedule (merged across phases) ===
 from schedule.beat_schedule import BEAT_SCHEDULE  # noqa: E402
 
 CELERY_BEAT_SCHEDULE = BEAT_SCHEDULE
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
+# === Email (Phase 5 verification notifications) ===
+# Default to console backend; dev.py keeps console, production.py uses SMTP.
+EMAIL_BACKEND = os.environ.get(
+    "DJANGO_EMAIL_BACKEND",
+    "django.core.mail.backends.console.EmailBackend",
+)
+DEFAULT_FROM_EMAIL = os.environ.get(
+    "DJANGO_DEFAULT_FROM_EMAIL",
+    "no-reply@interactome.simbiosys.sb.upf.edu",
+)
