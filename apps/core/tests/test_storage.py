@@ -1,4 +1,5 @@
 """Tests for core.storage — MinIO S3 client wrapper."""
+
 from __future__ import annotations
 
 import pytest
@@ -23,10 +24,12 @@ def test_get_object_store_returns_singleton() -> None:
     get_object_store.cache_clear()
 
 
-def test_ensure_bucket_creates_when_missing(store: ObjectStore, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_ensure_bucket_creates_when_missing(
+    store: ObjectStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
     created: list[str] = []
 
-    def fake_head(Bucket: str) -> dict:  # type: ignore[return]
+    def fake_head(Bucket: str) -> dict:  # noqa: ARG001 (never returns — raises)
         raise ClientError({"Error": {"Code": "404"}}, "HeadBucket")
 
     def fake_create(Bucket: str) -> dict:
@@ -39,7 +42,9 @@ def test_ensure_bucket_creates_when_missing(store: ObjectStore, monkeypatch: pyt
     assert created == ["test-bucket"]
 
 
-def test_ensure_bucket_no_op_when_exists(store: ObjectStore, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_ensure_bucket_no_op_when_exists(
+    store: ObjectStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
     created: list[str] = []
     monkeypatch.setattr(store.client, "head_bucket", lambda Bucket: {})
     monkeypatch.setattr(store.client, "create_bucket", lambda Bucket: created.append(Bucket))
@@ -47,13 +52,16 @@ def test_ensure_bucket_no_op_when_exists(store: ObjectStore, monkeypatch: pytest
     assert created == []
 
 
-def test_upload_bytes_uses_correct_bucket_and_key(store: ObjectStore, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_upload_bytes_uses_correct_bucket_and_key(
+    store: ObjectStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
     calls: list[dict] = []
-    monkeypatch.setattr(
-        store.client,
-        "put_object",
-        lambda **kw: calls.append(kw) or {"ETag": '"abc"'},
-    )
+
+    def fake_put(**kw: object) -> dict:
+        calls.append(dict(kw))
+        return {"ETag": '"abc"'}
+
+    monkeypatch.setattr(store.client, "put_object", fake_put)
     store.upload_bytes("buk", "k/p", b"hello", content_type="text/plain")
     assert calls[0]["Bucket"] == "buk"
     assert calls[0]["Key"] == "k/p"
@@ -76,7 +84,9 @@ def test_presigned_url_includes_expiry(store: ObjectStore, monkeypatch: pytest.M
     assert captured["method"] == "get_object"
 
 
-def test_object_exists_true_when_head_succeeds(store: ObjectStore, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_object_exists_true_when_head_succeeds(
+    store: ObjectStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(store.client, "head_object", lambda **kw: {"ETag": '"x"'})
     assert store.object_exists("b", "k") is True
 

@@ -1,4 +1,5 @@
 """Tests for sbml.models — ModelVersion and ExportArtifact."""
+
 from __future__ import annotations
 
 import pytest

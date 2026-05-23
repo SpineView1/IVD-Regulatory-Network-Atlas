@@ -26,6 +26,7 @@ Wrapping ``boto3`` here means consumers never see boto3 directly, and we can swa
 to ``minio-py`` or a different backend without touching call sites.  Matches spec
 §1 ("Object keys stored in Postgres rows").
 """
+
 from __future__ import annotations
 
 import functools
@@ -87,7 +88,7 @@ class ObjectStore:
     def download_bytes(self, bucket: str, key: str) -> bytes:
         """Fetch the full body of *bucket/key* as bytes."""
         obj = self.client.get_object(Bucket=bucket, Key=key)
-        return obj["Body"].read()  # type: ignore[no-any-return]
+        return obj["Body"].read()
 
     def object_exists(self, bucket: str, key: str) -> bool:
         """Return ``True`` iff *bucket/key* exists (HEAD request)."""
@@ -113,7 +114,7 @@ class ObjectStore:
         not specified.
         """
         expiry = expires if expires is not None else settings.MINIO_PRESIGN_EXPIRY_SECONDS
-        return self.client.generate_presigned_url(  # type: ignore[no-any-return]
+        return self.client.generate_presigned_url(
             ClientMethod="get_object",
             Params={"Bucket": bucket, "Key": key},
             ExpiresIn=expiry,

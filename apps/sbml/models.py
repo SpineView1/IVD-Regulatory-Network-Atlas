@@ -7,10 +7,10 @@ ModelVersion is the immutable snapshot row described in spec §3:
 Once ``frozen_at`` is non-NULL no other field is mutated. Curators view
 ``frozen_at IS NOT NULL`` rows as "this is what was downloaded".
 """
+
 from __future__ import annotations
 
 import re
-from typing import Optional
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -25,9 +25,7 @@ SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+$")
 def validate_semver(value: str) -> None:
     """Raise ValidationError if *value* is not a valid MAJOR.MINOR.PATCH string."""
     if not SEMVER_RE.match(value):
-        raise ValidationError(
-            f"{value!r} is not a valid MAJOR.MINOR.PATCH semver string"
-        )
+        raise ValidationError(f"{value!r} is not a valid MAJOR.MINOR.PATCH semver string")
 
 
 class ModelVersion(TimestampedModel):
@@ -52,7 +50,7 @@ class ModelVersion(TimestampedModel):
     n_edges = models.PositiveIntegerField()
 
     sbml_s3_key = models.CharField(max_length=512, blank=True)
-    csv_s3_key = models.CharField(max_length=512, blank=True)          # edges.csv
+    csv_s3_key = models.CharField(max_length=512, blank=True)  # edges.csv
     evidence_csv_s3_key = models.CharField(max_length=512, blank=True)  # evidence.csv
     zip_s3_key = models.CharField(max_length=512, blank=True)
 
@@ -86,7 +84,7 @@ class ModelVersion(TimestampedModel):
             self.save(update_fields=["frozen_at", "updated_at"])
 
     @classmethod
-    def latest_for(cls, network: "models.Model") -> Optional["ModelVersion"]:
+    def latest_for(cls, network: models.Model) -> ModelVersion | None:
         """Return the highest-semver ``ModelVersion`` for the given network.
 
         Sorting is done in Python (not DB) so we get true semver ordering rather

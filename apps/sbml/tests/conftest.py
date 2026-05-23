@@ -5,6 +5,7 @@ Uses REAL model field names (per cross-plan reconciliation doc):
 - Network.title (not name)
 - Entity requires OntologyEntity (no flat kwargs)
 """
+
 from __future__ import annotations
 
 import pytest
@@ -31,7 +32,7 @@ def _make_entity(
         compartment=compartment,
         canonical_uri=canonical_uri,
     )
-    for scheme, value in (identifiers or []):
+    for scheme, value in identifiers or []:
         Identifier.objects.create(entity=oe, scheme=scheme, value=value)
     return Entity.objects.create(ontology_entity=oe)
 
@@ -99,5 +100,5 @@ def accepted_edges(db, network, entities) -> list[Edge]:
 
 
 @pytest.fixture
-def reviewer(db) -> User:  # type: ignore[type-arg]
+def reviewer(db):
     return User.objects.create_user(username="curator", email="curator@upf.edu", password="x")

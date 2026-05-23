@@ -14,6 +14,7 @@ These are **pure functions** — no DB access, no side-effects.  The
 ``bump_semver`` function is the spec-level gate; ``diff_edge_sets`` is an
 intermediate helper exposed for testing.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

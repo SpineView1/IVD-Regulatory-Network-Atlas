@@ -1,7 +1,6 @@
 """Tests for sbml.versioning — semver bump rules per spec §7."""
-from __future__ import annotations
 
-import pytest
+from __future__ import annotations
 
 from sbml.versioning import EdgeSnapshot, bump_semver, diff_edge_sets
 
@@ -11,7 +10,9 @@ def _es(edge_id: int, src: int, tgt: int, rel: str) -> EdgeSnapshot:
 
 
 def test_first_ever_version_is_0_1_0() -> None:
-    assert bump_semver(prev=None, prev_edges=set(), new_edges={_es(1, 1, 2, "activates")}) == "0.1.0"
+    assert (
+        bump_semver(prev=None, prev_edges=set(), new_edges={_es(1, 1, 2, "activates")}) == "0.1.0"
+    )
 
 
 def test_no_change_returns_prev_unchanged() -> None:
@@ -40,15 +41,24 @@ def test_edge_rejected_bumps_minor() -> None:
 def test_curator_action_bumps_major() -> None:
     prev = {_es(1, 1, 2, "activates")}
     new = {_es(1, 1, 2, "activates"), _es(2, 2, 3, "activates")}
-    assert bump_semver(prev="0.1.0", prev_edges=prev, new_edges=new, triggered_by_curator=True) == "1.0.0"
+    assert (
+        bump_semver(prev="0.1.0", prev_edges=prev, new_edges=new, triggered_by_curator=True)
+        == "1.0.0"
+    )
 
 
 def test_curator_action_from_0_x_lands_on_1_0_0() -> None:
-    assert bump_semver(prev="0.9.42", prev_edges=set(), new_edges=set(), triggered_by_curator=True) == "1.0.0"
+    assert (
+        bump_semver(prev="0.9.42", prev_edges=set(), new_edges=set(), triggered_by_curator=True)
+        == "1.0.0"
+    )
 
 
 def test_curator_action_from_1_x_increments_major() -> None:
-    assert bump_semver(prev="1.2.3", prev_edges=set(), new_edges=set(), triggered_by_curator=True) == "2.0.0"
+    assert (
+        bump_semver(prev="1.2.3", prev_edges=set(), new_edges=set(), triggered_by_curator=True)
+        == "2.0.0"
+    )
 
 
 def test_minor_bump_resets_patch() -> None:
