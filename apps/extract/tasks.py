@@ -218,6 +218,94 @@ def run_ppi(self: Any, row_id: int) -> str:
     return "done"
 
 
+@shared_task(name="extract.tasks.smoke_all_models")
+def smoke_all_models(chunk_id: int) -> dict[str, int]:
+    """Synchronously run one chunk through all 7 models in-process.
+
+    Intended for operator smoke-testing and the live integration test.
+    Bypasses the queue: it calls ``run_ppi`` logic directly (creating
+    ExtractionRun rows and RawPPI rows) rather than dispatching to the
+    per-model queues. This makes it usable from a shell or a test
+    without requiring all workers to be running.
+
+    Returns ``{model_name: raw_ppi_count}`` for each model.
+    """
+    version = active_prompt_version()
+    upsert_runs_for_chunk(chunk_id)
+
+    counts: dict[str, int] = {}
+    for model_name in SUPPORTED_OLLAMA_MODELS:
+        try:
+            run = ExtractionRun.objects.get(
+                chunk_id=chunk_id,
+                model_name=model_name,
+                prompt_version=version,
+            )
+        except ExtractionRun.DoesNotExist:
+            logger.warning("smoke_all_models: no run for model=%s chunk=%d", model_name, chunk_id)
+            counts[model_name] = 0
+            continue
+
+        if run.status == ExtractionRun.Status.DONE:
+            counts[model_name] = RawPPI.objects.filter(run=run).count()
+            continue
+
+        from papers.models import Chunk as ChunkModel
+
+        chunk = ChunkModel.objects.get(pk=chunk_id)
+        prompt_text = build_prompt_text(chunk.text)
+
+        try:
+            response_text, relation_logprob, eval_count = _ollama_generate(
+                model=model_name, prompt=prompt_text
+            )
+            import json as _json
+
+            parsed: dict[str, Any] = _json.loads(response_text)
+            from extract.schemas import PPIExtractionResponse
+
+            validated = PPIExtractionResponse.model_validate(parsed)
+        except Exception as exc:
+            import time as _time
+
+            run.status = ExtractionRun.Status.FAILED
+            run.error = f"{type(exc).__name__}: {exc}"[:2000]
+            run.finished_at = timezone.now()
+            run.save(update_fields=["status", "error", "finished_at", "updated_at"])
+            logger.warning("smoke_all_models run failed model=%s: %s", model_name, exc)
+            counts[model_name] = 0
+            continue
+
+        raw_rows = [
+            RawPPI(
+                run=run,
+                subject=ppi.subject,
+                object=ppi.object,
+                relation=str(ppi.relation),
+                evidence_span=ppi.evidence_span,
+                evidence_offset_start=ppi.evidence_offset_start,
+                evidence_offset_end=ppi.evidence_offset_end,
+                cell_type=ppi.cell_type,
+                stimulus=ppi.stimulus,
+                confidence=ppi.confidence,
+                relation_logprob=relation_logprob,
+            )
+            for ppi in validated.ppis
+        ]
+        with transaction.atomic():
+            if raw_rows:
+                RawPPI.objects.bulk_create(raw_rows)
+            run.status = ExtractionRun.Status.DONE
+            run.finished_at = timezone.now()
+            run.response_tokens = eval_count
+            run.save(update_fields=["status", "finished_at", "response_tokens", "updated_at"])
+
+        counts[model_name] = len(raw_rows)
+        logger.info("smoke_all_models model=%s ppis=%d", model_name, len(raw_rows))
+
+    return counts
+
+
 @shared_task(name="extract.tasks.enqueue_pending_chunks")
 def enqueue_pending_chunks(batch_size: int = 200) -> dict[str, int]:
     """Beat-fired fan-out (every 5 min per spec §6 Beat schedule).
