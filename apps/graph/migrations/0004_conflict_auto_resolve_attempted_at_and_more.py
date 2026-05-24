@@ -4,25 +4,27 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('graph', '0003_remove_networkedgemembership_networkedgemembership_unique_network_edge_and_more'),
+        (
+            "graph",
+            "0003_remove_networkedgemembership_networkedgemembership_unique_network_edge_and_more",
+        ),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='conflict',
-            name='auto_resolve_attempted_at',
+            model_name="conflict",
+            name="auto_resolve_attempted_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='conflict',
-            name='resolved_at',
+            model_name="conflict",
+            name="resolved_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='conflict',
-            name='resolved_relation',
-            field=models.CharField(blank=True, default='', max_length=64),
+            model_name="conflict",
+            name="resolved_relation",
+            field=models.CharField(blank=True, default="", max_length=64),
         ),
     ]

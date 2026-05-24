@@ -95,6 +95,25 @@ PHASE_8_BEAT_SCHEDULE: dict[str, dict] = {
     },
 }
 
+# Phase 6: Continuous monitoring — health checks, conflict sweeper, digest notifier.
+PHASE_6_BEAT_SCHEDULE: dict[str, dict] = {
+    "monitoring-healthcheck": {
+        "task": "schedule.healthcheck",
+        "schedule": 15 * 60,  # every 15 min, per spec §6
+        "options": {"queue": "q.io"},
+    },
+    "verify-sweep-open-conflicts": {
+        "task": "verify.sweep_open_conflicts",
+        "schedule": 30 * 60,  # every 30 min, per spec §6
+        "options": {"queue": "q.io"},
+    },
+    "verify-notify-subscribers-daily-digest": {
+        "task": "verify.notify_subscribers_daily_digest",
+        "schedule": crontab(hour=9, minute=0),  # daily 09:00 UTC, per spec §6
+        "options": {"queue": "q.io"},
+    },
+}
+
 # Canonical merged schedule — wired into CELERY_BEAT_SCHEDULE in settings.base.
 BEAT_SCHEDULE: dict[str, dict] = {
     **PHASE_1_BEAT_SCHEDULE,
@@ -102,5 +121,6 @@ BEAT_SCHEDULE: dict[str, dict] = {
     **PHASE_3_BEAT_SCHEDULE,
     **PHASE_4_BEAT_SCHEDULE,
     **PHASE_5_BEAT_SCHEDULE,
+    **PHASE_6_BEAT_SCHEDULE,
     **PHASE_8_BEAT_SCHEDULE,
 }

@@ -5,38 +5,49 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('graph', '0002_edge_evidence_conflict_membership'),
-        ('networks', '0001_initial'),
+        ("graph", "0002_edge_evidence_conflict_membership"),
+        ("networks", "0001_initial"),
     ]
 
     operations = [
         migrations.RemoveConstraint(
-            model_name='networkedgemembership',
-            name='networkedgemembership_unique_network_edge',
+            model_name="networkedgemembership",
+            name="networkedgemembership_unique_network_edge",
         ),
         migrations.AddField(
-            model_name='networkedgemembership',
-            name='pending_extraction',
+            model_name="networkedgemembership",
+            name="pending_extraction",
             field=models.BooleanField(db_index=True, default=False),
         ),
         migrations.AddField(
-            model_name='networkedgemembership',
-            name='pending_paper_id',
+            model_name="networkedgemembership",
+            name="pending_paper_id",
             field=models.IntegerField(blank=True, db_index=True, null=True),
         ),
         migrations.AlterField(
-            model_name='networkedgemembership',
-            name='edge',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='network_memberships', to='graph.edge'),
+            model_name="networkedgemembership",
+            name="edge",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="network_memberships",
+                to="graph.edge",
+            ),
         ),
         migrations.AddIndex(
-            model_name='networkedgemembership',
-            index=models.Index(fields=['pending_paper_id', 'pending_extraction'], name='mem_pending_paper_idx'),
+            model_name="networkedgemembership",
+            index=models.Index(
+                fields=["pending_paper_id", "pending_extraction"], name="mem_pending_paper_idx"
+            ),
         ),
         migrations.AddConstraint(
-            model_name='networkedgemembership',
-            constraint=models.UniqueConstraint(condition=models.Q(('edge__isnull', False)), fields=('network', 'edge'), name='networkedgemembership_unique_network_edge'),
+            model_name="networkedgemembership",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("edge__isnull", False)),
+                fields=("network", "edge"),
+                name="networkedgemembership_unique_network_edge",
+            ),
         ),
     ]
