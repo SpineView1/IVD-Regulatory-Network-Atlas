@@ -32,6 +32,35 @@ class AllowedRelation(StrEnum):
     TRANSLOCATES = "translocates"
 
 
+class Species(StrEnum):
+    """Source organism of the cells/tissue the interaction was shown in.
+
+    The IVD literature is dominated by these model systems; ``OTHER`` is
+    the escape hatch and ``None`` means the text did not state a species.
+    """
+
+    HUMAN = "human"
+    RAT = "rat"
+    MOUSE = "mouse"
+    BOVINE = "bovine"
+    PORCINE = "porcine"
+    RABBIT = "rabbit"
+    CANINE = "canine"
+    OVINE = "ovine"
+    OTHER = "other"
+
+
+class DegStatus(StrEnum):
+    """Whether the interaction was demonstrated in degenerated vs healthy disc.
+
+    ``DEG`` = degenerated / herniated / pathological tissue; ``NON_DEG`` =
+    healthy / non-degenerated / control tissue; ``None`` = not stated.
+    """
+
+    DEG = "DEG"
+    NON_DEG = "NON-DEG"
+
+
 class PPITuple(BaseModel):
     """One extracted protein-protein (or protein-RNA, protein-metabolite) interaction."""
 
@@ -44,6 +73,8 @@ class PPITuple(BaseModel):
     evidence_offset_start: int = Field(ge=0)
     evidence_offset_end: int = Field(ge=1)
     cell_type: str | None = Field(default=None, max_length=128)
+    species: Species | None = Field(default=None)
+    deg_status: DegStatus | None = Field(default=None)
     stimulus: str | None = Field(default=None, max_length=256)
     confidence: float = Field(ge=0.0, le=1.0)
 

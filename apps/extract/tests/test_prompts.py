@@ -44,6 +44,26 @@ def test_render_prompt_substitutes_chunk_text():
     assert "BMP2 phosphorylates SMAD1 in NP cells." in rendered
 
 
+def test_prompt_v2_requests_species_and_deg_status():
+    from extract.prompts import PROMPT_V2_BODY, PROMPT_V2_VERSION
+
+    assert PROMPT_V2_VERSION == "2.0.0"
+    body = PROMPT_V2_BODY.lower()
+    assert "species" in body
+    assert "deg_status" in body
+    assert "non-deg" in body
+
+
+def test_render_prompt_uses_latest_version():
+    """render_prompt mirrors the latest (V2) prompt so direct callers/smoke
+    tests get the current field set."""
+    from extract.prompts import PROMPT_V2_BODY
+
+    rendered = render_prompt("X activates Y.")
+    assert "species" in rendered
+    assert rendered == PROMPT_V2_BODY.replace("{{CHUNK_TEXT}}", "X activates Y.")
+
+
 def test_render_prompt_no_unfilled_placeholders():
     rendered = render_prompt("any text")
     # double-brace marker we use for placeholders

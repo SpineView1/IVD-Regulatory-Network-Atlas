@@ -47,9 +47,10 @@ def chunk(db):
 
 
 def test_prompt_template_unique_on_version(db):
-    PromptTemplate.objects.create(version="2.0.0", body="x", is_active=False)
+    # Use a version not claimed by the seed migrations (V1=1.0.0, V2=2.0.0).
+    PromptTemplate.objects.create(version="9.9.9", body="x", is_active=False)
     with pytest.raises(IntegrityError):
-        PromptTemplate.objects.create(version="2.0.0", body="y", is_active=False)
+        PromptTemplate.objects.create(version="9.9.9", body="y", is_active=False)
 
 
 def test_only_one_active_prompt_at_a_time(db):
