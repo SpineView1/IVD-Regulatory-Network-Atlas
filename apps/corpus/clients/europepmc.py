@@ -21,7 +21,10 @@ class EuropePmcNotFound(Exception):
 
 class EuropePmcClient:
     def __init__(self, *, timeout: float = 60.0) -> None:
-        self._client = httpx.Client(timeout=timeout)
+        # follow_redirects: Europe PMC moved the OAI endpoint from /oai.cgi to
+        # /backend/oai.cgi (301 Moved Permanently). Following redirects keeps
+        # the client working across that move and any future relocation.
+        self._client = httpx.Client(timeout=timeout, follow_redirects=True)
         self._oai_url = settings.EUROPE_PMC_OAI_URL
 
     @require_token("europe_pmc_oai", cost=1)

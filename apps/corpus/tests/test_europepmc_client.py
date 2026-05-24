@@ -73,3 +73,26 @@ def test_get_jats_includes_correct_oai_verb(client, httpx_mock: HTTPXMock):
     assert "oai%3Aeuropepmc.org%3APMC11000000" in str(
         req.url
     ) or "oai:europepmc.org:PMC11000000" in str(req.url)
+
+
+def test_client_follows_redirects():
+    """Europe PMC moved the OAI endpoint (301 /oai.cgi -> /backend/oai.cgi);
+    the client must follow redirects so fetch_fulltext keeps working."""
+    assert EuropePmcClient()._client.follow_redirects is True
+
+
+def test_get_jats_follows_301_redirect(client, httpx_mock: HTTPXMock):
+    """A 301 to the relocated endpoint is followed transparently."""
+    httpx_mock.add_response(
+        method="GET",
+        url=OAI_URL_RE,
+        status_code=301,
+        headers={"Location": "https://europepmc.org/backend/oai.cgi?verb=GetRecord"},
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=re.compile(r"https://europepmc\.org/backend/oai\.cgi.*"),
+        content=(FIXTURE_DIR / "europepmc_jats.xml").read_bytes(),
+    )
+    xml = client.get_jats_for_pmcid("PMC11000000")
+    assert b"<article" in xml or b"article xmlns" in xml
