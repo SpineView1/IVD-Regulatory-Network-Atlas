@@ -5,6 +5,7 @@ so unit tests can swap in FakeGraphBackend and never need a live database.
 All methods take/return plain Python dicts and lists (JSON-serializable),
 never neo4j driver objects.
 """
+
 from __future__ import annotations
 
 import abc

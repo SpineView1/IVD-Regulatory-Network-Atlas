@@ -1,4 +1,5 @@
 """AnalysisConfig — wires the edges_integrated signal receiver on startup."""
+
 from __future__ import annotations
 
 from django.apps import AppConfig

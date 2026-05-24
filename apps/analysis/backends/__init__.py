@@ -1,4 +1,5 @@
 """Graph backends. The factory hides which implementation is active."""
+
 from __future__ import annotations
 
 from django.conf import settings
