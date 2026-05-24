@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, cast
 
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
@@ -13,8 +14,8 @@ if TYPE_CHECKING:
     from django.contrib.auth.models import User as _User
 
 from graph.models import Conflict
-from verify.models import ReviewDecision
-from verify.services import record_review
+from verify.models import ReviewDecision, Subscription
+from verify.services import record_review, update_subscription
 
 
 @require_POST
@@ -63,3 +64,55 @@ def resolve_conflict(request: HttpRequest, pk: int) -> HttpResponse:
         "verify/partials/conflict_card.html",
         {"conflict": conflict},
     )
+
+
+# ---------------------------------------------------------------------------
+# Task 13: Subscription toggle + delete HTMX endpoints
+# ---------------------------------------------------------------------------
+
+
+@require_POST
+@login_required
+def subscription_toggle(request: HttpRequest, pk: int) -> HttpResponse:
+    """HTMX endpoint: toggle email_enabled / inapp_enabled on a Subscription.
+
+    POST parameters:
+    - ``email_enabled``: "true" | "false"
+    - ``inapp_enabled``: "true" | "false"
+
+    Returns the updated subscription_row.html partial.
+    Returns 403 if the user does not own this subscription.
+    """
+    user = cast("_User", request.user)
+
+    try:
+        sub = update_subscription(
+            user=user,
+            subscription_id=pk,
+            email_enabled=request.POST.get("email_enabled", "true").lower() == "true",
+            inapp_enabled=request.POST.get("inapp_enabled", "true").lower() == "true",
+        )
+    except PermissionDenied:
+        return HttpResponse("Forbidden", status=403)
+
+    return render(
+        request,
+        "verify/partials/subscription_row.html",
+        {"sub": sub},
+    )
+
+
+@require_POST
+@login_required
+def subscription_delete(request: HttpRequest, pk: int) -> HttpResponse:
+    """HTMX endpoint: unsubscribe (delete a Subscription row).
+
+    Returns 200 with an empty fragment on success.
+    Returns 403 if the user does not own this subscription.
+    """
+    user = cast("_User", request.user)
+    sub = get_object_or_404(Subscription, pk=pk)
+    if sub.user_id != user.pk:
+        return HttpResponse("Forbidden", status=403)
+    sub.delete()
+    return HttpResponse("", status=200)

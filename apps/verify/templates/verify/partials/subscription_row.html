@@ -1,0 +1,50 @@
+{# Partial: one subscription row in the subscription manager.
+   HTMX target: #subscription-{{ sub.pk }}
+   Context: sub (Subscription instance with .network selected)
+#}
+<div id="subscription-{{ sub.pk }}"
+     class="list-group-item py-2">
+  <form hx-post="{% url 'verify:subscription_toggle' pk=sub.pk %}"
+        hx-target="#subscription-{{ sub.pk }}"
+        hx-swap="outerHTML"
+        class="d-flex align-items-center gap-3">
+    {% csrf_token %}
+    <div class="flex-grow-1">
+      {% if sub.network %}
+      <strong>{{ sub.network.code }}</strong>
+      <span class="text-muted small ms-1">{{ sub.network.title }}</span>
+      {% else %}
+      <strong>Category: {{ sub.category }}</strong>
+      {% endif %}
+    </div>
+    <div class="form-check form-switch mb-0">
+      <input class="form-check-input" type="checkbox"
+             name="email_enabled"
+             value="true"
+             {% if sub.email_enabled %}checked{% endif %}
+             onchange="this.form.querySelector('[name=inapp_enabled]').value = document.getElementById('inapp-{{ sub.pk }}').checked ? 'true' : 'false'; this.value = this.checked ? 'true' : 'false'; htmx.trigger(this.form, 'submit');">
+      <label class="form-check-label small">Email</label>
+    </div>
+    <div class="form-check form-switch mb-0">
+      <input class="form-check-input" id="inapp-{{ sub.pk }}" type="checkbox"
+             name="inapp_enabled"
+             value="{% if sub.inapp_enabled %}true{% else %}false{% endif %}"
+             {% if sub.inapp_enabled %}checked{% endif %}
+             onchange="this.value = this.checked ? 'true' : 'false'; htmx.trigger(this.form, 'submit');">
+      <label class="form-check-label small">In-app</label>
+    </div>
+    {# Hidden fallback values so POST always has both fields #}
+    <input type="hidden" name="email_enabled"
+           value="{% if sub.email_enabled %}true{% else %}false{% endif %}">
+    <input type="hidden" name="inapp_enabled"
+           value="{% if sub.inapp_enabled %}true{% else %}false{% endif %}">
+  </form>
+  <button type="button"
+          class="btn btn-sm btn-outline-danger ms-2"
+          hx-post="{% url 'verify:subscription_delete' pk=sub.pk %}"
+          hx-target="#subscription-{{ sub.pk }}"
+          hx-swap="outerHTML"
+          hx-confirm="Unsubscribe from this network?">
+    <i class="bi bi-trash"></i>
+  </button>
+</div>

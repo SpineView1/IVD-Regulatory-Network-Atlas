@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import Counter
 from typing import Any
 
+from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.db.models import Count, Q
 from django.db.models.functions import ExtractYear
@@ -252,3 +253,24 @@ def audit_trail(request: HttpRequest, pk: int) -> HttpResponse:
         "reviews": reviews,
     }
     return render(request, "dashboard/audit_trail.html", context)
+
+
+# ---------------------------------------------------------------------------
+# Task 13: Subscription manager
+# ---------------------------------------------------------------------------
+
+
+@login_required
+def subscriptions(request: HttpRequest) -> HttpResponse:
+    """List all of the logged-in user's subscriptions with toggle controls."""
+    from verify.models import Subscription as SubscriptionModel
+
+    user_subs = list(
+        SubscriptionModel.objects.filter(user=request.user)  # type: ignore[misc]
+        .select_related("network")
+        .order_by("created_at")
+    )
+    context: dict[str, Any] = {
+        "subscriptions": user_subs,
+    }
+    return render(request, "dashboard/subscriptions.html", context)

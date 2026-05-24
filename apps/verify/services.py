@@ -11,19 +11,24 @@ Key contracts (spec §7 + cross-plan reconciliation):
   Creates in-app Notification rows for all subscribers and enqueues
   verify.tasks.notify to send email.
 - subscribe: create-or-get a Subscription (idempotent).
+- update_subscription: update email_enabled/inapp_enabled flags on an
+  existing Subscription row. Raises PermissionDenied if the user does not
+  own the subscription; raises Http404 if not found.
 - mark_stale: canonical transition+notification API that records a network
   move to stale and notifies subscribers.  Designed so Phase 3's graph
   callsites (reassign_network_membership) can wire in without breaking their
   own direct DB updates.
 """
+
 from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING
 
 from django.contrib.auth.models import AbstractBaseUser
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
+from django.http import Http404
 
 from verify.models import (
     Notification,
@@ -65,9 +70,7 @@ def record_review(
     when decision is not in ReviewDecision.
     """
     if edge is None and conflict is None:
-        raise ValidationError(
-            "record_review: must supply edge or conflict."
-        )
+        raise ValidationError("record_review: must supply edge or conflict.")
     if decision not in ReviewDecision.values:
         raise ValidationError(
             f"record_review: invalid decision {decision!r}. "
@@ -107,9 +110,7 @@ def subscribe(
     Raises ValidationError when neither network nor category is provided.
     """
     if network is None and not category:
-        raise ValidationError(
-            "subscribe: must supply network or category."
-        )
+        raise ValidationError("subscribe: must supply network or category.")
 
     if network is not None:
         sub, _ = Subscription.objects.get_or_create(
@@ -129,6 +130,38 @@ def subscribe(
                 "inapp_enabled": inapp_enabled,
             },
         )
+    return sub
+
+
+# ---------------------------------------------------------------------------
+# update_subscription
+# ---------------------------------------------------------------------------
+
+
+def update_subscription(
+    *,
+    user: AbstractBaseUser,
+    subscription_id: int,
+    email_enabled: bool,
+    inapp_enabled: bool,
+) -> Subscription:
+    """Update the email_enabled / inapp_enabled flags on an existing Subscription.
+
+    Raises Http404 if the subscription does not exist.
+    Raises PermissionDenied if *user* does not own the subscription.
+
+    This is the update path that the existing ``subscribe`` (create-only
+    get_or_create) deliberately omits — per task 13 spec.
+    """
+    try:
+        sub = Subscription.objects.get(pk=subscription_id)
+    except Subscription.DoesNotExist:
+        raise Http404(f"Subscription {subscription_id} not found.") from None
+    if sub.user_id != user.pk:
+        raise PermissionDenied("You do not own this subscription.")
+    sub.email_enabled = email_enabled
+    sub.inapp_enabled = inapp_enabled
+    sub.save(update_fields=["email_enabled", "inapp_enabled", "updated_at"])
     return sub
 
 
@@ -154,10 +187,7 @@ def notify_subscribers(
 
     Returns the list of Notification rows created (useful for testing).
     """
-    message = (
-        f"Network {network.code!r} has a new version "
-        f"v{model_version.semver} available."
-    )
+    message = f"Network {network.code!r} has a new version " f"v{model_version.semver} available."
     return _dispatch_notifications(
         network=network,
         event_type=NotificationEvent.NEW_VERSION,
@@ -261,9 +291,7 @@ def sign_off(
     try:
         regenerate.delay(network.pk, triggered_by_curator=True)
     except Exception:
-        log.exception(
-            "sign_off: failed to enqueue regenerate for network %s", network.code
-        )
+        log.exception("sign_off: failed to enqueue regenerate for network %s", network.code)
 
     # 5. Notify subscribers
     _dispatch_notifications(
@@ -328,14 +356,10 @@ def _dispatch_notifications(
     from verify.tasks import notify as notify_task  # noqa: PLC0415 — avoid circular import
 
     # Collect unique subscribers (direct + category-wide)
-    subs = list(
-        Subscription.objects.filter(network=network).select_related("user")
-    )
+    subs = list(Subscription.objects.filter(network=network).select_related("user"))
     if network.category:
         cat_subs = list(
-            Subscription.objects.filter(
-                category=network.category
-            ).select_related("user")
+            Subscription.objects.filter(category=network.category).select_related("user")
         )
         # Merge, dedup by user_id (prefer direct sub if both present)
         seen: set[int] = {s.user_id for s in subs}

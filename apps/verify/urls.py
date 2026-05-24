@@ -17,4 +17,14 @@ urlpatterns = [
         views.resolve_conflict,
         name="resolve_conflict",
     ),
+    path(
+        "subscriptions/<int:pk>/toggle/",
+        views.subscription_toggle,
+        name="subscription_toggle",
+    ),
+    path(
+        "subscriptions/<int:pk>/delete/",
+        views.subscription_delete,
+        name="subscription_delete",
+    ),
 ]

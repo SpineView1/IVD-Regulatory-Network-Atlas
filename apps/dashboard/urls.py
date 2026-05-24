@@ -23,4 +23,9 @@ urlpatterns = [
         views.audit_trail,
         name="audit_trail",
     ),
+    path(
+        "subscriptions/",
+        views.subscriptions,
+        name="subscriptions",
+    ),
 ]
