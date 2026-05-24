@@ -165,6 +165,14 @@ OLLAMA_AUTHELIA_BASE = os.environ.get("AUTHELIA_BASE", "https://authelia.simbios
 OLLAMA_USER = os.environ.get("OLLAMA_USER", "")
 OLLAMA_PASSWORD = os.environ.get("OLLAMA_PASSWORD", "")
 OLLAMA_DEFAULT_TIMEOUT = float(os.environ.get("OLLAMA_DEFAULT_TIMEOUT", "120"))
+# EXTRACTION_ACTIVE_MODELS — comma-separated subset of SUPPORTED_OLLAMA_MODELS
+# that this deployment actually runs workers for. Empty/unset → full ensemble.
+# A single-GPU box (OLLAMA_MAX_LOADED_MODELS=2) sets e.g.
+# "qwen3:8b,gemma3:12b" so chunk coverage is reachable and enqueue_pending_chunks
+# does not re-dispatch worker-less models forever. See extract.prompts.active_models.
+EXTRACTION_ACTIVE_MODELS = [
+    m.strip() for m in os.environ.get("EXTRACTION_ACTIVE_MODELS", "").split(",") if m.strip()
+] or None
 OLLAMA_KEEP_ALIVE = os.environ.get("OLLAMA_KEEP_ALIVE", "2h")
 # OLLAMA_SESSION_COOKIE — optional pre-seeded Authelia session cookie value.
 # When set, OllamaClient can skip the initial /api/firstfactor login on first

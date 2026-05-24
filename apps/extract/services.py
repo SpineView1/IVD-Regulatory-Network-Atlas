@@ -9,7 +9,7 @@ from __future__ import annotations
 from django.db import transaction
 
 from extract.models import ExtractionRun, PromptTemplate
-from extract.prompts import SUPPORTED_OLLAMA_MODELS
+from extract.prompts import active_models
 
 
 def active_prompt_version() -> str:
@@ -34,15 +34,15 @@ def build_prompt_text(chunk_text: str) -> str:
 
 @transaction.atomic
 def upsert_runs_for_chunk(chunk_id: int) -> int:
-    """Create the seven ExtractionRun rows for ``chunk_id`` if missing.
+    """Create the ExtractionRun rows for ``chunk_id`` if missing.
 
-    Returns the count of rows that exist after the operation (always 7,
-    barring a row that already advanced to ``done`` under an earlier
-    prompt version — those are left untouched). The operation is
-    idempotent: re-running it never creates duplicates.
+    One row per model in the active roster (``active_models()`` — the full
+    canonical ensemble unless the deployment narrows it). Rows that already
+    advanced to ``done`` under an earlier prompt version are left untouched.
+    The operation is idempotent: re-running it never creates duplicates.
     """
     version = active_prompt_version()
-    for model_name in SUPPORTED_OLLAMA_MODELS:
+    for model_name in active_models():
         ExtractionRun.objects.get_or_create(
             chunk_id=chunk_id,
             model_name=model_name,
