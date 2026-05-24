@@ -282,3 +282,121 @@ def sweep_open_conflicts() -> dict:
 
     log.info("sweep_open_conflicts: dispatched=%d", dispatched)
     return {"dispatched": dispatched}
+
+
+# ---------------------------------------------------------------------------
+# Daily disagreement digest (Phase 6 Task 10)
+# ---------------------------------------------------------------------------
+
+
+def queue_subscribers_for_disagreements(
+    network_ids: list[int] | None = None,
+) -> dict[int, dict[int, int]]:
+    """Helper: collect recent open conflicts per (user_id, network_id).
+
+    Returns ``{user_id: {network_id: conflict_count}}`` for all subscribers
+    with recent (< 24 h) open conflicts in their subscribed networks.
+
+    Separated into its own function so tests can call it directly.
+    """
+    from datetime import timedelta
+
+    from django.db.models import Q
+
+    from graph.models import Conflict, NetworkEdgeMembership  # noqa: PLC0415
+    from verify.models import Subscription  # noqa: PLC0415 — lazy to avoid circularity
+
+    cutoff = timezone.now() - timedelta(hours=24)
+
+    # Build the network filter
+    subs_qs = Subscription.objects.select_related("user", "network").filter(
+        email_enabled=True,
+    )
+    if network_ids is not None:
+        subs_qs = subs_qs.filter(network_id__in=network_ids)
+
+    # Collect all relevant network ids from subscriptions (exclude null network)
+    subs_qs = subs_qs.filter(network__isnull=False).exclude(user__email="")
+
+    by_user: dict[int, dict[int, int]] = {}
+
+    for sub in subs_qs:
+        # Find open conflicts touching this network's edges within cutoff
+        edge_ids = NetworkEdgeMembership.objects.filter(
+            network=sub.network, edge__isnull=False
+        ).values_list("edge_id", flat=True)
+        n_conflicts = Conflict.objects.filter(
+            Q(edge_a_id__in=edge_ids) | Q(edge_b_id__in=edge_ids),
+            resolution_status="open",
+            created_at__gte=cutoff,
+        ).count()
+        if n_conflicts == 0:
+            continue
+        if sub.network_id is not None:
+            by_user.setdefault(sub.user_id, {})[sub.network_id] = n_conflicts
+
+    return by_user
+
+
+@shared_task(name="verify.notify_subscribers_daily_digest", queue="q.io")
+def notify_subscribers_daily_digest() -> dict:
+    """Daily 09:00 UTC: send one digest email per subscriber aggregating
+    recent open disagreements across all subscribed networks.
+
+    Creates one in-app Notification per (subscriber, network) pair that
+    has fresh conflicts, then sends one summary email per subscriber.
+
+    Returns ``{"sent": N}`` (N = number of unique subscribers who got email).
+    """
+    from django.core.mail import send_mail  # noqa: PLC0415 — lazy import
+
+    from networks.models import Network  # noqa: PLC0415 — lazy import
+
+    by_user = queue_subscribers_for_disagreements()
+
+    sent = 0
+    for user_id, net_counts in by_user.items():
+        recipient = User.objects.get(pk=user_id)
+        email = getattr(recipient, "email", "")
+        if not email:
+            continue
+
+        # Create in-app Notification rows for each network with fresh conflicts
+        for nid, count in net_counts.items():
+            network = Network.objects.get(pk=nid)
+            Notification.objects.create(
+                user=recipient,
+                network=network,
+                event_type=NotificationEvent.NETWORK_DISAGREEMENTS,
+                message=(
+                    f"{count} new open disagreement(s) in '{network.title}' "
+                    f"({network.code}) in the last 24 hours."
+                ),
+            )
+
+        # Compose one aggregated email body
+        body_lines = [
+            f"Hi {getattr(recipient, 'first_name', None) or recipient.get_username()},",
+            "",
+            "New disagreements appeared in networks you subscribe to in the last 24h:",
+            "",
+        ]
+        for nid, count in net_counts.items():
+            network = Network.objects.get(pk=nid)
+            body_lines.append(f"  - {network.title} ({network.code}): {count} new disagreement(s)")
+        body_lines += [
+            "",
+            "Review at https://interactome.simbiosys.sb.upf.edu/",
+        ]
+
+        send_mail(
+            subject="[interactome] Daily disagreement digest",
+            message="\n".join(body_lines),
+            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "interactome@localhost"),
+            recipient_list=[email],
+            fail_silently=False,
+        )
+        sent += 1
+
+    log.info("notify_subscribers_daily_digest: sent=%d", sent)
+    return {"sent": sent}

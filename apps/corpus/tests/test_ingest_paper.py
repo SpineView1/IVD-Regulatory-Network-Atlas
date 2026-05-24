@@ -117,3 +117,48 @@ def test_ingest_paper_pubtator_failure_does_not_block(db):
     p = Paper.objects.get(pmid=38000123)
     assert p.ingest_status == "ingested"
     assert p.pubtator_entities == []
+
+
+@pytest.mark.django_db(transaction=True)
+def test_ingest_paper_fires_paper_ingested_signal():
+    """ingest_paper completion MUST fire the paper_ingested signal.
+
+    This is the critical glue: without it, detect_affected_networks
+    (and the whole continuous monitoring loop) never triggers.
+
+    Uses transaction=True so transaction.on_commit fires within the test.
+    """
+    # Ensure buckets exist (get_or_create — autouse fixture may or may not
+    # have already run depending on transaction isolation mode).
+    RateLimitBucket.objects.get_or_create(
+        provider="ncbi_eutils",
+        defaults={"capacity": 10, "refill_per_sec": 10.0, "current_tokens": 10.0},
+    )
+    RateLimitBucket.objects.get_or_create(
+        provider="pubtator3",
+        defaults={"capacity": 10, "refill_per_sec": 10.0, "current_tokens": 10.0},
+    )
+
+    from corpus.signals import paper_ingested
+
+    fired: list[dict] = []
+
+    def _capture(sender: object, **kwargs: object) -> None:
+        fired.append(dict(kwargs))
+
+    paper_ingested.connect(_capture)
+    try:
+        with (
+            patch("corpus.tasks.NcbiClient") as M,
+            patch("corpus.tasks.PubtatorClient") as P,
+            patch("papers.tasks.classify_original.delay"),
+        ):
+            M.return_value.efetch.return_value = [_stub_meta()]
+            P.return_value.get_annotations.return_value = []
+            ingest_paper.delay(38000123).get(timeout=2)
+    finally:
+        paper_ingested.disconnect(_capture)
+
+    assert fired, "paper_ingested signal was NOT fired — the monitoring loop is broken"
+    assert fired[0]["paper_id"] == 38000123
+    assert fired[0]["pmid"] == 38000123
