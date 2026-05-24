@@ -71,46 +71,6 @@ class NcbiClient:
         tree = etree.fromstring(resp.content)  # noqa: S320
         return [int(id_el.text) for id_el in tree.findall(".//IdList/Id")]
 
-    @require_token("ncbi_eutils", cost=1)
-    def _esearch_history(self, *, query: str, db: str = "pubmed") -> tuple[int, str, str]:
-        """Store a result set on NCBI's History server.
-
-        Returns ``(count, webenv, query_key)``. ``usehistory=y`` is required to
-        page beyond the first ~10k results (plain ``retstart`` is hard-capped
-        by NCBI at ~10k).
-        """
-        params: dict[str, Any] = {
-            **self._base_params,
-            "db": db,
-            "term": query,
-            "usehistory": "y",
-            "retmax": 0,
-        }
-        resp = self._client.get(ESEARCH_URL, params=params)
-        resp.raise_for_status()
-        tree = etree.fromstring(resp.content)  # noqa: S320
-        count = int(tree.findtext(".//Count") or "0")
-        webenv = tree.findtext(".//WebEnv") or ""
-        query_key = tree.findtext(".//QueryKey") or ""
-        return count, webenv, query_key
-
-    @require_token("ncbi_eutils", cost=1)
-    def _esearch_history_page(
-        self, *, webenv: str, query_key: str, retstart: int, retmax: int, db: str = "pubmed"
-    ) -> list[int]:
-        params: dict[str, Any] = {
-            **self._base_params,
-            "db": db,
-            "WebEnv": webenv,
-            "query_key": query_key,
-            "retstart": retstart,
-            "retmax": retmax,
-        }
-        resp = self._client.get(ESEARCH_URL, params=params)
-        resp.raise_for_status()
-        tree = etree.fromstring(resp.content)  # noqa: S320
-        return [int(id_el.text) for id_el in tree.findall(".//IdList/Id")]
-
     def esearch_all(
         self,
         *,
@@ -118,36 +78,36 @@ class NcbiClient:
         db: str = "pubmed",
         page_size: int = 9999,
         max_results: int = 40000,
+        start_year: int = 1980,
+        end_year: int | None = None,
     ) -> list[int]:
-        """Return ALL matching PMIDs up to ``max_results`` via the History server.
+        """Return ALL matching PMIDs up to ``max_results`` via per-year windows.
 
-        NCBI caps plain ``retstart`` paging at the first ~10k results, so a
-        large result set (the master IDD query has ~30k hits) is silently
-        truncated by a single ``esearch``. This stores the set with
-        ``usehistory=y`` and pages through it from the History server, which
-        supports deep ``retstart``. Returns de-duplicated PMIDs in order.
+        NCBI's ESearch IdList is hard-capped at ~10k entries per result set —
+        even from the History server (efetch UID paging 400s, retstart paging
+        truncates). The master IDD query matches ~39k papers. The robust
+        workaround is to split the publication-date range into per-year windows
+        (each well under 10k for this corpus) and union the results. Returns
+        de-duplicated PMIDs.
         """
-        count, webenv, query_key = self._esearch_history(query=query, db=db)
-        if not webenv or not query_key:
-            # History unavailable — fall back to a single (capped) page.
-            return self.esearch(query=query, retmax=min(page_size, max_results), db=db)
+        from datetime import date as _date  # noqa: PLC0415
 
-        target = min(count, max_results)
+        if end_year is None:
+            end_year = _date.today().year
         seen: set[int] = set()
         out: list[int] = []
-        retstart = 0
-        while retstart < target:
-            want = min(page_size, target - retstart)
-            page = self._esearch_history_page(
-                webenv=webenv, query_key=query_key, retstart=retstart, retmax=want, db=db
-            )
-            if not page:
+        for year in range(start_year, end_year + 1):
+            if len(out) >= max_results:
                 break
+            windowed = f'({query}) AND ("{year}"[PDAT] : "{year}"[PDAT])'
+            # Each year is < page_size for this corpus; one esearch per window.
+            page = self.esearch(query=windowed, retmax=page_size, db=db)
             for pmid in page:
                 if pmid not in seen:
                     seen.add(pmid)
                     out.append(pmid)
-            retstart += len(page)
+                    if len(out) >= max_results:
+                        break
         return out[:max_results]
 
     @require_token("ncbi_eutils", cost=1)
