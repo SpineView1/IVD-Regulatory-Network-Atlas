@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+from django.db import IntegrityError
 
 from corpus.models import Paper, PaperRelevance
 from graph.models import NetworkEdgeMembership
@@ -61,3 +62,32 @@ def test_detect_returns_empty_for_paper_with_no_relevance(db, two_networks):
     p = Paper.objects.create(pmid=22222222, title="t", abstract="a")
     result = detect_affected_networks(p.pk)
     assert result["affected_network_ids"] == []
+
+
+@pytest.mark.django_db
+def test_db_constraint_prevents_duplicate_pending_rows(paper_with_relevance, two_networks):
+    """DB-level UniqueConstraint blocks duplicate pending rows for (network, paper).
+
+    This verifies Fix 2: even if app-level get_or_create is bypassed (e.g.
+    concurrent workers race), the database will raise IntegrityError rather
+    than silently creating a duplicate pending-extraction placeholder.
+    """
+    n1, _ = two_networks
+    p = paper_with_relevance
+
+    # Create the first pending row normally.
+    NetworkEdgeMembership.objects.create(
+        network=n1,
+        pending_paper_id=p.pk,
+        pending_extraction=True,
+        edge=None,
+    )
+
+    # A second insert with the same (network, pending_paper_id, edge=NULL) must fail.
+    with pytest.raises(IntegrityError):
+        NetworkEdgeMembership.objects.create(
+            network=n1,
+            pending_paper_id=p.pk,
+            pending_extraction=True,
+            edge=None,
+        )

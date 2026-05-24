@@ -55,6 +55,20 @@ def test_canonical_beat_schedule_task_names_are_unique():
     assert len(task_names) == len(set(task_names))
 
 
+def test_phase6_assert_beat_alive_in_beat_schedule():
+    """4th mandatory Phase-6 Beat entry — liveness heartbeat every 60 s."""
+    assert "schedule-assert-beat-alive" in PHASE_6_BEAT_SCHEDULE
+    entry = PHASE_6_BEAT_SCHEDULE["schedule-assert-beat-alive"]
+    assert entry["task"] == "schedule.tasks.assert_beat_alive"
+    assert entry["schedule"] == 60
+    assert entry.get("options", {}).get("queue") == "q.io"
+
+
+def test_phase6_has_exactly_four_entries():
+    """Phase 6 mandates exactly four Beat entries (spec §6)."""
+    assert len(PHASE_6_BEAT_SCHEDULE) == 4
+
+
 # ---------------------------------------------------------------------------
 # Task 13: Beat schedule smoke test — all task names must be registered
 # ---------------------------------------------------------------------------
