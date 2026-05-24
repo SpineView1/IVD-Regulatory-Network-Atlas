@@ -84,35 +84,53 @@
   </div>
 </div>
 
-<!-- Review History -->
+<!-- Inline Review Form (Task 14) -->
+<div class="card mb-4">
+  <div class="card-header">
+    <i class="bi bi-pencil-square me-1"></i>Record Your Review
+  </div>
+  <div class="card-body">
+    <form hx-post="{% url 'verify:review_edge' pk=edge.pk %}"
+          hx-target="#review-history-{{ edge.pk }}"
+          hx-swap="outerHTML"
+          class="d-flex gap-2 align-items-end flex-wrap">
+      {% csrf_token %}
+      <div class="flex-grow-1">
+        <label class="form-label small mb-1" for="review-comment">
+          Comment (optional)
+        </label>
+        <textarea id="review-comment"
+                  name="comment"
+                  class="form-control form-control-sm"
+                  rows="2"
+                  placeholder="Briefly explain your decision..."></textarea>
+      </div>
+      <div class="d-flex gap-1">
+        <button type="submit" name="decision" value="approve"
+                class="btn btn-sm btn-success">
+          <i class="bi bi-check2-circle"></i> Approve
+        </button>
+        <button type="submit" name="decision" value="reject"
+                class="btn btn-sm btn-danger">
+          <i class="bi bi-x-circle"></i> Reject
+        </button>
+        <button type="submit" name="decision" value="discuss"
+                class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-chat-dots"></i> Discuss
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Review History (HTMX-swappable via review_history partial) -->
 <div class="card">
   <div class="card-header">
     <i class="bi bi-clock-history me-1"></i>Review History
     <small class="text-muted ms-2">(append-only — latest per reviewer wins)</small>
   </div>
   <div class="card-body p-0">
-    {% if reviews %}
-    <ul class="list-group list-group-flush">
-      {% for review in reviews %}
-      <li class="list-group-item py-2">
-        <div class="d-flex justify-content-between align-items-start">
-          <div>
-            <strong>{{ review.reviewer.get_username }}</strong>
-            <span class="ms-2">{% status_pill review.decision %}</span>
-            {% if review.comment %}
-            <p class="mb-0 mt-1 small text-muted">{{ review.comment }}</p>
-            {% endif %}
-          </div>
-          <small class="text-muted text-nowrap">{{ review.created_at|date:"Y-m-d H:i" }}</small>
-        </div>
-      </li>
-      {% endfor %}
-    </ul>
-    {% else %}
-    <div class="p-3 text-muted">
-      <em>No reviews recorded yet for this edge.</em>
-    </div>
-    {% endif %}
+    {% include "verify/partials/review_history.html" with edge=edge reviews=reviews %}
   </div>
 </div>
 {% endblock %}

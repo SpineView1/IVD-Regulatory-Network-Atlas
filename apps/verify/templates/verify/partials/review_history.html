@@ -1,0 +1,29 @@
+{# Partial: review history section for one edge.
+   Updated via HTMX after a new review is recorded.
+   Context: edge, reviews (list of Review instances, latest-per-reviewer)
+#}
+{% load dashboard_extras %}
+<div id="review-history-{{ edge.pk }}">
+  {% if reviews %}
+  <ul class="list-group list-group-flush">
+    {% for review in reviews %}
+    <li class="list-group-item py-2">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <strong>{{ review.reviewer.get_username }}</strong>
+          <span class="ms-2">{% status_pill review.decision %}</span>
+          {% if review.comment %}
+          <p class="mb-0 mt-1 small text-muted">{{ review.comment }}</p>
+          {% endif %}
+        </div>
+        <small class="text-muted text-nowrap">{{ review.created_at|date:"Y-m-d H:i" }}</small>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="p-3 text-muted">
+    <em>No reviews recorded yet for this edge.</em>
+  </div>
+  {% endif %}
+</div>

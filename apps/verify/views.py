@@ -116,3 +116,62 @@ def subscription_delete(request: HttpRequest, pk: int) -> HttpResponse:
         return HttpResponse("Forbidden", status=403)
     sub.delete()
     return HttpResponse("", status=200)
+
+
+# ---------------------------------------------------------------------------
+# Task 14: Per-edge review endpoint
+# ---------------------------------------------------------------------------
+
+
+@require_POST
+@login_required
+def review_edge(request: HttpRequest, pk: int) -> HttpResponse:
+    """HTMX endpoint: POST to record a review decision on a single Edge.
+
+    Accepted POST parameters:
+    - ``decision`` (required): one of ReviewDecision.values
+    - ``comment`` (optional): free-text rationale
+
+    APPEND-ONLY: every POST creates a new Review row. The latest row per
+    reviewer (ordered by created_at DESC) is the current decision.
+
+    Returns the ``review_history.html`` partial showing the latest-per-reviewer
+    view (using .order_by("reviewer_id", "-created_at").distinct("reviewer_id"),
+    which requires PostgreSQL).
+
+    Returns 400 if decision is missing or invalid.
+    Returns 404 if the edge does not exist.
+    """
+    from graph.models import Edge
+
+    edge = get_object_or_404(Edge, pk=pk)
+    decision = request.POST.get("decision", "").strip()
+    comment = request.POST.get("comment", "").strip()
+
+    if decision not in ReviewDecision.values:
+        return HttpResponse(
+            f"Invalid decision {decision!r}. Valid choices: {ReviewDecision.values}",
+            status=400,
+            content_type="text/plain",
+        )
+
+    user = cast("_User", request.user)
+    record_review(
+        reviewer=user,
+        edge=edge,
+        decision=decision,
+        comment=comment,
+    )
+
+    # Latest-per-reviewer: PostgreSQL DISTINCT ON ordered by reviewer_id, -created_at
+    latest_reviews = list(
+        edge.reviews.select_related("reviewer")
+        .order_by("reviewer_id", "-created_at")
+        .distinct("reviewer_id")
+    )
+
+    return render(
+        request,
+        "verify/partials/review_history.html",
+        {"edge": edge, "reviews": latest_reviews},
+    )

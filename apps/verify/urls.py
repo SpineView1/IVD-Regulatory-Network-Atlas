@@ -27,4 +27,9 @@ urlpatterns = [
         views.subscription_delete,
         name="subscription_delete",
     ),
+    path(
+        "edges/<int:pk>/review/",
+        views.review_edge,
+        name="review_edge",
+    ),
 ]
