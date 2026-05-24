@@ -24,6 +24,7 @@ __all__ = [
     "INTER_MODEL_CONSENSUS_MIN",
     "OPPOSITE_RELATIONS",
     "RECENCY_HALFLIFE_DAYS",
+    "affected_network_ids",
     "bayes_belief",
     "detect_inter_model_conflicts",
     "detect_inter_paper_conflicts",
@@ -543,6 +544,34 @@ def detect_inter_model_conflicts(raw_ppi_ids: Iterable[int]) -> int:
                 new += 1
 
     return new
+
+
+# ---------------------------------------------------------------------------
+# Affected-network query (Phase 6 delta detection)
+# ---------------------------------------------------------------------------
+
+
+def affected_network_ids(paper_id: int, *, threshold: float = 0.5) -> list[int]:
+    """Return network IDs whose relevance to ``paper_id`` is >= threshold.
+
+    Public boundary function — other apps call this rather than touching
+    ``PaperRelevance`` directly. Uses lazy import to keep graph from
+    importing corpus at module load.
+
+    Args:
+        paper_id: the Paper PK (which equals Paper.pmid — the primary key).
+        threshold: minimum relevance score (default 0.5 = cheap-pass score).
+
+    Returns:
+        List of Network PKs.
+    """
+    from corpus.models import PaperRelevance  # noqa: PLC0415 — lazy import
+
+    return list(
+        PaperRelevance.objects.filter(paper_id=paper_id, score__gte=threshold).values_list(
+            "network_id", flat=True
+        )
+    )
 
 
 # ---------------------------------------------------------------------------

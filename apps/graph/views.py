@@ -28,7 +28,7 @@ def dev_network_edges_json(request: HttpRequest, code: str) -> JsonResponse:
     network = get_object_or_404(Network, code=code)
 
     memberships = (
-        NetworkEdgeMembership.objects.filter(network=network)
+        NetworkEdgeMembership.objects.filter(network=network, edge__isnull=False)
         .select_related(
             "edge__source__ontology_entity",
             "edge__target__ontology_entity",
@@ -43,6 +43,8 @@ def dev_network_edges_json(request: HttpRequest, code: str) -> JsonResponse:
     edges: list[dict] = []
 
     for m in memberships:
+        if m.edge is None:  # pending-extraction rows have no edge; skip
+            continue
         for entity in (m.edge.source, m.edge.target):
             if entity.pk in nodes:
                 continue

@@ -11,6 +11,7 @@ import logging
 import re
 from typing import Any
 
+from django.db import transaction
 from django.utils import timezone
 
 from celery import shared_task
@@ -39,7 +40,23 @@ logger = logging.getLogger(__name__)
     max_retries=5,
 )
 def refresh_pubmed(self: Any) -> dict:
-    """Incremental PubMed sweep. Enqueues ingest_paper for each new PMID."""
+    """Incremental PubMed sweep. Enqueues ingest_paper for each new PMID.
+
+    Short-circuits if (a) the global INGESTION_PAUSED flag is set, or
+    (b) the extraction queue depth exceeds the backpressure threshold.
+    See spec Section 10 (continuous monitoring) and Section 6 (Beat schedule).
+    """
+    from monitoring import services as monitoring_services  # noqa: PLC0415 — lazy to avoid circular
+
+    if monitoring_services.is_ingestion_paused():
+        return {"skipped": True, "reason": "ingestion_paused"}
+    if monitoring_services.is_backpressured():
+        return {"skipped": True, "reason": "backpressured"}
+    return _do_refresh_pubmed()
+
+
+def _do_refresh_pubmed() -> dict:
+    """The original body of refresh_pubmed — extracted to allow pause-flag wrapping."""
     wm = get_watermark("pubmed")
     query = build_incremental_query(since=wm.last_entrez_date)
     client = NcbiClient()
@@ -160,6 +177,35 @@ def ingest_paper(self: Any, pmid: int) -> str:
         paper.ingest_status = "ingested"
         paper.ingest_error = ""
         paper.save()
+
+        # Fire paper_ingested signal via transaction.on_commit so the signal
+        # only fires after the row is durably committed to Postgres.
+        # Receivers (corpus.receivers.on_paper_ingested) enqueue
+        # graph.detect_affected_networks — the entry point for the continuous
+        # monitoring loop.
+        from corpus.signals import paper_ingested  # noqa: PLC0415 — lazy circular
+
+        relevance_scores: dict[int, float] = {}
+        try:
+            from corpus.models import PaperRelevance as PR  # noqa: PLC0415
+
+            relevance_scores = dict(
+                PR.objects.filter(paper=paper).values_list("network_id", "score")
+            )
+        except Exception as _exc:  # pragma: no cover — defensive; never breaks ingest
+            logger.debug("paper_ingested: could not gather relevance_scores: %s", _exc)
+
+        captured_pmid = paper.pmid
+
+        transaction.on_commit(
+            lambda: paper_ingested.send(
+                sender=paper.__class__,
+                paper_id=captured_pmid,
+                pmid=captured_pmid,
+                relevance_scores=relevance_scores,
+            )
+        )
+
         # Hand off to the classifier — wired in Task 26.
         from papers.tasks import classify_original  # noqa: PLC0415
 

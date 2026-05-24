@@ -8,6 +8,11 @@ yet); Phase 2 (extract.ExtractionRun) registers itself with us.
 `refill_rate_limit_buckets`: calls `.refill()` on every bucket. The
 buckets self-refill on access, but a periodic refill smooths out
 edge cases where a provider is idle for hours.
+
+`assert_beat_alive`: writes a "beat is alive" heartbeat every 60 s by
+updating a dedicated ``Watermark`` row (source=``beat:heartbeat``).
+The healthcheck task reads this row's ``updated_at`` to detect a dead
+Beat scheduler (Phase 6 — fourth mandatory Beat entry).
 """
 
 from __future__ import annotations
@@ -24,6 +29,9 @@ from celery import shared_task
 from schedule.models import RateLimitBucket
 
 logger = logging.getLogger(__name__)
+
+# The source key used for the beat-liveness Watermark row.
+BEAT_HEARTBEAT_SOURCE = "beat:heartbeat"
 
 # Apps register their long-running model + status field here so the janitor
 # can sweep them.
@@ -95,3 +103,30 @@ def refill_rate_limit_buckets() -> dict:
         bucket.refill()
         refilled += 1
     return {"refilled": refilled}
+
+
+@shared_task(name="schedule.tasks.assert_beat_alive", queue="q.io")
+def assert_beat_alive() -> dict:
+    """Write a "beat is alive" heartbeat every 60 s.
+
+    Creates or updates a ``Watermark`` row with
+    ``source=BEAT_HEARTBEAT_SOURCE`` and calls ``.save()`` so that
+    ``TimestampedModel.updated_at`` (auto_now) is bumped on every
+    execution.
+
+    The healthcheck task reads this row's ``updated_at`` to detect a
+    dead Beat scheduler — if the row is missing or older than 5 minutes,
+    a ``beat_scheduler_stale`` HealthAlert is emitted.
+    """
+    from schedule.models import Watermark  # noqa: PLC0415 — lazy import
+
+    row, created = Watermark.objects.get_or_create(
+        source=BEAT_HEARTBEAT_SOURCE,
+        defaults={"notes": "Beat liveness heartbeat — written every 60 s by assert_beat_alive."},
+    )
+    if not created:
+        # .save() bumps updated_at via TimestampedModel's auto_now field.
+        row.save()
+
+    logger.debug("assert_beat_alive: heartbeat written (created=%s, pk=%s)", created, row.pk)
+    return {"source": BEAT_HEARTBEAT_SOURCE, "created": created, "pk": row.pk}

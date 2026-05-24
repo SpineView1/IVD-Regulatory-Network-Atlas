@@ -52,6 +52,16 @@
       </button>
 
       <div class="collapse navbar-collapse" id="navbarMain">
+        {# Phase 6: health alerts HTMX widget (polled every 30s) #}
+        <div class="me-3">
+          {% include "dashboard/partials/health_alerts.html" %}
+        </div>
+
+        {# Phase 6: pause/resume ingestion panel — requires monitoring/pause_panel.html #}
+        <div class="me-3">
+          {% include "monitoring/pause_panel.html" %}
+        </div>
+
         <ul class="navbar-nav me-auto">
           <li class="nav-item">
             <a class="nav-link" href="{% url 'dashboard:grid' %}">Networks</a>

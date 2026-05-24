@@ -301,12 +301,16 @@ def smoke_all_models(chunk_id: int) -> dict[str, int]:
 
 
 @shared_task(name="extract.tasks.enqueue_pending_chunks")
-def enqueue_pending_chunks(batch_size: int = 200) -> dict[str, int]:
+def enqueue_pending_chunks(batch_size: int = 200) -> dict:
     """Beat-fired fan-out (every 5 min per spec §6 Beat schedule).
 
     Finds Chunks that haven't been run against every model with the
     active prompt, creates the missing ExtractionRun rows, and routes a
     Celery message per row to its model's queue.
+
+    Short-circuits if INGESTION_PAUSED is set. Does NOT honour
+    backpressure — when we *are* backpressured, this task is exactly
+    what drains the queue.
 
     Selects only Results-section chunks. Skips chunks where all 7 models
     already appear in ``Chunk.processed_by_models`` for the active prompt
@@ -314,6 +318,15 @@ def enqueue_pending_chunks(batch_size: int = 200) -> dict[str, int]:
 
     Returns a dict ``{model_name: count_enqueued}`` for logging.
     """
+    from monitoring import services as monitoring_services  # noqa: PLC0415 — lazy to avoid circular
+
+    if monitoring_services.is_ingestion_paused():
+        return {"skipped": True, "reason": "ingestion_paused"}
+    return _do_enqueue_pending_chunks(batch_size=batch_size)
+
+
+def _do_enqueue_pending_chunks(batch_size: int = 200) -> dict:
+    """The original body of enqueue_pending_chunks — extracted to allow pause-flag wrapping."""
     from papers.models import Chunk
 
     version = active_prompt_version()

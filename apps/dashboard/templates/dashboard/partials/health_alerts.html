@@ -1,0 +1,19 @@
+{# Health alerts HTMX partial — polled every 30s from the dashboard navbar. #}
+<div id="health-alerts"
+     hx-get="{% url 'dashboard:health-alerts' %}"
+     hx-trigger="every 30s"
+     hx-swap="outerHTML">
+  {% if alerts %}
+    <ul class="list-unstyled mb-0">
+      {% for a in alerts %}
+        <li class="small text-{{ a.severity|yesno:'danger,warning,info,secondary' }} py-1">
+          <strong>{{ a.severity|upper }}</strong> &middot; {{ a.check_name }} &middot;
+          <em>{{ a.created_at|timesince }} ago</em>
+          &mdash; {{ a.message }}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <span class="text-success small">All systems normal.</span>
+  {% endif %}
+</div>
