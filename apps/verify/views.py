@@ -34,7 +34,9 @@ def resolve_conflict(request: HttpRequest, pk: int) -> HttpResponse:
 
     Returns 400 if decision is missing or invalid.
     """
-    from graph.models import Conflict  # noqa: PLC0415 — lazy import; verify must not import graph at module load
+    from graph.models import (
+        Conflict,  # noqa: PLC0415 — lazy import; verify must not import graph at module load
+    )
 
     conflict = get_object_or_404(Conflict, pk=pk)
 

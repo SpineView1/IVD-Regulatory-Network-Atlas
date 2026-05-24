@@ -229,9 +229,9 @@ def test_mark_stale_already_stale_creates_no_notification(db, reviewer, network)
 
     mark_stale(network=network, reason="Redundant call.")
 
-    assert not Notification.objects.filter(user=reviewer).exists(), (
-        "mark_stale on already-stale network must not create Notification rows"
-    )
+    assert not Notification.objects.filter(
+        user=reviewer
+    ).exists(), "mark_stale on already-stale network must not create Notification rows"
 
 
 def test_mark_stale_verified_to_stale_creates_notification(db, reviewer, network):
@@ -246,9 +246,9 @@ def test_mark_stale_verified_to_stale_creates_notification(db, reviewer, network
     mark_stale(network=network, reason="New corpus data arrived.")
 
     notifs = Notification.objects.filter(user=reviewer, event_type=NotificationEvent.NETWORK_STALE)
-    assert notifs.exists(), (
-        "mark_stale on a verified network must create a NETWORK_STALE Notification"
-    )
+    assert (
+        notifs.exists()
+    ), "mark_stale on a verified network must create a NETWORK_STALE Notification"
 
 
 # ---------------------------------------------------------------------------

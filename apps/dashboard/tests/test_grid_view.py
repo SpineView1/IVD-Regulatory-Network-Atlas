@@ -229,4 +229,6 @@ class TestGridView:
         assert resp.status_code == 200
         ctx = resp.context
         counts = ctx["open_conflict_counts"]
-        assert counts[net.pk] == 1, f"Expected 1 open conflict for {net.code!r}, got {counts[net.pk]}"
+        assert (
+            counts[net.pk] == 1
+        ), f"Expected 1 open conflict for {net.code!r}, got {counts[net.pk]}"
