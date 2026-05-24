@@ -1,0 +1,18 @@
+{# Pause/resume control panel — included in the dashboard navbar. #}
+<div id="monitoring-pause-panel" class="monitoring-pause-panel">
+  {% if paused %}
+    <span class="status status--paused">Ingestion paused</span>
+    <form hx-post="{% url 'monitoring:resume' %}" hx-target="#monitoring-pause-panel">
+      {% csrf_token %}
+      <input type="text" name="reason" placeholder="reason for resuming" required />
+      <button type="submit">Resume ingestion</button>
+    </form>
+  {% else %}
+    <span class="status status--running">Ingestion running</span>
+    <form hx-post="{% url 'monitoring:pause' %}" hx-target="#monitoring-pause-panel">
+      {% csrf_token %}
+      <input type="text" name="reason" placeholder="reason for pausing" required />
+      <button type="submit">Pause ingestion</button>
+    </form>
+  {% endif %}
+</div>

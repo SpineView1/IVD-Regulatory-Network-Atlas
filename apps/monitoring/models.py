@@ -5,6 +5,7 @@ foreign-key relationships outside this app. They are read by Beat tasks
 on every tick, so primary-key lookups and a partial index on
 ``HealthAlert(resolved_at)`` are the only performance considerations.
 """
+
 from __future__ import annotations
 
 from django.db import models

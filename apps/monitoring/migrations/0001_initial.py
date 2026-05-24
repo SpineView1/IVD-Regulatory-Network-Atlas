@@ -4,44 +4,67 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='FeatureFlag',
+            name="FeatureFlag",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('updated_at', models.DateTimeField(auto_now=True, db_index=True)),
-                ('name', models.CharField(max_length=64, unique=True)),
-                ('value', models.BooleanField(default=False)),
-                ('last_changed_by', models.CharField(blank=True, default='', max_length=150)),
-                ('last_changed_reason', models.TextField(blank=True, default='')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True, db_index=True)),
+                ("updated_at", models.DateTimeField(auto_now=True, db_index=True)),
+                ("name", models.CharField(max_length=64, unique=True)),
+                ("value", models.BooleanField(default=False)),
+                ("last_changed_by", models.CharField(blank=True, default="", max_length=150)),
+                ("last_changed_reason", models.TextField(blank=True, default="")),
             ],
             options={
-                'indexes': [models.Index(fields=['name'], name='monitoring__name_9b644e_idx')],
+                "indexes": [models.Index(fields=["name"], name="monitoring__name_9b644e_idx")],
             },
         ),
         migrations.CreateModel(
-            name='HealthAlert',
+            name="HealthAlert",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('updated_at', models.DateTimeField(auto_now=True, db_index=True)),
-                ('check_name', models.CharField(db_index=True, max_length=128)),
-                ('severity', models.CharField(choices=[('info', 'Info'), ('warning', 'Warning'), ('error', 'Error'), ('critical', 'Critical')], max_length=16)),
-                ('message', models.TextField()),
-                ('context', models.JSONField(blank=True, default=dict)),
-                ('resolved_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('resolved_by', models.CharField(blank=True, default='', max_length=150)),
-                ('resolution_note', models.TextField(blank=True, default='')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True, db_index=True)),
+                ("updated_at", models.DateTimeField(auto_now=True, db_index=True)),
+                ("check_name", models.CharField(db_index=True, max_length=128)),
+                (
+                    "severity",
+                    models.CharField(
+                        choices=[
+                            ("info", "Info"),
+                            ("warning", "Warning"),
+                            ("error", "Error"),
+                            ("critical", "Critical"),
+                        ],
+                        max_length=16,
+                    ),
+                ),
+                ("message", models.TextField()),
+                ("context", models.JSONField(blank=True, default=dict)),
+                ("resolved_at", models.DateTimeField(blank=True, db_index=True, null=True)),
+                ("resolved_by", models.CharField(blank=True, default="", max_length=150)),
+                ("resolution_note", models.TextField(blank=True, default="")),
             ],
             options={
-                'indexes': [models.Index(fields=['check_name', 'created_at'], name='health_check_recent_idx')],
+                "indexes": [
+                    models.Index(
+                        fields=["check_name", "created_at"], name="health_check_recent_idx"
+                    )
+                ],
             },
         ),
     ]

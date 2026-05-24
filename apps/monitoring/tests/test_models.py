@@ -1,4 +1,5 @@
 """Tests for monitoring.models."""
+
 from __future__ import annotations
 
 from datetime import timedelta
@@ -10,8 +11,10 @@ from monitoring.models import FeatureFlag, HealthAlert
 
 
 def test_feature_flag_singleton_per_name(db):
+    from django.db import IntegrityError
+
     FeatureFlag.objects.create(name="INGESTION_PAUSED", value=False)
-    with pytest.raises(Exception):  # IntegrityError, but stays portable
+    with pytest.raises(IntegrityError):
         FeatureFlag.objects.create(name="INGESTION_PAUSED", value=True)
 
 

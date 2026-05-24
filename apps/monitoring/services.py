@@ -2,6 +2,7 @@
 
 Other apps import from here, never from ``monitoring.models``.
 """
+
 from __future__ import annotations
 
 from django.db import transaction

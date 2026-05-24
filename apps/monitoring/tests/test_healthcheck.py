@@ -1,4 +1,5 @@
 """Tests for monitoring.tasks.healthcheck."""
+
 from __future__ import annotations
 
 from datetime import timedelta
@@ -43,7 +44,8 @@ class TestPubMedFreshnessCheck:
         healthcheck()
         alerts = HealthAlert.objects.filter(check_name="pubmed_refresh_stale")
         assert alerts.count() == 1
-        assert alerts.first().severity == "error"
+        alert = alerts.get()
+        assert alert.severity == "error"
 
 
 @pytest.mark.django_db
@@ -54,7 +56,8 @@ class TestOllamaReachabilityCheck:
         healthcheck()
         alerts = HealthAlert.objects.filter(check_name="ollama_unreachable")
         assert alerts.count() == 1
-        assert alerts.first().severity == "critical"
+        alert = alerts.get()
+        assert alert.severity == "critical"
 
 
 @pytest.mark.django_db
@@ -65,7 +68,8 @@ class TestPostgresLatencyCheck:
         healthcheck()
         alerts = HealthAlert.objects.filter(check_name="postgres_slow")
         assert alerts.count() == 1
-        assert alerts.first().severity == "warning"
+        alert = alerts.get()
+        assert alert.severity == "warning"
 
     @patch("monitoring.tasks._probe_ollama", return_value=True)
     @patch("monitoring.tasks._probe_postgres_latency", return_value=50.0)

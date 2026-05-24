@@ -4,6 +4,7 @@ All tasks here run on the ``q.io`` queue (cheap HTTP + Postgres). The
 ``healthcheck`` task is Beat-scheduled every 15 min (see
 ``schedule.beat_schedule``).
 """
+
 from __future__ import annotations
 
 import logging
@@ -11,11 +12,11 @@ import time
 from datetime import timedelta
 
 import requests
-from celery import shared_task
 from django.conf import settings
 from django.db import connection
 from django.utils import timezone
 
+from celery import shared_task
 from monitoring.models import HealthAlert
 
 logger = logging.getLogger(__name__)
@@ -44,9 +45,7 @@ def _probe_postgres_latency() -> float:
     return (time.monotonic() - started) * 1000.0
 
 
-def _emit_alert(
-    *, check_name: str, severity: str, message: str, context: dict
-) -> HealthAlert:
+def _emit_alert(*, check_name: str, severity: str, message: str, context: dict) -> HealthAlert:
     alert = HealthAlert.objects.create(
         check_name=check_name,
         severity=severity,
