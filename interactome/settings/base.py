@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "dashboard",
     "sbml",
     "verify",
+    "monitoring",
 ]
 
 MIDDLEWARE = [
