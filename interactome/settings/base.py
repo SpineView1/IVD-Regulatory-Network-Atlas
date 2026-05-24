@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "papers",
     "extract",
     "graph",
+    "analysis",
     "schedule",
     "dashboard",
     "sbml",
@@ -138,6 +139,9 @@ CELERY_TASK_ROUTES = {
     # Phase 5: verify notification + reviewer-reminder tasks (shared q.io worker)
     "verify.notify": {"queue": "q.io"},
     "verify.dispatch_review_assignments": {"queue": "q.io"},
+    # Phase 8: Neo4j projection and reconciliation tasks
+    "analysis.tasks.project_edges": {"queue": "q.io"},
+    "analysis.tasks.reconcile_neo4j": {"queue": "q.io"},
 }
 
 # === MinIO / S3-compatible object store ===
@@ -223,6 +227,16 @@ from schedule.beat_schedule import BEAT_SCHEDULE  # noqa: E402
 
 CELERY_BEAT_SCHEDULE = BEAT_SCHEDULE
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
+# === Neo4j read-model (Phase 8) =============================================
+# Postgres is the system of record; Neo4j is derived and rebuildable.
+NEO4J_URI = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
+NEO4J_USER = os.environ.get("NEO4J_USER", "neo4j")
+NEO4J_PASSWORD = os.environ.get("NEO4J_PASSWORD", "")
+
+# Which GraphBackend the analysis app uses. "neo4j" in real deployments;
+# tests override to "fake" via the settings fixture.
+ANALYSIS_GRAPH_BACKEND = os.environ.get("ANALYSIS_GRAPH_BACKEND", "neo4j")
 
 # === Email (Phase 5 verification notifications) ===
 # Default to console backend; dev.py keeps console, production.py uses SMTP.

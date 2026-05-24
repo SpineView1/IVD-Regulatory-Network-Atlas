@@ -86,6 +86,15 @@ PHASE_5_BEAT_SCHEDULE: dict[str, dict] = {
     },
 }
 
+# Phase 8: Neo4j reconciliation (nightly rebuild sweep — spec §6 Beat schedule).
+PHASE_8_BEAT_SCHEDULE: dict[str, dict] = {
+    "analysis-reconcile-neo4j": {
+        "task": "analysis.tasks.reconcile_neo4j",
+        "schedule": crontab(minute=0, hour=4),  # daily 04:00 UTC, per spec §6
+        "options": {"queue": "q.io"},
+    },
+}
+
 # Canonical merged schedule — wired into CELERY_BEAT_SCHEDULE in settings.base.
 BEAT_SCHEDULE: dict[str, dict] = {
     **PHASE_1_BEAT_SCHEDULE,
@@ -93,4 +102,5 @@ BEAT_SCHEDULE: dict[str, dict] = {
     **PHASE_3_BEAT_SCHEDULE,
     **PHASE_4_BEAT_SCHEDULE,
     **PHASE_5_BEAT_SCHEDULE,
+    **PHASE_8_BEAT_SCHEDULE,
 }
