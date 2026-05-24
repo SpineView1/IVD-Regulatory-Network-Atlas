@@ -1,4 +1,5 @@
 """Tests for verify.emails — event-type -> (subject, body) rendering."""
+
 from __future__ import annotations
 
 import pytest
@@ -53,6 +54,4 @@ def test_render_new_version_email(network):
 
 def test_render_unknown_event_raises(network):
     with pytest.raises(ValueError):
-        render_event_email(
-            event_type="not_an_event", network=network, message="x", user=None
-        )
+        render_event_email(event_type="not_an_event", network=network, message="x", user=None)

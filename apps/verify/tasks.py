@@ -8,6 +8,7 @@ matching email (the queue hop keeps SMTP latency off the request path).
 ``dispatch_review_assignments`` is a Beat task (hourly, spec §6) that reminds
 every curator about networks awaiting their review.
 """
+
 from __future__ import annotations
 
 import logging
@@ -44,18 +45,14 @@ def notify(
     from networks.models import Network  # noqa: PLC0415 — avoid app-load import cycle
 
     if notification_id is not None:
-        notif = Notification.objects.select_related("user", "network").get(
-            pk=notification_id
-        )
+        notif = Notification.objects.select_related("user", "network").get(pk=notification_id)
         recipient = notif.user
         network = notif.network
         ev = notif.event_type
         msg = notif.message
     else:
         if user_id is None or network_id is None or event_type is None:
-            raise ValueError(
-                "notify: supply notification_id, or user_id+network_id+event_type."
-            )
+            raise ValueError("notify: supply notification_id, or user_id+network_id+event_type.")
         recipient = User.objects.get(pk=user_id)
         network = Network.objects.get(pk=network_id)
         ev = event_type
@@ -65,9 +62,7 @@ def notify(
     if not email or network is None:
         return "skipped"
 
-    subject, body = render_event_email(
-        event_type=ev, network=network, message=msg, user=recipient
-    )
+    subject, body = render_event_email(event_type=ev, network=network, message=msg, user=recipient)
     send_mail(
         subject=subject,
         message=body,
@@ -105,10 +100,7 @@ def dispatch_review_assignments() -> int:
             )
         else:
             event_type = NotificationEvent.NEW_VERSION
-            message = (
-                f"Reminder: {network.title} has a draft version awaiting your "
-                f"sign-off."
-            )
+            message = f"Reminder: {network.title} has a draft version awaiting your " f"sign-off."
         services.notify_user(
             user=ra.reviewer,
             network=network,

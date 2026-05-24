@@ -112,18 +112,51 @@ def grid(request: HttpRequest) -> HttpResponse:
         .order_by("category", "code")
     )
 
-    # Build per-network edge count and open conflict count annotations
+    # Build per-network edge count: one aggregation query.
     edge_counts: dict[int, int] = {
         row["network_id"]: row["cnt"]
         for row in NetworkEdgeMembership.objects.values("network_id").annotate(cnt=Count("id"))
     }
-    open_conflict_counts: dict[int, int] = {}
-    for n in networks:
-        edge_ids = n.edge_memberships.values_list("edge_id", flat=True)
-        open_conflict_counts[n.pk] = Conflict.objects.filter(
-            Q(edge_a_id__in=edge_ids) | Q(edge_b_id__in=edge_ids),
+
+    # Build per-network open-conflict count in O(1) queries (no per-network loop).
+    # Strategy:
+    #   (a) Fetch network_id → set-of-edge-ids via NetworkEdgeMembership (one query).
+    #   (b) Aggregate open Conflicts per edge_a / edge_b via two annotated querysets,
+    #       then merge into a per-network dict (two queries total).
+    _mem_qs = NetworkEdgeMembership.objects.values_list("network_id", "edge_id")
+    _network_to_edges: dict[int, set[int]] = {}
+    for nid, eid in _mem_qs:
+        _network_to_edges.setdefault(nid, set()).add(eid)
+
+    # All open conflicts touching any edge we know about.
+    _all_edge_ids: set[int] = set()
+    for eids in _network_to_edges.values():
+        _all_edge_ids.update(eids)
+
+    # Build edge_id → list[network_id] reverse index.
+    _edge_to_networks: dict[int, list[int]] = {}
+    for nid, eids in _network_to_edges.items():
+        for eid in eids:
+            _edge_to_networks.setdefault(eid, []).append(nid)
+
+    # One query: fetch all open Conflict (edge_a_id, edge_b_id) pairs.
+    _open_conflicts = list(
+        Conflict.objects.filter(
+            Q(edge_a_id__in=_all_edge_ids) | Q(edge_b_id__in=_all_edge_ids),
             resolution_status="open",
-        ).count()
+        ).values_list("id", "edge_a_id", "edge_b_id")
+    )
+
+    open_conflict_counts: dict[int, int] = {n.pk: 0 for n in networks}
+    _counted: set[tuple[int, int]] = set()  # (conflict_id, network_id) to avoid double-counting
+    for cid, ea_id, eb_id in _open_conflicts:
+        touching_nets: set[int] = set()
+        touching_nets.update(_edge_to_networks.get(ea_id, []))
+        touching_nets.update(_edge_to_networks.get(eb_id, []))
+        for nid in touching_nets:
+            if (cid, nid) not in _counted and nid in open_conflict_counts:
+                open_conflict_counts[nid] += 1
+                _counted.add((cid, nid))
 
     # Group by category
     categories: list[dict[str, Any]] = []

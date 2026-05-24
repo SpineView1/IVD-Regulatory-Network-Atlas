@@ -10,6 +10,7 @@ Event types are the ``NotificationEvent`` values from ``verify.models``:
 ``network_stale``, ``network_disagreements``, ``network_signed_off``,
 ``new_version``.
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any

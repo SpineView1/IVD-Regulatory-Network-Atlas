@@ -1,4 +1,5 @@
 """Tests for verify.state_machine — pure transition rules."""
+
 from __future__ import annotations
 
 import pytest
@@ -19,24 +20,15 @@ def test_stale_to_refreshing_on_integration_start():
 
 
 def test_refreshing_to_version_draft_on_regenerate_done():
-    assert (
-        transition(NetworkStatus.REFRESHING, "regenerate_done")
-        == NetworkStatus.VERSION_DRAFT
-    )
+    assert transition(NetworkStatus.REFRESHING, "regenerate_done") == NetworkStatus.VERSION_DRAFT
 
 
 def test_version_draft_to_verified_on_signoff():
-    assert (
-        transition(NetworkStatus.VERSION_DRAFT, "signoff")
-        == NetworkStatus.VERIFIED
-    )
+    assert transition(NetworkStatus.VERSION_DRAFT, "signoff") == NetworkStatus.VERIFIED
 
 
 def test_verified_to_stale_on_new_evidence():
-    assert (
-        transition(NetworkStatus.VERIFIED, "new_corpus")
-        == NetworkStatus.STALE
-    )
+    assert transition(NetworkStatus.VERIFIED, "new_corpus") == NetworkStatus.STALE
 
 
 def test_cannot_signoff_from_idle():

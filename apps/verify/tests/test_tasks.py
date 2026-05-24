@@ -1,4 +1,5 @@
 """Tests for verify.tasks — email sender + reviewer-reminder Beat task."""
+
 from __future__ import annotations
 
 from django.contrib.auth import get_user_model

@@ -68,9 +68,7 @@ def frozen_mv(db, draft_network):
 # ---------------------------------------------------------------------------
 
 
-def test_signoff_service_end_to_end(
-    db, monkeypatch, curator, subscriber, draft_network, frozen_mv
-):
+def test_signoff_service_end_to_end(db, monkeypatch, curator, subscriber, draft_network, frozen_mv):
     """Full service flow: sign_off → Signoff row + network verified + regen enqueued + subscriber notified."""
     from verify.models import Notification, NotificationEvent, Signoff
     from verify.services import sign_off, subscribe

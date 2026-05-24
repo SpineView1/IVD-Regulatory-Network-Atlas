@@ -13,7 +13,6 @@ from django.views.decorators.http import require_POST
 if TYPE_CHECKING:
     from django.contrib.auth.models import User as _User
 
-from graph.models import Conflict
 from verify.models import ReviewDecision, Subscription
 from verify.services import record_review, update_subscription
 from verify.services import sign_off as service_sign_off
@@ -35,6 +34,8 @@ def resolve_conflict(request: HttpRequest, pk: int) -> HttpResponse:
 
     Returns 400 if decision is missing or invalid.
     """
+    from graph.models import Conflict  # noqa: PLC0415 — lazy import; verify must not import graph at module load
+
     conflict = get_object_or_404(Conflict, pk=pk)
 
     decision = request.POST.get("decision", "").strip()

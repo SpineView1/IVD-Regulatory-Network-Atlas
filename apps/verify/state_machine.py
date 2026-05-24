@@ -4,6 +4,7 @@ Pure-function state machine. Inputs: current status + event name.
 Output: new status, or InvalidTransition. No I/O, no side effects.
 The services layer is responsible for persistence and notifications.
 """
+
 from __future__ import annotations
 
 from enum import Enum
@@ -59,6 +60,4 @@ def transition(current: NetworkStatus | str, event: str) -> NetworkStatus:
     try:
         return _TRANSITIONS[current][event]
     except KeyError as exc:
-        raise InvalidTransition(
-            f"No transition from {current.value!r} on event {event!r}"
-        ) from exc
+        raise InvalidTransition(f"No transition from {current.value!r} on event {event!r}") from exc

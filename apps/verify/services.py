@@ -226,15 +226,17 @@ def mark_stale(
         Network as NetworkModel,  # noqa: PLC0415 — avoid top-level import cycle
     )
 
+    previous_status = network.pipeline_status
+
     try:
-        next_status = transition(network.pipeline_status, "new_corpus")
+        next_status = transition(previous_status, "new_corpus")
     except InvalidTransition:
         # e.g. refreshing → stale is not modelled; silently skip to avoid
         # breaking Phase 3 graph callsites that may encounter mid-refresh networks.
         log.debug(
             "mark_stale: skipping transition for network %s (status=%s)",
             network.code,
-            network.pipeline_status,
+            previous_status,
         )
         return
 
@@ -243,7 +245,10 @@ def mark_stale(
     )
     network.pipeline_status = next_status.value
 
-    if next_status == NetworkStatus.STALE:
+    # Only dispatch notifications on a GENUINE transition into stale — not on
+    # idempotent stale→stale re-fires (which would spam subscribers on every
+    # corpus batch that re-touches an already-stale network).
+    if next_status == NetworkStatus.STALE and NetworkStatus(previous_status) != NetworkStatus.STALE:
         msg = reason or f"Network {network.code!r} has new data and requires re-verification."
         _dispatch_notifications(
             network=network,

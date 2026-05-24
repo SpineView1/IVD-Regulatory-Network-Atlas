@@ -13,7 +13,6 @@ import pytest
 from django.template import Context, RequestContext, Template
 from django.test import RequestFactory
 
-
 # ---------------------------------------------------------------------------
 # context_processors.unread_notifications_count
 # ---------------------------------------------------------------------------
@@ -94,9 +93,7 @@ class TestStatusPillTemplateTag:
     """Tests for dashboard_extras.status_pill."""
 
     def _render(self, status: str) -> str:
-        template = Template(
-            "{% load dashboard_extras %}{% status_pill status %}"
-        )
+        template = Template("{% load dashboard_extras %}{% status_pill status %}")
         return template.render(Context({"status": status}))
 
     def test_idle_renders_badge(self):
@@ -142,9 +139,7 @@ class TestBeliefColorTemplateTag:
     """Tests for dashboard_extras.belief_color."""
 
     def _render(self, score: float) -> str:
-        template = Template(
-            "{% load dashboard_extras %}{{ score|belief_color }}"
-        )
+        template = Template("{% load dashboard_extras %}{{ score|belief_color }}")
         return template.render(Context({"score": score}))
 
     def test_high_belief_green(self):
@@ -180,9 +175,7 @@ class TestBaseHtmlExtensions:
 
     def _render_base(self, request=None) -> str:
         # Render base.html directly; use a minimal block-extending template
-        template_str = (
-            "{% extends 'dashboard/base.html' %}{% block content %}BODY{% endblock %}"
-        )
+        template_str = "{% extends 'dashboard/base.html' %}{% block content %}BODY{% endblock %}"
         t = Template(template_str)
         if request is not None:
             ctx: Context = RequestContext(request, {})

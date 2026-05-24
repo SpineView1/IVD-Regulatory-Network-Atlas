@@ -6,6 +6,7 @@ TDD: tests are written first. Red → Green → Refactor.
 Fixtures from conftest.py: reviewer, other_reviewer, network, edge, conflict,
 model_version.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -156,7 +157,9 @@ def test_notify_subscribers_respects_inapp_disabled(db, reviewer, network, model
     from verify.models import Notification, Subscription
     from verify.services import notify_subscribers
 
-    Subscription.objects.create(user=reviewer, network=network, inapp_enabled=False, email_enabled=False)
+    Subscription.objects.create(
+        user=reviewer, network=network, inapp_enabled=False, email_enabled=False
+    )
     notify_subscribers(network=network, model_version=model_version)
     assert not Notification.objects.filter(user=reviewer, network=network).exists()
 
@@ -194,9 +197,7 @@ def test_mark_stale_notifies_subscribers(db, reviewer, network):
     network.save()
     subscribe(user=reviewer, network=network)
     mark_stale(network=network, reason="New corpus data arrived.")
-    notifs = Notification.objects.filter(
-        user=reviewer, event_type=NotificationEvent.NETWORK_STALE
-    )
+    notifs = Notification.objects.filter(user=reviewer, event_type=NotificationEvent.NETWORK_STALE)
     assert notifs.exists()
 
 
@@ -210,6 +211,44 @@ def test_mark_stale_already_stale_is_noop(db, network):
     mark_stale(network=network, reason="Redundant call.")
     network.refresh_from_db()
     assert network.pipeline_status == "stale"
+
+
+def test_mark_stale_already_stale_creates_no_notification(db, reviewer, network):
+    """mark_stale on an already-stale network must NOT dispatch notifications.
+
+    Calling mark_stale repeatedly on a stale network (e.g. every time a new
+    corpus batch re-touches it) would otherwise spam every subscriber.  The fix:
+    only notify on a GENUINE transition INTO stale (previous != stale).
+    """
+    from verify.models import Notification
+    from verify.services import mark_stale, subscribe
+
+    network.pipeline_status = "stale"
+    network.save()
+    subscribe(user=reviewer, network=network)
+
+    mark_stale(network=network, reason="Redundant call.")
+
+    assert not Notification.objects.filter(user=reviewer).exists(), (
+        "mark_stale on already-stale network must not create Notification rows"
+    )
+
+
+def test_mark_stale_verified_to_stale_creates_notification(db, reviewer, network):
+    """mark_stale on a verified network DOES dispatch a notification (genuine transition)."""
+    from verify.models import Notification, NotificationEvent
+    from verify.services import mark_stale, subscribe
+
+    network.pipeline_status = "verified"
+    network.save()
+    subscribe(user=reviewer, network=network)
+
+    mark_stale(network=network, reason="New corpus data arrived.")
+
+    notifs = Notification.objects.filter(user=reviewer, event_type=NotificationEvent.NETWORK_STALE)
+    assert notifs.exists(), (
+        "mark_stale on a verified network must create a NETWORK_STALE Notification"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -233,7 +272,9 @@ def test_sign_off_creates_signoff_row(db, reviewer, network, model_version, monk
     assert Signoff.objects.filter(network=network, model_version=model_version).exists()
 
 
-def test_sign_off_transitions_network_to_verified(db, reviewer, network, model_version, monkeypatch):
+def test_sign_off_transitions_network_to_verified(
+    db, reviewer, network, model_version, monkeypatch
+):
     monkeypatch.setattr(
         "sbml.tasks.regenerate.delay",
         lambda *a, **kw: type("Result", (), {"id": "fake-task-id"})(),
@@ -261,7 +302,9 @@ def test_sign_off_calls_curator_major_regenerate(db, reviewer, network, model_ve
     assert calls[0]["kwargs"].get("triggered_by_curator") is True
 
 
-def test_sign_off_notifies_subscribers(db, reviewer, other_reviewer, network, model_version, monkeypatch):
+def test_sign_off_notifies_subscribers(
+    db, reviewer, other_reviewer, network, model_version, monkeypatch
+):
     """sign_off notifies subscribers with NETWORK_SIGNED_OFF event."""
     monkeypatch.setattr(
         "sbml.tasks.regenerate.delay",
@@ -279,7 +322,9 @@ def test_sign_off_notifies_subscribers(db, reviewer, other_reviewer, network, mo
     assert notifs.exists()
 
 
-def test_sign_off_cannot_sign_off_non_version_draft(db, reviewer, network, model_version, monkeypatch):
+def test_sign_off_cannot_sign_off_non_version_draft(
+    db, reviewer, network, model_version, monkeypatch
+):
     """sign_off raises InvalidTransition when network is not in version_draft."""
     monkeypatch.setattr(
         "sbml.tasks.regenerate.delay",

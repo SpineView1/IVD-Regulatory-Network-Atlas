@@ -6,92 +6,275 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('graph', '0002_edge_evidence_conflict_membership'),
-        ('networks', '0001_initial'),
-        ('sbml', '0002_add_frozen_edges'),
+        ("graph", "0002_edge_evidence_conflict_membership"),
+        ("networks", "0001_initial"),
+        ("sbml", "0002_add_frozen_edges"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Notification',
+            name="Notification",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('updated_at', models.DateTimeField(auto_now=True, db_index=True)),
-                ('event_type', models.CharField(choices=[('network_stale', 'Network became stale'), ('network_disagreements', 'New disagreements on network'), ('network_signed_off', 'Network was signed off'), ('new_version', 'New version published')], max_length=32)),
-                ('message', models.TextField()),
-                ('read_at', models.DateTimeField(blank=True, null=True)),
-                ('network', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='notifications', to='networks.network')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='notifications', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True, db_index=True)),
+                ("updated_at", models.DateTimeField(auto_now=True, db_index=True)),
+                (
+                    "event_type",
+                    models.CharField(
+                        choices=[
+                            ("network_stale", "Network became stale"),
+                            ("network_disagreements", "New disagreements on network"),
+                            ("network_signed_off", "Network was signed off"),
+                            ("new_version", "New version published"),
+                        ],
+                        max_length=32,
+                    ),
+                ),
+                ("message", models.TextField()),
+                ("read_at", models.DateTimeField(blank=True, null=True)),
+                (
+                    "network",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="notifications",
+                        to="networks.network",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="notifications",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'indexes': [models.Index(fields=['user', 'created_at'], name='verify_noti_user_id_45b081_idx'), models.Index(fields=['user', 'read_at'], name='verify_noti_user_id_743e46_idx')],
+                "indexes": [
+                    models.Index(
+                        fields=["user", "created_at"], name="verify_noti_user_id_45b081_idx"
+                    ),
+                    models.Index(fields=["user", "read_at"], name="verify_noti_user_id_743e46_idx"),
+                ],
             },
         ),
         migrations.CreateModel(
-            name='Review',
+            name="Review",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('updated_at', models.DateTimeField(auto_now=True, db_index=True)),
-                ('decision', models.CharField(choices=[('approve', 'Approve'), ('reject', 'Reject'), ('discuss', 'Needs discussion'), ('abstain', 'Abstain')], max_length=16)),
-                ('comment', models.TextField(blank=True, default='')),
-                ('conflict', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='reviews', to='graph.conflict')),
-                ('edge', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='reviews', to='graph.edge')),
-                ('reviewer', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='reviews', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True, db_index=True)),
+                ("updated_at", models.DateTimeField(auto_now=True, db_index=True)),
+                (
+                    "decision",
+                    models.CharField(
+                        choices=[
+                            ("approve", "Approve"),
+                            ("reject", "Reject"),
+                            ("discuss", "Needs discussion"),
+                            ("abstain", "Abstain"),
+                        ],
+                        max_length=16,
+                    ),
+                ),
+                ("comment", models.TextField(blank=True, default="")),
+                (
+                    "conflict",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="reviews",
+                        to="graph.conflict",
+                    ),
+                ),
+                (
+                    "edge",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="reviews",
+                        to="graph.edge",
+                    ),
+                ),
+                (
+                    "reviewer",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="reviews",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'indexes': [models.Index(fields=['edge', 'created_at'], name='verify_revi_edge_id_07df4b_idx'), models.Index(fields=['conflict', 'created_at'], name='verify_revi_conflic_a7ab95_idx'), models.Index(fields=['reviewer', 'created_at'], name='verify_revi_reviewe_aed14e_idx')],
+                "indexes": [
+                    models.Index(
+                        fields=["edge", "created_at"], name="verify_revi_edge_id_07df4b_idx"
+                    ),
+                    models.Index(
+                        fields=["conflict", "created_at"], name="verify_revi_conflic_a7ab95_idx"
+                    ),
+                    models.Index(
+                        fields=["reviewer", "created_at"], name="verify_revi_reviewe_aed14e_idx"
+                    ),
+                ],
             },
         ),
         migrations.CreateModel(
-            name='ReviewAssignment',
+            name="ReviewAssignment",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('updated_at', models.DateTimeField(auto_now=True, db_index=True)),
-                ('role', models.CharField(choices=[('curator', 'Curator'), ('reviewer', 'Reviewer'), ('observer', 'Observer')], default='reviewer', max_length=16)),
-                ('network', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='review_assignments', to='networks.network')),
-                ('reviewer', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='review_assignments', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True, db_index=True)),
+                ("updated_at", models.DateTimeField(auto_now=True, db_index=True)),
+                (
+                    "role",
+                    models.CharField(
+                        choices=[
+                            ("curator", "Curator"),
+                            ("reviewer", "Reviewer"),
+                            ("observer", "Observer"),
+                        ],
+                        default="reviewer",
+                        max_length=16,
+                    ),
+                ),
+                (
+                    "network",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="review_assignments",
+                        to="networks.network",
+                    ),
+                ),
+                (
+                    "reviewer",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="review_assignments",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'constraints': [models.UniqueConstraint(fields=('reviewer', 'network'), name='verify_reviewassignment_unique')],
+                "constraints": [
+                    models.UniqueConstraint(
+                        fields=("reviewer", "network"), name="verify_reviewassignment_unique"
+                    )
+                ],
             },
         ),
         migrations.CreateModel(
-            name='Signoff',
+            name="Signoff",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('updated_at', models.DateTimeField(auto_now=True, db_index=True)),
-                ('notes', models.TextField(blank=True, default='')),
-                ('model_version', models.OneToOneField(on_delete=django.db.models.deletion.PROTECT, related_name='signoff', to='sbml.modelversion')),
-                ('network', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='signoffs', to='networks.network')),
-                ('signed_by', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='signoffs', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True, db_index=True)),
+                ("updated_at", models.DateTimeField(auto_now=True, db_index=True)),
+                ("notes", models.TextField(blank=True, default="")),
+                (
+                    "model_version",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="signoff",
+                        to="sbml.modelversion",
+                    ),
+                ),
+                (
+                    "network",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="signoffs",
+                        to="networks.network",
+                    ),
+                ),
+                (
+                    "signed_by",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="signoffs",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'constraints': [models.UniqueConstraint(fields=('model_version',), name='verify_signoff_unique_per_version')],
+                "constraints": [
+                    models.UniqueConstraint(
+                        fields=("model_version",), name="verify_signoff_unique_per_version"
+                    )
+                ],
             },
         ),
         migrations.CreateModel(
-            name='Subscription',
+            name="Subscription",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('updated_at', models.DateTimeField(auto_now=True, db_index=True)),
-                ('category', models.CharField(blank=True, default='', max_length=64)),
-                ('email_enabled', models.BooleanField(default=True)),
-                ('inapp_enabled', models.BooleanField(default=True)),
-                ('network', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='subscriptions', to='networks.network')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='subscriptions', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True, db_index=True)),
+                ("updated_at", models.DateTimeField(auto_now=True, db_index=True)),
+                ("category", models.CharField(blank=True, default="", max_length=64)),
+                ("email_enabled", models.BooleanField(default=True)),
+                ("inapp_enabled", models.BooleanField(default=True)),
+                (
+                    "network",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="subscriptions",
+                        to="networks.network",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="subscriptions",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'constraints': [models.UniqueConstraint(condition=models.Q(('network__isnull', False)), fields=('user', 'network'), name='verify_subscription_unique_user_network'), models.UniqueConstraint(condition=models.Q(('category', ''), _negated=True), fields=('user', 'category'), name='verify_subscription_unique_user_category')],
+                "constraints": [
+                    models.UniqueConstraint(
+                        condition=models.Q(("network__isnull", False)),
+                        fields=("user", "network"),
+                        name="verify_subscription_unique_user_network",
+                    ),
+                    models.UniqueConstraint(
+                        condition=models.Q(("category", ""), _negated=True),
+                        fields=("user", "category"),
+                        name="verify_subscription_unique_user_category",
+                    ),
+                ],
             },
         ),
     ]

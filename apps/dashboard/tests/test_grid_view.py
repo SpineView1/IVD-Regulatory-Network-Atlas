@@ -199,3 +199,34 @@ class TestGridView:
         assert "Transcription Factor" in body
         assert "Multi-Omics" in body
         assert "Proteostasis" in body
+
+    def test_grid_open_conflict_count_is_bounded_queries(
+        self, client, db, network_with_edges_and_conflicts, django_assert_max_num_queries
+    ):
+        """open_conflict_counts must be built with O(1) DB queries, not one per network.
+
+        We create two additional networks (no edges/conflicts) to prove the query
+        count does not scale with the number of networks.
+        """
+        Network.objects.create(code="extra_net_1", category="II", title="Extra 1")
+        Network.objects.create(code="extra_net_2", category="III", title="Extra 2")
+
+        # Allow a generous upper bound — the important invariant is that it is
+        # NOT proportional to the number of networks (which would be 200+ queries
+        # in production).  A constant ~20 queries covers: session, auth, networks
+        # queryset, edge_counts agg, memberships list, conflicts list, template
+        # context, etc.
+        with django_assert_max_num_queries(20):
+            resp = client.get("/")
+        assert resp.status_code == 200
+
+    def test_grid_open_conflict_count_correct_value(
+        self, client, db, network_with_edges_and_conflicts
+    ):
+        """grid() must report the correct open-conflict count (1) for tgfb_smad."""
+        net, _edge_a, _edge_b = network_with_edges_and_conflicts
+        resp = client.get("/")
+        assert resp.status_code == 200
+        ctx = resp.context
+        counts = ctx["open_conflict_counts"]
+        assert counts[net.pk] == 1, f"Expected 1 open conflict for {net.code!r}, got {counts[net.pk]}"

@@ -7,6 +7,7 @@ Uses REAL model field names (per cross-plan reconciliation doc):
 - Conflict.resolution_status values: open / auto_resolved / human_resolved
 - ModelVersion: frozen_at (not frozen), zip_s3_key (not s3_key)
 """
+
 from __future__ import annotations
 
 import pytest

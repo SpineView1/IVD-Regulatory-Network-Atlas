@@ -10,6 +10,7 @@ Canonical field names (per cross-plan reconciliation doc):
 - Signoff targets sbml.ModelVersion (frozen_at, not frozen)
 - Network.title (not name)
 """
+
 from __future__ import annotations
 
 from django.conf import settings
@@ -70,13 +71,9 @@ class Review(TimestampedModel):
 
     def clean(self) -> None:
         if self.edge is None and self.conflict is None:
-            raise ValidationError(
-                "A Review must target either an Edge or a Conflict."
-            )
+            raise ValidationError("A Review must target either an Edge or a Conflict.")
         if self.edge is not None and self.conflict is not None:
-            raise ValidationError(
-                "A Review cannot target both an Edge and a Conflict; choose one."
-            )
+            raise ValidationError("A Review cannot target both an Edge and a Conflict; choose one.")
 
     def __str__(self) -> str:
         target = self.edge or self.conflict
@@ -205,9 +202,7 @@ class Subscription(TimestampedModel):
 
     def clean(self) -> None:
         if self.network is None and not self.category:
-            raise ValidationError(
-                "A Subscription must target either a network or a category."
-            )
+            raise ValidationError("A Subscription must target either a network or a category.")
 
 
 class NotificationEvent(models.TextChoices):

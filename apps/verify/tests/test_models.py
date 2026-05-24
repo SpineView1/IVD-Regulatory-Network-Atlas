@@ -1,4 +1,5 @@
 """Tests for verify.models — append-only Review invariant + Signoff + others."""
+
 from __future__ import annotations
 
 import pytest
@@ -59,7 +60,9 @@ def test_review_history_is_chronological(db, reviewer, edge):
 
 def test_latest_review_for_edge_wins(db, reviewer, edge):
     Review.objects.create(reviewer=reviewer, edge=edge, decision="approve", comment="")
-    Review.objects.create(reviewer=reviewer, edge=edge, decision="reject", comment="changed my mind")
+    Review.objects.create(
+        reviewer=reviewer, edge=edge, decision="reject", comment="changed my mind"
+    )
     latest = Review.objects.filter(edge=edge).order_by("-created_at").first()
     assert latest is not None
     assert latest.decision == "reject"
@@ -79,6 +82,7 @@ def test_review_never_updates_in_place(db, reviewer, edge):
 
 
 # --- Signoff -----------------------------------------------------------------
+
 
 def test_signoff_pins_a_specific_model_version(db, reviewer, network, model_version):
     from verify.models import Signoff
@@ -101,10 +105,13 @@ def test_only_one_signoff_per_model_version(db, reviewer, other_reviewer, networ
 
     Signoff.objects.create(network=network, model_version=model_version, signed_by=reviewer)
     with pytest.raises(IntegrityError):
-        Signoff.objects.create(network=network, model_version=model_version, signed_by=other_reviewer)
+        Signoff.objects.create(
+            network=network, model_version=model_version, signed_by=other_reviewer
+        )
 
 
 # --- ReviewAssignment --------------------------------------------------------
+
 
 def test_review_assignment_links_reviewer_to_network(db, reviewer, network):
     from verify.models import ReviewAssignment
@@ -124,6 +131,7 @@ def test_review_assignment_role_in_allowed_set(db, reviewer, network):
 
 
 # --- Subscription ------------------------------------------------------------
+
 
 def test_user_can_subscribe_to_network(db, reviewer, network):
     from verify.models import Subscription
@@ -152,6 +160,7 @@ def test_subscription_requires_network_or_category(db, reviewer):
 
 
 # --- Notification ------------------------------------------------------------
+
 
 def test_notification_starts_unread(db, reviewer, network):
     from verify.models import Notification
