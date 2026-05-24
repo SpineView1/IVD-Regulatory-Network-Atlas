@@ -1,7 +1,7 @@
 {% load dashboard_extras %}
 {% comment %}Partial: one conflict card in the disagreement queue.
    HTMX target: #conflict-{{ conflict.pk }}
-   Context: conflict, network{% endcomment %}
+   Context: conflict, network, conflict_evidence (dict keyed by conflict.pk){% endcomment %}
 <div id="conflict-{{ conflict.pk }}"
      class="card mb-3 {% if conflict.resolution_status == 'human_resolved' %}border-success{% elif conflict.resolution_status == 'auto_resolved' %}border-info{% else %}border-warning{% endif %}">
   <div class="card-header d-flex justify-content-between align-items-center py-2">
@@ -13,6 +13,8 @@
   </div>
   <div class="card-body py-2">
     <div class="row g-2 mb-2">
+
+      {# ── Edge A ── #}
       <div class="col-sm-6">
         <div class="border rounded p-2 h-100">
           <strong>Edge A</strong>
@@ -27,8 +29,48 @@
             </span>
             &middot; {% status_pill conflict.edge_a.status %}
           </div>
+
+          {# Evidence block for Edge A #}
+          {% with ev_data=conflict_evidence|get_item:conflict.pk %}
+          {% if ev_data %}
+          {% with ev=ev_data.edge_a %}
+          {% if ev.items %}
+          <div class="mt-2">
+            <div class="fw-semibold small text-secondary mb-1">
+              <i class="bi bi-journal-text me-1"></i>Evidence
+              <span class="badge bg-light text-dark border ms-1">{{ ev.total }}</span>
+            </div>
+            <ol class="ps-3 mb-0">
+              {% for item in ev.items %}
+              <li class="small mb-2">
+                <blockquote class="blockquote mb-1 fst-italic" style="font-size:0.82em; border-left:2px solid #dee2e6; padding-left:0.5em;">
+                  "{{ item.evidence_span }}"
+                </blockquote>
+                <span class="text-muted" style="font-size:0.78em;">
+                  <a href="{{ item.pubmed_url }}" target="_blank" rel="noopener noreferrer"
+                     class="text-decoration-none">PMID&nbsp;{{ item.pmid }}</a>
+                  &middot; {{ item.citation }}
+                  &middot; <code>{{ item.model_name }}</code>
+                  {% if item.relation_logprob is not None %}
+                  &middot; logp&nbsp;{{ item.relation_logprob|floatformat:3 }}
+                  {% endif %}
+                  &middot; conf&nbsp;{{ item.confidence|floatformat:2 }}
+                </span>
+              </li>
+              {% endfor %}
+            </ol>
+            {% if ev.extra > 0 %}
+            <div class="text-muted small ms-3">+{{ ev.extra }} more</div>
+            {% endif %}
+          </div>
+          {% endif %}
+          {% endwith %}
+          {% endif %}
+          {% endwith %}
         </div>
       </div>
+
+      {# ── Edge B ── #}
       <div class="col-sm-6">
         <div class="border rounded p-2 h-100">
           <strong>Edge B</strong>
@@ -43,8 +85,47 @@
             </span>
             &middot; {% status_pill conflict.edge_b.status %}
           </div>
+
+          {# Evidence block for Edge B #}
+          {% with ev_data=conflict_evidence|get_item:conflict.pk %}
+          {% if ev_data %}
+          {% with ev=ev_data.edge_b %}
+          {% if ev.items %}
+          <div class="mt-2">
+            <div class="fw-semibold small text-secondary mb-1">
+              <i class="bi bi-journal-text me-1"></i>Evidence
+              <span class="badge bg-light text-dark border ms-1">{{ ev.total }}</span>
+            </div>
+            <ol class="ps-3 mb-0">
+              {% for item in ev.items %}
+              <li class="small mb-2">
+                <blockquote class="blockquote mb-1 fst-italic" style="font-size:0.82em; border-left:2px solid #dee2e6; padding-left:0.5em;">
+                  "{{ item.evidence_span }}"
+                </blockquote>
+                <span class="text-muted" style="font-size:0.78em;">
+                  <a href="{{ item.pubmed_url }}" target="_blank" rel="noopener noreferrer"
+                     class="text-decoration-none">PMID&nbsp;{{ item.pmid }}</a>
+                  &middot; {{ item.citation }}
+                  &middot; <code>{{ item.model_name }}</code>
+                  {% if item.relation_logprob is not None %}
+                  &middot; logp&nbsp;{{ item.relation_logprob|floatformat:3 }}
+                  {% endif %}
+                  &middot; conf&nbsp;{{ item.confidence|floatformat:2 }}
+                </span>
+              </li>
+              {% endfor %}
+            </ol>
+            {% if ev.extra > 0 %}
+            <div class="text-muted small ms-3">+{{ ev.extra }} more</div>
+            {% endif %}
+          </div>
+          {% endif %}
+          {% endwith %}
+          {% endif %}
+          {% endwith %}
         </div>
       </div>
+
     </div>
 
     {% if conflict.resolution_status == 'open' %}
