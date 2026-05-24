@@ -1,0 +1,9 @@
+Network: {{ network.title }} ({{ network.code }})
+
+This network has been signed off and promoted to VERIFIED. A curator MAJOR
+version has been cut.
+
+{{ message }}
+
+You can download the verified SBML-qual model and CSV bundle from the
+network detail page.

@@ -1,0 +1,108 @@
+{% extends "dashboard/base.html" %}
+{% load dashboard_extras %}
+
+{% block title %}{{ network.title }} — IVD Atlas{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-1">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:grid' %}">Networks</a></li>
+        <li class="breadcrumb-item active">{{ network.code }}</li>
+      </ol>
+    </nav>
+    <h1 class="h2 mb-0">{{ network.title }}</h1>
+    <span class="text-muted small">Category {{ network.category }}</span>
+  </div>
+  <div class="d-flex gap-2 align-items-center">
+    {% status_pill network.pipeline_status %}
+    <a href="{% url 'dashboard:disagreement_queue' code=network.code %}"
+       class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-list-check"></i> Disagreement Queue
+    </a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Left: Cytoscape graph -->
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-diagram-3 me-1"></i>Interaction Graph</span>
+        <small class="text-muted">
+          Edges JSON: <code>{{ edges_json_url }}</code>
+        </small>
+      </div>
+      <div class="card-body p-2">
+        {% include "dashboard/partials/cytoscape_init.html" with network=network edges_json_url=edges_json_url %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Versions panel -->
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-archive me-1"></i>Model Versions
+      </div>
+      <div class="card-body p-0">
+        {% if versions %}
+        <ul class="list-group list-group-flush">
+          {% for mv in versions %}
+          <li class="list-group-item">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <strong>v{{ mv.semver }}</strong>
+                <br />
+                <small class="text-muted">
+                  Frozen: {{ mv.frozen_at|date:"Y-m-d H:i" }}
+                </small>
+                <br />
+                <small class="text-muted">
+                  {{ mv.n_edges }} edges · {{ mv.n_species }} species
+                </small>
+              </div>
+              <div class="d-flex flex-column gap-1 text-end">
+                {% if mv.zip_s3_key %}
+                <a href="{% url 'sbml:download' code=network.code semver=mv.semver %}?type=zip"
+                   class="btn btn-xs btn-sm btn-outline-primary py-0 px-2">
+                  <i class="bi bi-file-zip"></i> ZIP
+                </a>
+                {% endif %}
+                {% if mv.sbml_s3_key %}
+                <a href="{% url 'sbml:download' code=network.code semver=mv.semver %}?type=sbml"
+                   class="btn btn-xs btn-sm btn-outline-secondary py-0 px-2">
+                  SBML
+                </a>
+                {% endif %}
+                {% if mv.csv_s3_key %}
+                <a href="{% url 'sbml:download' code=network.code semver=mv.semver %}?type=edges_csv"
+                   class="btn btn-xs btn-sm btn-outline-secondary py-0 px-2">
+                  CSV
+                </a>
+                {% endif %}
+              </div>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <div class="p-3 text-muted">
+          <em>No frozen versions yet. Versions appear here once the pipeline completes.</em>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if network.description %}
+    <div class="card mt-3">
+      <div class="card-header">About this network</div>
+      <div class="card-body">
+        <p class="mb-0 small">{{ network.description }}</p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

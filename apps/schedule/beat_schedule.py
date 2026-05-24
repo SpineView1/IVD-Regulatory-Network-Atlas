@@ -77,10 +77,20 @@ PHASE_4_BEAT_SCHEDULE: dict[str, dict] = {
     },
 }
 
+# Phase 5: reviewer-assignment reminders (per spec §6 Beat schedule).
+PHASE_5_BEAT_SCHEDULE: dict[str, dict] = {
+    "verify-dispatch-review-assignments": {
+        "task": "verify.dispatch_review_assignments",
+        "schedule": crontab(minute=0),  # hourly, per spec §6
+        "options": {"queue": "q.io"},
+    },
+}
+
 # Canonical merged schedule — wired into CELERY_BEAT_SCHEDULE in settings.base.
 BEAT_SCHEDULE: dict[str, dict] = {
     **PHASE_1_BEAT_SCHEDULE,
     **PHASE_2_BEAT_SCHEDULE,
     **PHASE_3_BEAT_SCHEDULE,
     **PHASE_4_BEAT_SCHEDULE,
+    **PHASE_5_BEAT_SCHEDULE,
 }

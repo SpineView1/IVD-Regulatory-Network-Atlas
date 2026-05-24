@@ -1,0 +1,7 @@
+Network: {{ network.title }} ({{ network.code }})
+
+A new model version has been published for this network.
+
+{{ message }}
+
+Visit the network detail page to review and download it.

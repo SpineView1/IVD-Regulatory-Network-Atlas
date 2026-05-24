@@ -1,0 +1,92 @@
+{% load dashboard_extras %}
+{# Partial: one conflict card in the disagreement queue.
+   HTMX target: #conflict-{{ conflict.pk }}
+   Context: conflict, network
+#}
+<div id="conflict-{{ conflict.pk }}"
+     class="card mb-3 {% if conflict.resolution_status == 'human_resolved' %}border-success{% elif conflict.resolution_status == 'auto_resolved' %}border-info{% else %}border-warning{% endif %}">
+  <div class="card-header d-flex justify-content-between align-items-center py-2">
+    <span>
+      <span class="badge bg-secondary me-1">{{ conflict.conflict_type }}</span>
+      Conflict #{{ conflict.pk }}
+    </span>
+    {% status_pill conflict.resolution_status %}
+  </div>
+  <div class="card-body py-2">
+    <div class="row g-2 mb-2">
+      <div class="col-sm-6">
+        <div class="border rounded p-2 h-100">
+          <strong>Edge A</strong>
+          <div class="small mt-1">
+            {{ conflict.edge_a.source.preferred_label }}
+            <span class="badge bg-primary mx-1">{{ conflict.edge_a.relation }}</span>
+            {{ conflict.edge_a.target.preferred_label }}
+          </div>
+          <div class="small text-muted mt-1">
+            Belief: <span style="color: {{ conflict.edge_a.belief_score|belief_color }}">
+              {{ conflict.edge_a.belief_score|floatformat:2 }}
+            </span>
+            &middot; {% status_pill conflict.edge_a.status %}
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6">
+        <div class="border rounded p-2 h-100">
+          <strong>Edge B</strong>
+          <div class="small mt-1">
+            {{ conflict.edge_b.source.preferred_label }}
+            <span class="badge bg-danger mx-1">{{ conflict.edge_b.relation }}</span>
+            {{ conflict.edge_b.target.preferred_label }}
+          </div>
+          <div class="small text-muted mt-1">
+            Belief: <span style="color: {{ conflict.edge_b.belief_score|belief_color }}">
+              {{ conflict.edge_b.belief_score|floatformat:2 }}
+            </span>
+            &middot; {% status_pill conflict.edge_b.status %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% if conflict.resolution_status == 'open' %}
+    <form hx-post="{% url 'verify:resolve_conflict' pk=conflict.pk %}"
+          hx-target="#conflict-{{ conflict.pk }}"
+          hx-swap="outerHTML"
+          class="d-flex gap-2 align-items-end mt-2">
+      {% csrf_token %}
+      <div class="flex-grow-1">
+        <label class="form-label small mb-1" for="comment-{{ conflict.pk }}">
+          Resolution comment (optional)
+        </label>
+        <textarea id="comment-{{ conflict.pk }}"
+                  name="comment"
+                  class="form-control form-control-sm"
+                  rows="2"
+                  placeholder="Briefly explain your resolution..."></textarea>
+      </div>
+      <div class="d-flex flex-column gap-1">
+        <button type="submit" name="decision" value="approve"
+                class="btn btn-sm btn-success">
+          <i class="bi bi-check2-circle"></i> Accept A
+        </button>
+        <button type="submit" name="decision" value="reject"
+                class="btn btn-sm btn-danger">
+          <i class="bi bi-x-circle"></i> Accept B
+        </button>
+        <button type="submit" name="decision" value="discuss"
+                class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-chat-dots"></i> Discuss
+        </button>
+      </div>
+    </form>
+    {% else %}
+    <div class="alert alert-success py-1 mb-0 small mt-2">
+      <i class="bi bi-check-circle me-1"></i>
+      Resolved as: <strong>{{ conflict.resolution_status }}</strong>
+      {% if conflict.reviews.exists %}
+      — {{ conflict.reviews.last.comment }}
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>

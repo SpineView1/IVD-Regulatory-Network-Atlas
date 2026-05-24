@@ -598,12 +598,28 @@ def reassign_network_membership(edge_ids: Iterable[int]) -> dict:
                 )
                 if was_created:
                     created_count += 1
-                    # Demote verified → stale per spec §7
-                    if network.pipeline_status == "verified":
-                        Network.objects.filter(pk=network.pk).update(pipeline_status="stale")
-                        demoted_count += 1
-                    elif network.pipeline_status == "idle":
-                        # idle → stale when new edge arrives that matches root
-                        Network.objects.filter(pk=network.pk).update(pipeline_status="stale")
+                    # Demote verified → stale (or idle → stale) per spec §7.
+                    # Use verify.services.mark_stale so subscribers are notified.
+                    # Lazy import to keep graph → verify a one-way dependency
+                    # (verify must never import graph at module level).
+                    if network.pipeline_status in ("verified", "idle"):
+                        try:
+                            from verify.services import mark_stale  # noqa: PLC0415
+
+                            mark_stale(
+                                network=network,
+                                reason=f"New edge (id={edge.pk}) arrived for network '{network.code}'.",
+                            )
+                            demoted_count += 1
+                        except Exception:
+                            # Fallback: direct DB update so Phase 3 behaviour is
+                            # preserved even if verify is unavailable.
+                            logger.exception(
+                                "reassign_network_membership: mark_stale failed for network %s; "
+                                "falling back to direct DB update.",
+                                network.code,
+                            )
+                            Network.objects.filter(pk=network.pk).update(pipeline_status="stale")
+                            demoted_count += 1
 
     return {"memberships_created": created_count, "networks_demoted": demoted_count}

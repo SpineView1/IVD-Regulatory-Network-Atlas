@@ -171,7 +171,7 @@ def regenerate_network(
 
     # Best-effort downstream notification (Phase 5) — outside atomic block
     try:
-        from verify.services import notify_subscribers  # type: ignore[import-not-found]
+        from verify.services import notify_subscribers
 
         notify_subscribers(network=network, model_version=mv)
     except Exception:

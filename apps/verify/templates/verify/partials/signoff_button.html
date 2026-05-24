@@ -1,0 +1,44 @@
+{# Partial: sign-off button / status fragment for network_detail.
+   Context: network, model_version (optional)
+   HTMX target: #signoff-panel
+#}
+<div id="signoff-panel">
+{% if network.pipeline_status == "version_draft" and model_version %}
+  <div class="card border-success mb-3">
+    <div class="card-body py-2">
+      <h6 class="card-title mb-2">
+        <i class="bi bi-patch-check me-1 text-success"></i>
+        Ready for sign-off — v{{ model_version.semver }}
+      </h6>
+      <form hx-post="{% url 'verify:sign_off' network_code=network.code semver=model_version.semver %}"
+            hx-target="#signoff-panel"
+            hx-swap="outerHTML"
+            class="d-flex gap-2 align-items-end">
+        {% csrf_token %}
+        <div class="flex-grow-1">
+          <label class="form-label small mb-1" for="signoff-notes">
+            Curator notes (optional)
+          </label>
+          <textarea id="signoff-notes"
+                    name="notes"
+                    class="form-control form-control-sm"
+                    rows="2"
+                    placeholder="Briefly describe the verification decision..."></textarea>
+        </div>
+        <button type="submit" class="btn btn-success btn-sm">
+          <i class="bi bi-check-circle me-1"></i>Sign off
+        </button>
+      </form>
+    </div>
+  </div>
+{% elif network.pipeline_status == "verified" %}
+  <div class="alert alert-success py-1 mb-2 small">
+    <i class="bi bi-patch-check-fill me-1"></i>
+    Network is <strong>verified</strong>.
+    {% if network.signoffs.exists %}
+      Signed off by {{ network.signoffs.last.signed_by.get_username }}
+      on {{ network.signoffs.last.created_at|date:"Y-m-d" }}.
+    {% endif %}
+  </div>
+{% endif %}
+</div>

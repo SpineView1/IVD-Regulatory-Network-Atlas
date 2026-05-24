@@ -1,0 +1,62 @@
+{% load dashboard_extras %}
+{# Partial: initialise Cytoscape.js for the network graph.
+   Requires: edges_json_url, network.code
+   Cytoscape.js is loaded in base.html from CDN.
+#}
+<div id="cy-container" style="width: 100%; height: 500px; border: 1px solid #dee2e6; border-radius: 4px; background: #f8f9fa;"></div>
+<script>
+(function () {
+  const edgesUrl = "{{ edges_json_url }}";
+  fetch(edgesUrl)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      const elements = [].concat(data.nodes || []).concat(data.edges || []);
+      const cy = cytoscape({
+        container: document.getElementById("cy-container"),
+        elements: elements,
+        style: [
+          {
+            selector: "node",
+            style: {
+              "label": "data(label)",
+              "font-size": 11,
+              "background-color": "#6c757d",
+              "color": "#212529",
+              "text-valign": "bottom",
+              "text-halign": "center",
+              "width": 28,
+              "height": 28,
+            }
+          },
+          {
+            selector: "edge",
+            style: {
+              "width": 2,
+              "line-color": function(ele) {
+                const status = ele.data("status");
+                if (status === "accepted") return "#198754";
+                if (status === "conflicted") return "#dc3545";
+                if (status === "rejected") return "#6c757d";
+                return "#0d6efd";
+              },
+              "target-arrow-shape": "triangle",
+              "target-arrow-color": "#0d6efd",
+              "curve-style": "bezier",
+              "label": "data(relation)",
+              "font-size": 9,
+              "text-rotation": "autorotate",
+            }
+          }
+        ],
+        layout: { name: "cose", animate: false, padding: 20 },
+      });
+      // Expose for debugging
+      window._cy_{{ network.code|slugify }} = cy;
+    })
+    .catch(function(err) {
+      document.getElementById("cy-container").innerHTML =
+        '<div class="d-flex align-items-center justify-content-center h-100 text-muted">'
+        + '<p>Graph data unavailable: ' + err.message + '</p></div>';
+    });
+})();
+</script>

@@ -1,0 +1,8 @@
+Network: {{ network.title }} ({{ network.code }})
+
+This network has become STALE because new evidence or edge changes arrived,
+so a previously verified model may now contain disagreements.
+
+{{ message }}
+
+Please review the disagreement queue and re-verify when ready.

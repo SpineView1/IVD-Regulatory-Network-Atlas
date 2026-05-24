@@ -1,0 +1,7 @@
+Network: {{ network.title }} ({{ network.code }})
+
+There are open disagreements on this network awaiting curator review.
+
+{{ message }}
+
+Open the disagreement queue to resolve them.
