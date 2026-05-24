@@ -110,3 +110,36 @@ def test_esearch_paginates_via_retstart(client, httpx_mock: HTTPXMock):
     req = httpx_mock.get_requests()[0]
     assert "retstart=200" in str(req.url)
     assert "retmax=100" in str(req.url)
+
+
+def _esearch_xml(pmids):
+    ids = "".join(f"<Id>{p}</Id>" for p in pmids)
+    return f"<eSearchResult><IdList>{ids}</IdList></eSearchResult>".encode()
+
+
+def test_esearch_all_paginates_until_exhausted(client, httpx_mock: HTTPXMock):
+    """esearch_all walks retstart in pages until a short page ends it."""
+    httpx_mock.add_response(method="GET", url=ESEARCH_URL_RE, content=_esearch_xml([1, 2, 3]))
+    httpx_mock.add_response(method="GET", url=ESEARCH_URL_RE, content=_esearch_xml([4, 5, 6]))
+    httpx_mock.add_response(
+        method="GET", url=ESEARCH_URL_RE, content=_esearch_xml([7, 8])
+    )  # short → stop
+    out = client.esearch_all(query="test", page_size=3, max_results=100)
+    assert out == [1, 2, 3, 4, 5, 6, 7, 8]
+
+
+def test_esearch_all_respects_max_results(client, httpx_mock: HTTPXMock):
+    httpx_mock.add_response(method="GET", url=ESEARCH_URL_RE, content=_esearch_xml([1, 2, 3]))
+    httpx_mock.add_response(method="GET", url=ESEARCH_URL_RE, content=_esearch_xml([4, 5, 6]))
+    out = client.esearch_all(query="test", page_size=3, max_results=5)
+    assert len(out) == 5
+    assert out == [1, 2, 3, 4, 5]
+
+
+def test_esearch_all_dedupes(client, httpx_mock: HTTPXMock):
+    httpx_mock.add_response(method="GET", url=ESEARCH_URL_RE, content=_esearch_xml([1, 2, 3]))
+    httpx_mock.add_response(
+        method="GET", url=ESEARCH_URL_RE, content=_esearch_xml([3, 4])
+    )  # 3 dup, short → stop
+    out = client.esearch_all(query="test", page_size=3, max_results=100)
+    assert out == [1, 2, 3, 4]
