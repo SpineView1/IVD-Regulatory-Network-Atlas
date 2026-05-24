@@ -100,7 +100,7 @@ def healthcheck() -> dict:
     a dead Beat scheduler.
     """
     # Lazy import: ``schedule`` depends on ``monitoring`` at import time.
-    from schedule.models import Watermark
+    from schedule.models import HealthcheckState, Watermark
     from schedule.tasks import BEAT_HEARTBEAT_SOURCE  # noqa: PLC0415
 
     result = {
@@ -189,5 +189,14 @@ def healthcheck() -> dict:
             context={},
         )
         result["beat_scheduler_stale"] = True
+
+    # Phase 7: write singleton row so Prometheus collector can expose age.
+    state, _ = HealthcheckState.objects.get_or_create(
+        id=1,
+        defaults={"last_run_at": timezone.now(), "status": "ok"},
+    )
+    state.last_run_at = timezone.now()
+    state.status = "ok"
+    state.save(update_fields=["last_run_at", "status"])
 
     return result

@@ -1,10 +1,12 @@
-"""schedule models — Watermark, RateLimitBucket, ScheduledJob.
+"""schedule models — Watermark, RateLimitBucket, ScheduledJob, HealthcheckState.
 
-These three tables hold all the durable cross-task coordination state:
+These tables hold all the durable cross-task coordination state:
 - Watermark: how far each external-source ingestion has progressed.
 - RateLimitBucket: token bucket per provider, persisted so restarts
   don't reset budget. (per spec §5 / §6)
 - ScheduledJob: bookkeeping for Beat-driven periodic tasks.
+- HealthcheckState: singleton row recording the last successful run of
+  the monitoring.healthcheck task; read by the Prometheus collector.
 """
 
 from __future__ import annotations
@@ -119,3 +121,23 @@ class ScheduledJob(TimestampedModel):
         self.last_status = "failed"
         self.last_error = error[:4000]
         self.save(update_fields=["last_status", "last_error", "updated_at"])
+
+
+class HealthcheckState(models.Model):
+    """Singleton row (id=1) recording when the last healthcheck task ran.
+
+    Written by ``monitoring.tasks.healthcheck`` after each successful run.
+    Read by ``schedule.metrics.HealthcheckAgeCollector`` at Prometheus scrape
+    time to expose ``interactome_healthcheck_last_run_seconds_ago``.
+
+    Not a TimestampedModel — we want explicit control over ``last_run_at``.
+    """
+
+    last_run_at = models.DateTimeField()
+    status = models.CharField(max_length=16, default="ok")
+
+    class Meta:
+        db_table = "schedule_healthcheckstate"
+
+    def __str__(self) -> str:
+        return f"HealthcheckState(last_run_at={self.last_run_at!r}, status={self.status!r})"
