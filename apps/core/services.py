@@ -23,6 +23,7 @@ from typing import Any, Protocol, runtime_checkable
 
 from django.db import transaction
 
+from core.aliases import alias_for
 from core.models import Identifier, OntologyEntity
 
 logger = logging.getLogger(__name__)
@@ -135,6 +136,25 @@ def _default_grounder() -> _Grounder:
     return gilda
 
 
+def _ground_top(grounder: _Grounder, text: str) -> Any | None:
+    """Ground ``text`` and return the top match above threshold, else None.
+
+    Swallows grounder failures (cold-worker resource load, network errors) the
+    same way the caller treats "no match" — as "leave it ungrounded".
+    """
+    try:
+        matches = grounder.ground(text)
+    except Exception as exc:  # gilda's resource load can fail on cold worker
+        logger.warning("grounder.ground failed for %r: %s", text, exc)
+        return None
+    if not matches:
+        return None
+    top = matches[0]
+    if top.score < GROUND_SCORE_THRESHOLD:
+        return None
+    return top
+
+
 def ground_mention(
     text: str,
     *,
@@ -167,18 +187,20 @@ def ground_mention(
         return None
 
     _g: _Grounder = grounder if grounder is not None else _default_grounder()
+    text_s = text.strip()
 
-    try:
-        matches = _g.ground(text.strip())
-    except Exception as exc:  # gilda's resource load can fail on cold worker
-        logger.warning("grounder.ground failed for %r: %s", text, exc)
-        return None
-
-    if not matches:
-        return None
-
-    top = matches[0]
-    if top.score < GROUND_SCORE_THRESHOLD:
+    # Try the raw mention first (proven path for clean symbols). Only if that
+    # fails fall back to a curated alias — e.g. "Collagen II" → "COL2A1" — so
+    # normalization can recover groundings without ever breaking an existing one.
+    top = _ground_top(_g, text_s)
+    if top is None:
+        alias = alias_for(text_s)
+        if alias is not None and alias.lower() != text_s.lower():
+            alias_top = _ground_top(_g, alias)
+            if alias_top is not None:
+                logger.info("grounded %r via alias %r", text_s, alias)
+                top = alias_top
+    if top is None:
         return None
 
     scheme = _GILDA_DB_TO_SCHEME.get(top.term.db.upper(), "OTHER")
