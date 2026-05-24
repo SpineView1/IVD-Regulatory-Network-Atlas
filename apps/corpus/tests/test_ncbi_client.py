@@ -117,29 +117,45 @@ def _esearch_xml(pmids):
     return f"<eSearchResult><IdList>{ids}</IdList></eSearchResult>".encode()
 
 
-def test_esearch_all_paginates_until_exhausted(client, httpx_mock: HTTPXMock):
-    """esearch_all walks retstart in pages until a short page ends it."""
+def _history_xml(count, webenv="MCID_TEST", query_key="1"):
+    return (
+        f"<eSearchResult><Count>{count}</Count>"
+        f"<WebEnv>{webenv}</WebEnv><QueryKey>{query_key}</QueryKey></eSearchResult>"
+    ).encode()
+
+
+def test_esearch_all_pages_via_history_server(client, httpx_mock: HTTPXMock):
+    """esearch_all stores the set with usehistory=y then pages from History,
+    so it retrieves beyond NCBI's ~10k single-request cap."""
+    # 1) history store: Count=8
+    httpx_mock.add_response(method="GET", url=ESEARCH_URL_RE, content=_history_xml(8))
+    # 2..) history pages (page_size=3)
     httpx_mock.add_response(method="GET", url=ESEARCH_URL_RE, content=_esearch_xml([1, 2, 3]))
     httpx_mock.add_response(method="GET", url=ESEARCH_URL_RE, content=_esearch_xml([4, 5, 6]))
-    httpx_mock.add_response(
-        method="GET", url=ESEARCH_URL_RE, content=_esearch_xml([7, 8])
-    )  # short → stop
+    httpx_mock.add_response(method="GET", url=ESEARCH_URL_RE, content=_esearch_xml([7, 8]))
     out = client.esearch_all(query="test", page_size=3, max_results=100)
     assert out == [1, 2, 3, 4, 5, 6, 7, 8]
+    # The first request must request usehistory=y
+    assert "usehistory=y" in str(httpx_mock.get_requests()[0].url)
+    # Subsequent requests page from the stored WebEnv
+    assert "WebEnv=MCID_TEST" in str(httpx_mock.get_requests()[1].url)
 
 
 def test_esearch_all_respects_max_results(client, httpx_mock: HTTPXMock):
+    httpx_mock.add_response(method="GET", url=ESEARCH_URL_RE, content=_history_xml(100))
     httpx_mock.add_response(method="GET", url=ESEARCH_URL_RE, content=_esearch_xml([1, 2, 3]))
-    httpx_mock.add_response(method="GET", url=ESEARCH_URL_RE, content=_esearch_xml([4, 5, 6]))
+    httpx_mock.add_response(method="GET", url=ESEARCH_URL_RE, content=_esearch_xml([4, 5]))
     out = client.esearch_all(query="test", page_size=3, max_results=5)
-    assert len(out) == 5
     assert out == [1, 2, 3, 4, 5]
 
 
-def test_esearch_all_dedupes(client, httpx_mock: HTTPXMock):
-    httpx_mock.add_response(method="GET", url=ESEARCH_URL_RE, content=_esearch_xml([1, 2, 3]))
+def test_esearch_all_falls_back_without_history(client, httpx_mock: HTTPXMock):
+    """If the History server returns no WebEnv, fall back to one capped page."""
     httpx_mock.add_response(
-        method="GET", url=ESEARCH_URL_RE, content=_esearch_xml([3, 4])
-    )  # 3 dup, short → stop
+        method="GET",
+        url=ESEARCH_URL_RE,
+        content=b"<eSearchResult><Count>3</Count></eSearchResult>",  # no WebEnv
+    )
+    httpx_mock.add_response(method="GET", url=ESEARCH_URL_RE, content=_esearch_xml([1, 2, 3]))
     out = client.esearch_all(query="test", page_size=3, max_results=100)
-    assert out == [1, 2, 3, 4]
+    assert out == [1, 2, 3]

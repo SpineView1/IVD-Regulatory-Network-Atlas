@@ -71,6 +71,46 @@ class NcbiClient:
         tree = etree.fromstring(resp.content)  # noqa: S320
         return [int(id_el.text) for id_el in tree.findall(".//IdList/Id")]
 
+    @require_token("ncbi_eutils", cost=1)
+    def _esearch_history(self, *, query: str, db: str = "pubmed") -> tuple[int, str, str]:
+        """Store a result set on NCBI's History server.
+
+        Returns ``(count, webenv, query_key)``. ``usehistory=y`` is required to
+        page beyond the first ~10k results (plain ``retstart`` is hard-capped
+        by NCBI at ~10k).
+        """
+        params: dict[str, Any] = {
+            **self._base_params,
+            "db": db,
+            "term": query,
+            "usehistory": "y",
+            "retmax": 0,
+        }
+        resp = self._client.get(ESEARCH_URL, params=params)
+        resp.raise_for_status()
+        tree = etree.fromstring(resp.content)  # noqa: S320
+        count = int(tree.findtext(".//Count") or "0")
+        webenv = tree.findtext(".//WebEnv") or ""
+        query_key = tree.findtext(".//QueryKey") or ""
+        return count, webenv, query_key
+
+    @require_token("ncbi_eutils", cost=1)
+    def _esearch_history_page(
+        self, *, webenv: str, query_key: str, retstart: int, retmax: int, db: str = "pubmed"
+    ) -> list[int]:
+        params: dict[str, Any] = {
+            **self._base_params,
+            "db": db,
+            "WebEnv": webenv,
+            "query_key": query_key,
+            "retstart": retstart,
+            "retmax": retmax,
+        }
+        resp = self._client.get(ESEARCH_URL, params=params)
+        resp.raise_for_status()
+        tree = etree.fromstring(resp.content)  # noqa: S320
+        return [int(id_el.text) for id_el in tree.findall(".//IdList/Id")]
+
     def esearch_all(
         self,
         *,
@@ -79,29 +119,34 @@ class NcbiClient:
         page_size: int = 9999,
         max_results: int = 40000,
     ) -> list[int]:
-        """Paginated ESearch returning ALL matching PMIDs up to ``max_results``.
+        """Return ALL matching PMIDs up to ``max_results`` via the History server.
 
-        NCBI's ESearch returns at most ~10k IdList entries per request
-        regardless of ``retmax``, so a single call silently truncates a large
-        result set (the master IDD query has ~27k hits). This walks ``retstart``
-        in pages of ``page_size`` until the result set is exhausted or
-        ``max_results`` is reached. Each page consumes a rate-limit token via
-        the underlying ``esearch``. Returns de-duplicated PMIDs in order.
+        NCBI caps plain ``retstart`` paging at the first ~10k results, so a
+        large result set (the master IDD query has ~30k hits) is silently
+        truncated by a single ``esearch``. This stores the set with
+        ``usehistory=y`` and pages through it from the History server, which
+        supports deep ``retstart``. Returns de-duplicated PMIDs in order.
         """
+        count, webenv, query_key = self._esearch_history(query=query, db=db)
+        if not webenv or not query_key:
+            # History unavailable — fall back to a single (capped) page.
+            return self.esearch(query=query, retmax=min(page_size, max_results), db=db)
+
+        target = min(count, max_results)
         seen: set[int] = set()
         out: list[int] = []
         retstart = 0
-        while len(out) < max_results:
-            want = min(page_size, max_results - len(out))
-            page = self.esearch(query=query, retmax=want, retstart=retstart, db=db)
+        while retstart < target:
+            want = min(page_size, target - retstart)
+            page = self._esearch_history_page(
+                webenv=webenv, query_key=query_key, retstart=retstart, retmax=want, db=db
+            )
             if not page:
                 break
             for pmid in page:
                 if pmid not in seen:
                     seen.add(pmid)
                     out.append(pmid)
-            if len(page) < want:
-                break  # last page
             retstart += len(page)
         return out[:max_results]
 
