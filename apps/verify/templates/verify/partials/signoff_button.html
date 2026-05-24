@@ -1,7 +1,6 @@
-{# Partial: sign-off button / status fragment for network_detail.
+{% comment %}Partial: sign-off button / status fragment for network_detail.
    Context: network, model_version (optional)
-   HTMX target: #signoff-panel
-#}
+   HTMX target: #signoff-panel{% endcomment %}
 <div id="signoff-panel">
 {% if network.pipeline_status == "version_draft" and model_version %}
   <div class="card border-success mb-3">

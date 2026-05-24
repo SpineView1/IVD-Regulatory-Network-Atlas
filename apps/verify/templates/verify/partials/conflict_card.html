@@ -1,8 +1,7 @@
 {% load dashboard_extras %}
-{# Partial: one conflict card in the disagreement queue.
+{% comment %}Partial: one conflict card in the disagreement queue.
    HTMX target: #conflict-{{ conflict.pk }}
-   Context: conflict, network
-#}
+   Context: conflict, network{% endcomment %}
 <div id="conflict-{{ conflict.pk }}"
      class="card mb-3 {% if conflict.resolution_status == 'human_resolved' %}border-success{% elif conflict.resolution_status == 'auto_resolved' %}border-info{% else %}border-warning{% endif %}">
   <div class="card-header d-flex justify-content-between align-items-center py-2">
