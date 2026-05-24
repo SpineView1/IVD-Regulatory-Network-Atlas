@@ -251,6 +251,24 @@ def network_detail(request: HttpRequest, code: str) -> HttpResponse:
     return render(request, "dashboard/network_detail.html", context)
 
 
+def network_curation_csv(request: HttpRequest, code: str) -> HttpResponse:
+    """Download one network's interactions in the biologist curation format:
+    STIMULI / RELATION / RESPONSE / PATHWAY INVOLVED / TYPE OF CELLS /
+    DEG/NON-DEG / COMMENTS / REFERENCE — one row per (edge, supporting paper).
+    """
+    from django.utils.text import slugify  # noqa: PLC0415
+
+    from graph.curation_export import write_network_curation_csv  # noqa: PLC0415
+    from networks.models import Network  # noqa: PLC0415
+
+    network = get_object_or_404(Network, code=code)
+    payload = write_network_curation_csv(network)
+    filename = f"{slugify(network.code)}-curation.csv"
+    response = HttpResponse(payload, content_type="text/csv")
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
+
+
 # ---------------------------------------------------------------------------
 # Task 11: Disagreement queue
 # ---------------------------------------------------------------------------
