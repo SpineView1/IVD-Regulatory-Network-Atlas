@@ -12,7 +12,8 @@ from __future__ import annotations
 PROMPT_V1_VERSION = "1.0.0"
 
 # The exact 7 Ollama models the cluster gateway exposes (per spec §1
-# architecture diagram and §6 worker rationale).
+# architecture diagram and §6 worker rationale). This is the canonical
+# ensemble roster; deployments may run a subset (see active_models()).
 SUPPORTED_OLLAMA_MODELS: tuple[str, ...] = (
     "medgemma:27b",
     "phi4:14b",
@@ -22,6 +23,28 @@ SUPPORTED_OLLAMA_MODELS: tuple[str, ...] = (
     "devstral:24b",
     "llama3.1:8b",
 )
+
+
+def active_models() -> tuple[str, ...]:
+    """Return the models extraction should actually dispatch to.
+
+    Defaults to the full canonical ensemble (``SUPPORTED_OLLAMA_MODELS``).
+    A deployment whose GPU can only serve a subset (e.g. a single box with
+    ``OLLAMA_MAX_LOADED_MODELS=2``) sets ``settings.EXTRACTION_ACTIVE_MODELS``
+    to that subset so chunks are considered "covered" once those models
+    finish — otherwise coverage can never reach ``len(SUPPORTED_OLLAMA_MODELS)``
+    and ``enqueue_pending_chunks`` re-dispatches the missing models forever,
+    flooding queues that have no worker. Unknown names are ignored; an empty
+    or fully-invalid config falls back to the full roster.
+    """
+    from django.conf import settings  # noqa: PLC0415 — avoid import-time settings access
+
+    configured = getattr(settings, "EXTRACTION_ACTIVE_MODELS", None)
+    if not configured:
+        return SUPPORTED_OLLAMA_MODELS
+    active = tuple(m for m in SUPPORTED_OLLAMA_MODELS if m in set(configured))
+    return active or SUPPORTED_OLLAMA_MODELS
+
 
 PROMPT_V1_BODY = """\
 You are a biomedical relation-extraction system specialised in the

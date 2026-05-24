@@ -6,6 +6,7 @@ from extract.prompts import (
     PROMPT_V1_BODY,
     PROMPT_V1_VERSION,
     SUPPORTED_OLLAMA_MODELS,
+    active_models,
     render_prompt,
 )
 
@@ -67,3 +68,24 @@ def test_supported_models_is_exactly_seven():
         "devstral:24b",
         "llama3.1:8b",
     }
+
+
+def test_active_models_defaults_to_full_roster(settings):
+    settings.EXTRACTION_ACTIVE_MODELS = None
+    assert active_models() == SUPPORTED_OLLAMA_MODELS
+
+
+def test_active_models_honors_configured_subset(settings):
+    settings.EXTRACTION_ACTIVE_MODELS = ["qwen3:8b", "gemma3:12b"]
+    # Preserves canonical ordering, drops everything else.
+    assert active_models() == ("qwen3:8b", "gemma3:12b")
+
+
+def test_active_models_ignores_unknown_names(settings):
+    settings.EXTRACTION_ACTIVE_MODELS = ["qwen3:8b", "not-a-real-model"]
+    assert active_models() == ("qwen3:8b",)
+
+
+def test_active_models_falls_back_when_all_invalid(settings):
+    settings.EXTRACTION_ACTIVE_MODELS = ["bogus:1b"]
+    assert active_models() == SUPPORTED_OLLAMA_MODELS

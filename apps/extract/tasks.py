@@ -26,7 +26,7 @@ from celery import shared_task
 from core.heartbeat import with_heartbeat
 from core.ollama import OllamaClient, OllamaError
 from extract.models import ExtractionRun, RawPPI
-from extract.prompts import SUPPORTED_OLLAMA_MODELS
+from extract.prompts import SUPPORTED_OLLAMA_MODELS, active_models
 from extract.routing import MODEL_TO_QUEUE, queue_for_model
 from extract.schemas import PPI_JSON_SCHEMA, AllowedRelation, PPIExtractionResponse
 from extract.services import active_prompt_version, build_prompt_text, upsert_runs_for_chunk
@@ -330,14 +330,15 @@ def _do_enqueue_pending_chunks(batch_size: int = 200) -> dict:
     from papers.models import Chunk
 
     version = active_prompt_version()
-    enqueued: dict[str, int] = {m: 0 for m in SUPPORTED_OLLAMA_MODELS}
+    models = active_models()
+    enqueued: dict[str, int] = {m: 0 for m in models}
 
     # Find Results chunks not yet fully covered by all models for this version.
     # A chunk is "pending" if fewer than n_models ExtractionRun rows exist with
     # status in (done, running) for the active prompt_version.
     # The old .exclude() approach incorrectly excluded the whole chunk as soon
     # as ONE model finished — the count-annotation correctly tracks coverage.
-    n_models = len(SUPPORTED_OLLAMA_MODELS)
+    n_models = len(models)
     candidate_chunks = list(
         Chunk.objects.filter(section__doco_type="Results")
         .annotate(
