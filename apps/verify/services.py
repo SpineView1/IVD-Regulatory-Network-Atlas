@@ -38,7 +38,7 @@ from verify.models import (
     Signoff,
     Subscription,
 )
-from verify.state_machine import NetworkStatus, transition
+from verify.state_machine import InvalidTransition, NetworkStatus, transition
 
 if TYPE_CHECKING:
     from graph.models import Conflict, Edge
@@ -226,7 +226,18 @@ def mark_stale(
         Network as NetworkModel,  # noqa: PLC0415 — avoid top-level import cycle
     )
 
-    next_status = transition(network.pipeline_status, "new_corpus")
+    try:
+        next_status = transition(network.pipeline_status, "new_corpus")
+    except InvalidTransition:
+        # e.g. refreshing → stale is not modelled; silently skip to avoid
+        # breaking Phase 3 graph callsites that may encounter mid-refresh networks.
+        log.debug(
+            "mark_stale: skipping transition for network %s (status=%s)",
+            network.code,
+            network.pipeline_status,
+        )
+        return
+
     NetworkModel.objects.filter(pk=network.pk).update(
         pipeline_status=next_status.value,
     )

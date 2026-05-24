@@ -10,13 +10,14 @@ from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 
-from graph.models import Conflict
-from verify.models import ReviewDecision, Subscription
-from verify.services import record_review, sign_off as service_sign_off, update_subscription
-from verify.state_machine import InvalidTransition
-
 if TYPE_CHECKING:
     from django.contrib.auth.models import User as _User
+
+from graph.models import Conflict
+from verify.models import ReviewDecision, Subscription
+from verify.services import record_review, update_subscription
+from verify.services import sign_off as service_sign_off
+from verify.state_machine import InvalidTransition
 
 
 @require_POST
