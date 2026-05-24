@@ -74,3 +74,60 @@ def test_all_edge_ids_returns_projected_set(backend):
         "edge_id": 100, "relation": "activates", "belief_score": 0.5,
         "n_supporting_papers": 1, "n_models_agreeing": 1, "status": "accepted", "networks": []})
     assert backend.all_edge_ids() == {100}
+
+
+# ---------------------------------------------------------------------------
+# Task 4: projection mapping tests
+# ---------------------------------------------------------------------------
+
+def test_build_entity_payload_uses_canonical_proxy_props(db, accepted_edge):
+    from analysis.projection import build_entity_payload
+
+    payload = build_entity_payload(accepted_edge.source)
+    assert payload["pg_id"] == accepted_edge.source_id
+    assert payload["symbol"] == "IL1B"            # Entity.symbol proxy (§5)
+    assert payload["entity_type"] == "protein"
+    assert payload["compartment"] == "cytoplasm"
+    assert payload["canonical_uri"] == "https://identifiers.org/hgnc:5992"
+
+
+def test_build_edge_payload_uses_canonical_edge_fields(db, accepted_edge):
+    from analysis.projection import build_edge_payload
+
+    props = build_edge_payload(accepted_edge)
+    assert props["edge_id"] == accepted_edge.id
+    assert props["relation"] == "activates"        # Edge.relation, NOT relation_type (§4)
+    assert props["belief_score"] == pytest.approx(0.91)
+    assert props["n_supporting_papers"] == 3       # now persisted (§8)
+    assert props["n_models_agreeing"] == 5
+    assert props["status"] == "accepted"
+    assert props["networks"] == ["nfkb_axis"]      # from NetworkEdgeMembership
+
+
+def test_project_edge_ids_writes_nodes_edges_and_membership(db, accepted_edge, fake_backend):
+    from analysis.projection import project_edge_ids
+
+    project_edge_ids([accepted_edge.id], backend=fake_backend)
+    assert fake_backend.count_entities() == 2
+    assert fake_backend.count_edges() == 1
+    # both endpoints linked to the network
+    cross = fake_backend.crosstalk_edges(network_a="nfkb_axis", network_b="nfkb_axis")
+    assert len(cross["edges"]) == 1
+
+
+def test_project_edge_ids_deletes_relationship_when_not_accepted(db, accepted_edge, fake_backend):
+    from analysis.projection import project_edge_ids
+
+    project_edge_ids([accepted_edge.id], backend=fake_backend)
+    assert fake_backend.count_edges() == 1
+
+    accepted_edge.status = "rejected"
+    accepted_edge.save(update_fields=["status"])
+    project_edge_ids([accepted_edge.id], backend=fake_backend)
+    assert fake_backend.count_edges() == 0
+
+
+def test_accepted_edge_ids_in_postgres(db, accepted_edge):
+    from analysis.projection import accepted_edge_ids
+
+    assert accepted_edge_ids() == {accepted_edge.id}
