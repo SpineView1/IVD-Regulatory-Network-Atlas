@@ -48,6 +48,8 @@ services:
                       --access-logfile - --error-logfile -"
     expose:
       - "8000"
+    volumes:
+      - /var/log/interactome:/var/log/interactome
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
       interval: 30s
@@ -65,6 +67,8 @@ services:
       neo4j:
         condition: service_healthy
     command: celery -A interactome beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - /var/log/interactome:/var/log/interactome
     healthcheck:
       disable: true
 
@@ -78,6 +82,8 @@ services:
       neo4j:
         condition: service_healthy
     command: celery -A interactome worker -Q q.io -c 8 -n io@%h -l info
+    volumes:
+      - /var/log/interactome:/var/log/interactome
     healthcheck:
       disable: true
 
@@ -89,6 +95,8 @@ services:
       web:
         condition: service_healthy
     command: celery -A interactome worker -Q q.fast -c 2 -n fast@%h -l info
+    volumes:
+      - /var/log/interactome:/var/log/interactome
     healthcheck:
       disable: true
 
@@ -110,6 +118,8 @@ services:
       web:
         condition: service_healthy
     command: celery -A interactome worker -Q q.extract.medgemma_27b -c 1 -n medgemma@%h -l info
+    volumes:
+      - /var/log/interactome:/var/log/interactome
     healthcheck:
       disable: true
 
@@ -124,6 +134,8 @@ services:
       web:
         condition: service_healthy
     command: celery -A interactome worker -Q q.extract.phi4_14b -c 1 -n phi4@%h -l info
+    volumes:
+      - /var/log/interactome:/var/log/interactome
     healthcheck:
       disable: true
 
@@ -138,6 +150,8 @@ services:
       web:
         condition: service_healthy
     command: celery -A interactome worker -Q q.extract.qwen3_8b -c 1 -n qwen3@%h -l info
+    volumes:
+      - /var/log/interactome:/var/log/interactome
     healthcheck:
       disable: true
 
@@ -152,6 +166,8 @@ services:
       web:
         condition: service_healthy
     command: celery -A interactome worker -Q q.extract.gemma3_12b -c 1 -n gemma3@%h -l info
+    volumes:
+      - /var/log/interactome:/var/log/interactome
     healthcheck:
       disable: true
 
@@ -166,6 +182,8 @@ services:
       web:
         condition: service_healthy
     command: celery -A interactome worker -Q q.extract.deepseek_r1_32b -c 1 -n deepseek@%h -l info
+    volumes:
+      - /var/log/interactome:/var/log/interactome
     healthcheck:
       disable: true
 
@@ -180,6 +198,8 @@ services:
       web:
         condition: service_healthy
     command: celery -A interactome worker -Q q.extract.devstral_24b -c 1 -n devstral@%h -l info
+    volumes:
+      - /var/log/interactome:/var/log/interactome
     healthcheck:
       disable: true
 
@@ -194,6 +214,8 @@ services:
       web:
         condition: service_healthy
     command: celery -A interactome worker -Q q.extract.llama3_1_8b -c 1 -n llama3@%h -l info
+    volumes:
+      - /var/log/interactome:/var/log/interactome
     healthcheck:
       disable: true
 
@@ -227,6 +249,9 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./deploy/postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./deploy/postgres/init-pgbackrest.sh:/docker-entrypoint-initdb.d/10-pgbackrest.sh:ro
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
@@ -291,6 +316,57 @@ services:
       timeout: 10s
       retries: 5
 
+  # === Phase 7: Backup, Observability ===
+
+  pgbackrest:
+    image: pgbackrest/pgbackrest:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./deploy/pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf:ro
+      - ./deploy/pgbackrest/crontab:/etc/cron.d/pgbackrest-cron:ro
+      - ./deploy/pgbackrest/entrypoint.sh:/usr/local/bin/entrypoint.sh:ro
+      - ./deploy/pgbackrest/restore-test.sh:/usr/local/bin/restore-test.sh:ro
+      - backupdata:/var/lib/pgbackrest
+      - pgbackrest_logs:/var/log/pgbackrest
+    entrypoint: ["/usr/local/bin/entrypoint.sh"]
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    restart: unless-stopped
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    expose:
+      - "9090"
+    depends_on:
+      web:
+        condition: service_healthy
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    volumes:
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    expose:
+      - "3000"
+    depends_on:
+      - prometheus
+
 volumes:
   pgdata:
   redisdata:
@@ -298,3 +374,7 @@ volumes:
   caddy_data:
   caddy_config:
   neo4jdata: {}
+  backupdata:
+  pgbackrest_logs:
+  prometheus_data:
+  grafana_data:
