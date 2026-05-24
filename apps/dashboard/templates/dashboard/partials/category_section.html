@@ -1,0 +1,22 @@
+{% load dashboard_extras %}
+{# Partial: one category row. Context: category (code, label, networks), edge_counts, open_conflict_counts #}
+<section class="mb-5 category-section" id="cat-{{ category.code }}">
+  <h4 class="border-bottom pb-2 mb-3">
+    <span class="badge bg-secondary me-2">{{ category.code }}</span>
+    {{ category.label }}
+    <small class="text-muted fs-6 ms-2">({{ category.networks|length }} network{{ category.networks|length|pluralize }})</small>
+  </h4>
+  {% if category.networks %}
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-4 g-3">
+    {% for network in category.networks %}
+    <div class="col">
+      {% with open_conflicts=open_conflict_counts|get_item:network.pk %}
+      {% include "dashboard/partials/network_card.html" with network=network open_conflicts=open_conflicts edge_count=edge_counts|get_item:network.pk %}
+      {% endwith %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-muted"><em>No networks in this category yet.</em></p>
+  {% endif %}
+</section>

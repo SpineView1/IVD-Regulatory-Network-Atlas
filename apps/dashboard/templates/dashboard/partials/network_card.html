@@ -1,0 +1,33 @@
+{% load dashboard_extras %}
+{# Partial: one network card. Context vars: network, edge_counts, open_conflict_counts #}
+<div class="card h-100 shadow-sm network-card" data-code="{{ network.code }}">
+  <div class="card-body p-3">
+    <h6 class="card-title mb-1">
+      <a href="{% url 'dashboard:network_detail' code=network.code %}" class="text-decoration-none stretched-link">
+        {{ network.title }}
+      </a>
+    </h6>
+    <code class="text-muted small">{{ network.code }}</code>
+    <div class="mt-2 d-flex flex-wrap gap-1 align-items-center">
+      {% status_pill network.pipeline_status %}
+    </div>
+    <div class="mt-2 small text-muted d-flex gap-3">
+      <span title="Edges">
+        <i class="bi bi-diagram-3"></i>
+        {{ edge_counts|default_if_none:"0" }} edges
+      </span>
+      <span title="Open conflicts">
+        <i class="bi bi-exclamation-triangle{% if open_conflicts > 0 %} text-warning{% endif %}"></i>
+        {{ open_conflicts }} conflicts
+      </span>
+    </div>
+  </div>
+  <div class="card-footer p-1 text-end">
+    {% if open_conflicts > 0 %}
+    <a href="{% url 'dashboard:disagreement_queue' code=network.code %}"
+       class="btn btn-sm btn-outline-warning py-0 px-1">
+      <i class="bi bi-list-check"></i> Review queue
+    </a>
+    {% endif %}
+  </div>
+</div>

@@ -156,6 +156,7 @@ def grid(request: HttpRequest) -> HttpResponse:
         "categories": categories,
         "edge_counts": edge_counts,
         "open_conflict_counts": open_conflict_counts,
+        "total_networks": len(networks),
     }
     return render(request, "dashboard/grid.html", context)
 

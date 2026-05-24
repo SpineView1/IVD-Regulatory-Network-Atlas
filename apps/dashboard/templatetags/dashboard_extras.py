@@ -12,6 +12,20 @@ from django.utils.html import format_html
 
 register = template.Library()
 
+
+@register.filter(name="get_item")
+def get_item(dictionary: dict | None, key: object) -> object:
+    """Look up *key* in *dictionary*; return 0 if not found.
+
+    Usage::
+
+        {{ edge_counts|get_item:network.pk }}
+    """
+    if dictionary is None:
+        return 0
+    return dictionary.get(key, 0)
+
+
 # Map pipeline_status → Bootstrap bg-* class (Bootstrap 5.3)
 _STATUS_CLASSES: dict[str, str] = {
     "idle": "secondary",
@@ -50,8 +64,8 @@ _LOW_THRESHOLD = 0.4
 
 # Colors chosen to match Bootstrap 5.3 semantic colors
 _COLOR_HIGH = "#198754"  # Bootstrap success green
-_COLOR_MED = "#fd7e14"   # Bootstrap warning orange
-_COLOR_LOW = "#dc3545"   # Bootstrap danger red
+_COLOR_MED = "#fd7e14"  # Bootstrap warning orange
+_COLOR_LOW = "#dc3545"  # Bootstrap danger red
 
 
 @register.filter(name="belief_color")
