@@ -254,18 +254,31 @@ class NetworkEdgeMembership(TimestampedModel):
         Edge,
         on_delete=models.CASCADE,
         related_name="network_memberships",
+        null=True,
+        blank=True,
     )
     relevance = models.FloatField(default=1.0, db_index=True)
+    # Phase 6: pending-extraction fields. Set when detect_affected_networks
+    # creates a placeholder membership before the extraction worker has
+    # integrated the paper's RawPPIs into Edges. Cleared (edge set, flag
+    # False) when graph.integrate_pending promotes them.
+    pending_paper_id = models.IntegerField(null=True, blank=True, db_index=True)
+    pending_extraction = models.BooleanField(default=False, db_index=True)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
                 fields=["network", "edge"],
                 name="networkedgemembership_unique_network_edge",
+                condition=models.Q(edge__isnull=False),
             ),
         ]
         indexes = [
             models.Index(fields=["network", "relevance"]),
+            models.Index(
+                fields=["pending_paper_id", "pending_extraction"],
+                name="mem_pending_paper_idx",
+            ),
         ]
 
     def __str__(self) -> str:
