@@ -17,6 +17,7 @@ data volume; real timings (Seq Scan baseline ~180–250 ms → index scan ~5–1
 should be recorded in the plan's Self-Review section after the first production
 migration run.
 """
+
 from __future__ import annotations
 
 from django.db import migrations

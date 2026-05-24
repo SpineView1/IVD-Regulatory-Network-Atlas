@@ -16,6 +16,7 @@ captured at deploy time. The dev-box test Postgres has no production data;
 real timings should be recorded in the plan's Self-Review section after the
 first production migration run.
 """
+
 from __future__ import annotations
 
 from django.db import migrations

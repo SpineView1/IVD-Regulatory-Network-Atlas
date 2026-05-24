@@ -11,6 +11,7 @@ which is the pending-sign-off reminder query in verify.tasks.
 EXPLAIN ANALYZE timings against production data are to be captured at
 deploy time — not fabricated here.
 """
+
 from __future__ import annotations
 
 import pytest

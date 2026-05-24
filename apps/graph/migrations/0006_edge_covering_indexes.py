@@ -18,6 +18,7 @@ data volume; real timings (Hash Join baseline ~120–400 ms → nested-loop inde
 scan ~2–20 ms) should be recorded in the plan's Self-Review section after
 the first production migration run.
 """
+
 from __future__ import annotations
 
 from django.db import migrations

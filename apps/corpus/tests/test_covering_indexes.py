@@ -10,6 +10,7 @@ are to be captured at deploy time — not fabricated here. The dev-box
 test Postgres has no production data volume, so only correctness is
 asserted here.
 """
+
 from __future__ import annotations
 
 import pytest
