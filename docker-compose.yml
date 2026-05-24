@@ -38,6 +38,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      neo4j:
+        condition: service_healthy
     command: >
       sh -c "python manage.py migrate --noinput &&
              gunicorn interactome.wsgi:application
@@ -60,6 +62,8 @@ services:
     depends_on:
       web:
         condition: service_healthy
+      neo4j:
+        condition: service_healthy
     command: celery -A interactome beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     healthcheck:
       disable: true
@@ -70,6 +74,8 @@ services:
     env_file: .env
     depends_on:
       web:
+        condition: service_healthy
+      neo4j:
         condition: service_healthy
     command: celery -A interactome worker -Q q.io -c 8 -n io@%h -l info
     healthcheck:
@@ -191,6 +197,26 @@ services:
     healthcheck:
       disable: true
 
+  neo4j:                # derived read-model for crosstalk + GDS analysis (Phase 8)
+    image: neo4j:5-community
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD}
+      NEO4J_PLUGINS: '["graph-data-science","apoc"]'
+      NEO4J_dbms_security_procedures_unrestricted: 'gds.*,apoc.*'
+      NEO4J_dbms_security_procedures_allowlist: 'gds.*,apoc.*'
+    ports:
+      - "7474:7474"   # browser (behind Caddy/Authelia in production)
+      - "7687:7687"   # bolt
+    volumes:
+      - neo4jdata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7474 >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
@@ -271,3 +297,4 @@ volumes:
   miniodata:
   caddy_data:
   caddy_config:
+  neo4jdata: {}

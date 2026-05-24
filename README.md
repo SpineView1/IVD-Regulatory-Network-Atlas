@@ -67,6 +67,70 @@ poetry run ruff format --check .
 poetry run mypy apps interactome
 ```
 
+## Phase 8 — Graph Analysis & Crosstalk Explorer (complete, branch: phase-8-graph-analysis)
+
+Phase 8 adds the `analysis` app, which stands up Neo4j as a *derived, rebuildable*
+read-model of the accepted-`Edge` graph and ships an interactive cross-network
+crosstalk explorer on top of it.
+
+### Neo4j read-model
+
+Postgres is the system of record; Neo4j is derived and fully rebuildable from it
+via `analysis.tasks.reconcile_neo4j(rebuild=True)` — the "pull the plug" guarantee.
+Accepted `Edge` records are projected as `(:Entity)-[:REGULATES {edge_id,...}]->(:Entity)`
+relationships; network membership is stored as `(:Entity)-[:IN_NETWORK]->(:Network)`.
+
+```bash
+# Trigger a full reconcile/rebuild from Postgres
+docker compose exec web poetry run python manage.py shell -c "
+from analysis.tasks import reconcile_neo4j
+print(reconcile_neo4j(rebuild=True))
+"
+```
+
+### Analysis explorer
+
+Navigate to `/analysis/` to use the interactive Cytoscape.js + HTMX explorer:
+
+- **Neighborhood** — k-hop neighborhood of any entity across the whole atlas
+- **Crosstalk** — edges bridging any two networks
+- **Paths** — shortest or all simple directed paths between two entities
+- **Analysis panel** — GDS PageRank / betweenness / degree centrality, Louvain
+  community detection, directed feedback loops (with double-negative motif flagging)
+
+JSON endpoints are available for programmatic use:
+
+```bash
+# k-hop neighborhood (entity_id is graph.Entity.pk)
+curl -H 'Remote-User: fchemorion' \
+  'http://localhost:8000/analysis/neighborhood.json?entity_id=1&k=2'
+
+# Cross-network crosstalk
+curl -H 'Remote-User: fchemorion' \
+  'http://localhost:8000/analysis/crosstalk.json?network_a=nfkb_axis&network_b=sirt_axis'
+```
+
+### Running Phase 8 integration tests against a live Neo4j
+
+The `@pytest.mark.neo4j` suite is skipped by default (no `NEO4J_URI` → deselected,
+not failed). To run against a live Neo4j with GDS + APOC:
+
+```bash
+docker compose up -d neo4j   # wait for (healthy)
+NEO4J_URI=bolt://localhost:7687 NEO4J_USER=neo4j \
+  NEO4J_PASSWORD="$(grep NEO4J_PASSWORD .env | cut -d= -f2)" \
+  poetry run pytest -m neo4j -v
+```
+
+Expected: `5 passed`.
+
+### Tests
+
+- **740 offline tests passing** — ruff + mypy + pytest all green; `neo4j` marker tests deselected
+- Offline e2e (`test_e2e_offline.py`) seeds Postgres → runs `project_edges` →
+  asserts services (crosstalk, centrality, feedback loops) → checks explorer JSON
+  Cytoscape shape — all without a live Neo4j instance
+
 ## Phase 5 — Verification UI (complete, branch: phase-5-verification-ui)
 
 Phase 5 adds the `verify` app and extends the `dashboard` app with the full

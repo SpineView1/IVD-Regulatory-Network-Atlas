@@ -13,4 +13,5 @@ urlpatterns = [
     path("graph/", include("graph.urls")),
     path("", include("sbml.urls")),
     path("verify/", include("verify.urls")),
+    path("analysis/", include("analysis.urls")),
 ]
