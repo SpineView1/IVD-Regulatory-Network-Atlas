@@ -32,4 +32,9 @@ urlpatterns = [
         views.review_edge,
         name="review_edge",
     ),
+    path(
+        "networks/<slug:network_code>/sign-off/<str:semver>/",
+        views.sign_off_view,
+        name="sign_off",
+    ),
 ]

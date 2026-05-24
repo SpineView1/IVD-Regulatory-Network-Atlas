@@ -6,16 +6,17 @@ from typing import TYPE_CHECKING, cast
 
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 
-if TYPE_CHECKING:
-    from django.contrib.auth.models import User as _User
-
 from graph.models import Conflict
 from verify.models import ReviewDecision, Subscription
-from verify.services import record_review, update_subscription
+from verify.services import record_review, sign_off as service_sign_off, update_subscription
+from verify.state_machine import InvalidTransition
+
+if TYPE_CHECKING:
+    from django.contrib.auth.models import User as _User
 
 
 @require_POST
@@ -121,6 +122,50 @@ def subscription_delete(request: HttpRequest, pk: int) -> HttpResponse:
 # ---------------------------------------------------------------------------
 # Task 14: Per-edge review endpoint
 # ---------------------------------------------------------------------------
+
+
+@require_POST
+@login_required
+def sign_off_view(request: HttpRequest, network_code: str, semver: str) -> HttpResponse:
+    """HTMX endpoint: POST to sign off a network version.
+
+    URL parameters:
+    - ``network_code``: the network slug
+    - ``semver``: the ModelVersion semver string to sign off
+
+    POST parameters:
+    - ``notes`` (optional): curator notes
+
+    On success: transitions network to verified, enqueues sbml regeneration,
+    notifies subscribers, returns the updated signoff_button.html partial.
+
+    Returns 400 if the transition is invalid (network not in version_draft).
+    Returns 404 if the network or model_version does not exist.
+    """
+    from networks.models import Network
+    from sbml.models import ModelVersion
+
+    network = get_object_or_404(Network, code=network_code)
+    model_version = get_object_or_404(ModelVersion, network=network, semver=semver)
+    notes = request.POST.get("notes", "").strip()
+    user = cast("_User", request.user)
+
+    try:
+        service_sign_off(
+            network=network,
+            model_version=model_version,
+            signed_by=user,
+            notes=notes,
+        )
+    except InvalidTransition as exc:
+        return HttpResponseBadRequest(f"Invalid transition: {exc}")
+
+    network.refresh_from_db()
+    return render(
+        request,
+        "verify/partials/signoff_button.html",
+        {"network": network, "model_version": model_version},
+    )
 
 
 @require_POST
