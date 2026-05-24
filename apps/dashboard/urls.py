@@ -18,4 +18,9 @@ urlpatterns = [
         views.disagreement_queue,
         name="disagreement_queue",
     ),
+    path(
+        "networks/edges/<int:pk>/audit/",
+        views.audit_trail,
+        name="audit_trail",
+    ),
 ]

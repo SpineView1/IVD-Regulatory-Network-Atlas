@@ -12,6 +12,7 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, render
 
 from corpus.models import Paper
+from graph.models import Edge
 
 _TOP_MESH_CACHE_KEY = "dashboard:top_mesh"
 _TOP_MESH_TTL = 3600  # seconds
@@ -213,3 +214,41 @@ def disagreement_queue(request: HttpRequest, code: str) -> HttpResponse:
         "conflicts": conflicts,
     }
     return render(request, "dashboard/disagreement_queue.html", context)
+
+
+# ---------------------------------------------------------------------------
+# Task 12: Audit trail for a single edge
+# ---------------------------------------------------------------------------
+
+
+def audit_trail(request: HttpRequest, pk: int) -> HttpResponse:
+    """Full provenance tree for a single edge + review history.
+
+    Provenance chain traversed:
+    Edge → EdgeEvidence → RawPPI → ExtractionRun → Chunk → Section → Paper
+    Reviews fetched with select_related(reviewer) to avoid N+1.
+    Evidence uses select_related/prefetch_related so all 6 joins happen in
+    the minimum query count regardless of how many RawPPIs back the edge.
+    """
+    edge = get_object_or_404(
+        Edge.objects.select_related(
+            "source__ontology_entity",
+            "target__ontology_entity",
+        ),
+        pk=pk,
+    )
+
+    # Traverse the provenance chain with a single compound select_related/
+    # prefetch chain to avoid N+1 (spec requirement from reviewer).
+    evidence_qs = edge.evidence.select_related(
+        "raw_ppi__run__chunk__section__paper",
+    ).order_by("raw_ppi__run__chunk__section__paper__pmid")
+
+    reviews = list(edge.reviews.select_related("reviewer").order_by("created_at"))
+
+    context: dict[str, Any] = {
+        "edge": edge,
+        "evidence_list": list(evidence_qs),
+        "reviews": reviews,
+    }
+    return render(request, "dashboard/audit_trail.html", context)

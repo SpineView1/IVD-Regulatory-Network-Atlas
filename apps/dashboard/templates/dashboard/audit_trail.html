@@ -1,0 +1,134 @@
+{% extends "dashboard/base.html" %}
+{% load dashboard_extras %}
+
+{% block title %}Audit Trail — {{ edge }} — IVD Atlas{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb mb-1">
+      <li class="breadcrumb-item"><a href="{% url 'dashboard:grid' %}">Networks</a></li>
+      <li class="breadcrumb-item active">Edge Audit Trail</li>
+    </ol>
+  </nav>
+  <h1 class="h2 mb-0">
+    Edge Audit Trail
+    <small class="text-muted fs-5">#{{ edge.pk }}</small>
+  </h1>
+  <div class="mt-1">
+    <span class="fw-semibold">{{ edge.source.preferred_label }}</span>
+    <span class="badge bg-primary mx-2">{{ edge.relation }}</span>
+    <span class="fw-semibold">{{ edge.target.preferred_label }}</span>
+    <span class="ms-2">{% status_pill edge.status %}</span>
+    <span class="ms-2 text-muted small">
+      Belief: <span style="color: {{ edge.belief_score|belief_color }}">
+        {{ edge.belief_score|floatformat:3 }}
+      </span>
+    </span>
+  </div>
+</div>
+
+<!-- Evidence Table -->
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-journal-text me-1"></i>Supporting Evidence</span>
+    <small class="text-muted">{{ evidence_list|length }} evidence item{{ evidence_list|length|pluralize }}</small>
+  </div>
+  <div class="card-body p-0">
+    {% if evidence_list %}
+    <div class="table-responsive">
+      <table id="evidence-table" class="table table-sm table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>PMID</th>
+            <th>Paper Title</th>
+            <th>Model</th>
+            <th>Subject</th>
+            <th>Relation</th>
+            <th>Object</th>
+            <th>Logprob</th>
+            <th>Confidence</th>
+            <th>Evidence Span</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ee in evidence_list %}
+          {% with rp=ee.raw_ppi run=ee.raw_ppi.run chunk=ee.raw_ppi.run.chunk section=ee.raw_ppi.run.chunk.section paper=ee.raw_ppi.run.chunk.section.paper %}
+          <tr>
+            <td>
+              <a href="{% url 'dashboard:paper_detail' pmid=paper.pmid %}">
+                {{ paper.pmid }}
+              </a>
+            </td>
+            <td class="small">{{ paper.title|truncatechars:60 }}</td>
+            <td><code class="small">{{ run.model_name }}</code></td>
+            <td>{{ rp.subject }}</td>
+            <td><span class="badge bg-secondary">{{ rp.relation }}</span></td>
+            <td>{{ rp.object }}</td>
+            <td class="text-end font-monospace small">
+              {% if rp.relation_logprob is not None %}{{ rp.relation_logprob|floatformat:3 }}{% else %}&mdash;{% endif %}
+            </td>
+            <td class="text-end">{{ rp.confidence|floatformat:3 }}</td>
+            <td class="small text-muted">{{ rp.evidence_span|truncatechars:80 }}</td>
+          </tr>
+          {% endwith %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="p-3 text-muted">
+      <em>No evidence records found for this edge.</em>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Review History -->
+<div class="card">
+  <div class="card-header">
+    <i class="bi bi-clock-history me-1"></i>Review History
+    <small class="text-muted ms-2">(append-only — latest per reviewer wins)</small>
+  </div>
+  <div class="card-body p-0">
+    {% if reviews %}
+    <ul class="list-group list-group-flush">
+      {% for review in reviews %}
+      <li class="list-group-item py-2">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <strong>{{ review.reviewer.get_username }}</strong>
+            <span class="ms-2">{% status_pill review.decision %}</span>
+            {% if review.comment %}
+            <p class="mb-0 mt-1 small text-muted">{{ review.comment }}</p>
+            {% endif %}
+          </div>
+          <small class="text-muted text-nowrap">{{ review.created_at|date:"Y-m-d H:i" }}</small>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="p-3 text-muted">
+      <em>No reviews recorded yet for this edge.</em>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if evidence_list %}
+<script>
+  $(document).ready(function () {
+    $('#evidence-table').DataTable({
+      pageLength: 25,
+      order: [[0, 'asc']],
+      columnDefs: [
+        { targets: [8], orderable: false }
+      ]
+    });
+  });
+</script>
+{% endif %}
+{% endblock %}
