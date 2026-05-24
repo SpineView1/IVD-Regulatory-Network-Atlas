@@ -1,5 +1,5 @@
 {% load dashboard_extras %}
-{# Partial: one network card. Context vars: network, edge_counts, open_conflict_counts #}
+{# Partial: one network card. Context vars (passed via include): network, edge_count, open_conflicts #}
 <div class="card h-100 shadow-sm network-card" data-code="{{ network.code }}">
   <div class="card-body p-3">
     <h6 class="card-title mb-1">
@@ -14,7 +14,7 @@
     <div class="mt-2 small text-muted d-flex gap-3">
       <span title="Edges">
         <i class="bi bi-diagram-3"></i>
-        {{ edge_counts|default_if_none:"0" }} edges
+        {{ edge_count|default_if_none:"0" }} edges
       </span>
       <span title="Open conflicts">
         <i class="bi bi-exclamation-triangle{% if open_conflicts > 0 %} text-warning{% endif %}"></i>

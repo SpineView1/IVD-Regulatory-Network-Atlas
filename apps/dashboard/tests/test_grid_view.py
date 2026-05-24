@@ -124,13 +124,15 @@ class TestGridView:
     def test_grid_shows_edge_count_for_network_with_edges(
         self, client, db, network_with_edges_and_conflicts
     ):
-        """Networks with edges should show edge count in card."""
+        """Networks with edges should show their own integer edge count in the card."""
         resp = client.get("/")
         body = resp.content.decode()
-        # 2 edges should show "2" somewhere near the card
         assert "tgfb_smad" in body
-        # The count 2 should appear in the body
-        assert "2" in body
+        # The card must render the per-network integer ("2 edges"), NOT the raw
+        # edge_counts dict. Regression guard for the bug where network_card.html
+        # rendered the whole {network_id: count} mapping on every card.
+        assert "2 edges" in body
+        assert "} edges" not in body  # no dict repr leaked into the card
 
     def test_grid_shows_open_conflict_count(self, client, db, network_with_edges_and_conflicts):
         """Networks with open conflicts should show conflict count."""
