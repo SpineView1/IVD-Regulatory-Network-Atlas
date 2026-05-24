@@ -2024,6 +2024,47 @@ files = [
 ]
 
 [[package]]
+name = "neo4j"
+version = "5.28.4"
+description = "Neo4j Bolt driver for Python"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "neo4j-5.28.4-py3-none-any.whl", hash = "sha256:ba87c423fd2a1fbe6a116c47ac96cfbe7d8c419d24d2f5611e5674283dddf7b9"},
+    {file = "neo4j-5.28.4.tar.gz", hash = "sha256:4a2d8d6eb8c2da0bc87a30e96e2c179fbc0045665626482901ca3dcc9c2b1811"},
+]
+
+[package.dependencies]
+pytz = "*"
+
+[package.extras]
+numpy = ["numpy (>=1.7.0,<3.0.0)"]
+pandas = ["numpy (>=1.7.0,<3.0.0)", "pandas (>=1.1.0,<3.0.0)"]
+pyarrow = ["pyarrow (>=1.0.0)"]
+
+[[package]]
+name = "networkx"
+version = "3.6"
+description = "Python package for creating and manipulating graphs and networks"
+optional = false
+python-versions = ">=3.11"
+files = [
+    {file = "networkx-3.6-py3-none-any.whl", hash = "sha256:cdb395b105806062473d3be36458d8f1459a4e4b98e236a66c3a48996e07684f"},
+    {file = "networkx-3.6.tar.gz", hash = "sha256:285276002ad1f7f7da0f7b42f004bcba70d381e936559166363707fdad3d72ad"},
+]
+
+[package.extras]
+benchmarking = ["asv", "virtualenv"]
+default = ["matplotlib (>=3.8)", "numpy (>=1.25)", "pandas (>=2.0)", "scipy (>=1.11.2)"]
+developer = ["mypy (>=1.15)", "pre-commit (>=4.1)"]
+doc = ["intersphinx-registry", "myst-nb (>=1.1)", "numpydoc (>=1.8.0)", "pillow (>=10)", "pydata-sphinx-theme (>=0.16)", "sphinx (>=8.0)", "sphinx-gallery (>=0.18)", "texext (>=0.6.7)"]
+example = ["cairocffi (>=1.7)", "contextily (>=1.6)", "igraph (>=0.11)", "iplotx (>=0.9.0)", "momepy (>=0.7.2)", "osmnx (>=2.0.0)", "scikit-learn (>=1.5)", "seaborn (>=0.13)"]
+extra = ["lxml (>=4.6)", "pydot (>=3.0.1)", "pygraphviz (>=1.14)", "sympy (>=1.10)"]
+release = ["build (>=0.10)", "changelist (==0.5)", "twine (>=4.0)", "wheel (>=0.40)"]
+test = ["pytest (>=7.2)", "pytest-cov (>=4.0)", "pytest-xdist (>=3.0)"]
+test-extras = ["pytest-mpl", "pytest-randomly"]
+
+[[package]]
 name = "nltk"
 version = "3.9.4"
 description = "Natural Language Toolkit"
@@ -2678,6 +2719,17 @@ files = [
     {file = "python_libsbml-5.21.1-cp39-cp39-win_amd64.whl", hash = "sha256:321efcc145787f14a3d3088dc98958b88779454a72cab27e20742c4950cf5d2b"},
     {file = "python_libsbml-5.21.1-cp39-cp39-win_arm64.whl", hash = "sha256:3857707e191b13c09e4e06b1b398f2790002a14c9a0908de470ba65192061405"},
     {file = "python_libsbml-5.21.1.tar.gz", hash = "sha256:378077e37a1b5cd32d8c33bf845b23c22b7a6915d217d7ab811e71e022f982ea"},
+]
+
+[[package]]
+name = "pytz"
+version = "2026.2"
+description = "World timezone definitions, modern and historical"
+optional = false
+python-versions = "*"
+files = [
+    {file = "pytz-2026.2-py2.py3-none-any.whl", hash = "sha256:04156e608bee23d3792fd45c94ae47fae1036688e75032eea2e3bf0323d1f126"},
+    {file = "pytz-2026.2.tar.gz", hash = "sha256:0e60b47b29f21574376f218fe21abc009894a2321ea16c6754f3cad6eb7cdd6a"},
 ]
 
 [[package]]
@@ -3589,4 +3641,4 @@ watchdog = ["watchdog (>=2.3)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "7eda4c362f901657200d2c717506052a57aa3e8e7720d6bcf9e1912b1737d080"
+content-hash = "f875c347563b06fee6bd3015364168ee90ab35a5b75883eb2f1b6ed7838857c2"
