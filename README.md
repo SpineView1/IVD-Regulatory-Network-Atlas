@@ -67,6 +67,31 @@ poetry run ruff format --check .
 poetry run mypy apps interactome
 ```
 
+## Phase 5 — Verification UI (complete, branch: phase-5-verification-ui)
+
+Phase 5 adds the `verify` app and extends the `dashboard` app with the full
+curator verification workflow:
+
+- **Network grid** (`/`) — 17-category dashboard with status pills, edge counts, open conflict counts
+- **Per-network detail** (`/networks/<code>/`) — Cytoscape.js graph, ModelVersion versions panel, sign-off button
+- **Disagreement queue** (`/networks/<code>/queue/`) — side-by-side conflict evidence + HTMX resolve form
+- **Audit trail** (`/edges/<pk>/audit/`) — full Paper → Chunk → ExtractionRun → RawPPI → EdgeEvidence → Edge provenance chain
+- **Subscription manager** (`/subscriptions/`) — per-user subscription toggle/delete with HTMX
+- **Sign-off endpoint** (`POST /verify/networks/<code>/sign-off/<semver>/`) — transitions network to `verified`, enqueues `sbml.tasks.regenerate(triggered_by_curator=True)`, notifies subscribers
+- **mark_stale hook** — `graph.services.reassign_network_membership` now calls `verify.services.mark_stale` so verified/idle networks are demoted to stale AND subscribers are notified when new edges arrive
+- **CSRF + Authelia** — HTMX `configRequest` listener in `base.html` auto-injects `X-CSRFToken` from the `csrftoken` cookie; production `CSRF_TRUSTED_ORIGINS` is wired from `DJANGO_CSRF_TRUSTED_ORIGINS` env var
+- **Beat schedule** — `verify.notify` and `verify.dispatch_review_assignments` both on `q.io` (handled by `worker_io`)
+- **682 tests passing** — ruff + mypy + pytest all green
+
+### Verification workflow (curator)
+
+1. Log in at `https://interactome.simbiosys.sb.upf.edu/` via Authelia SSO.
+2. See all networks at a glance; click a network with open disagreements.
+3. Walk the disagreement queue; resolve each conflict via the HTMX form.
+4. Review individual edges via the inline approve/reject/discuss buttons.
+5. Click "Sign off" on the version_draft network; enter curator notes.
+6. Network transitions to `verified`; SBML regeneration with MAJOR semver bump is queued; subscribers are notified.
+
 ## Phase 4 — SBML-qual Emission (complete)
 
 Phase 4 adds the `sbml` app, which converts accepted `Edge` records from the
