@@ -15,13 +15,14 @@ register = template.Library()
 
 @register.filter(name="get_item")
 def get_item(dictionary: dict | None, key: object) -> object:
-    """Look up *key* in *dictionary*; return 0 if not found.
+    """Look up *key* in *dictionary*; return 0 if not found or not a dict.
 
     Usage::
 
         {{ edge_counts|get_item:network.pk }}
+        {{ conflict_evidence|get_item:conflict.pk }}
     """
-    if dictionary is None:
+    if not isinstance(dictionary, dict):
         return 0
     return dictionary.get(key, 0)
 

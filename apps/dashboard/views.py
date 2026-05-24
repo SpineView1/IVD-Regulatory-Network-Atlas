@@ -227,27 +227,127 @@ def network_detail(request: HttpRequest, code: str) -> HttpResponse:
 
 
 def disagreement_queue(request: HttpRequest, code: str) -> HttpResponse:
-    """List open Conflicts for a network with an HTMX resolution form."""
-    from graph.models import Conflict, NetworkEdgeMembership
-    from networks.models import Network
+    """List open Conflicts for a network with an HTMX resolution form.
+
+    Evidence chain is prefetched for edge_a and edge_b of every conflict so
+    the conflict_card template can render supporting sentences + references
+    with a bounded number of queries (no N+1 across conflicts or evidence).
+    """
+    from django.db.models import Prefetch  # noqa: PLC0415
+
+    from graph.models import Conflict, EdgeEvidence, NetworkEdgeMembership  # noqa: PLC0415
+    from networks.models import Network  # noqa: PLC0415
 
     network = get_object_or_404(Network, code=code)
     edge_ids = NetworkEdgeMembership.objects.filter(network=network).values_list(
         "edge_id", flat=True
     )
+
+    # Prefetch the full evidence chain for both edges so the template render
+    # is O(fixed) queries rather than O(conflicts * 2).
+    _evidence_qs = EdgeEvidence.objects.select_related(
+        "raw_ppi__run__chunk__section__paper",
+    ).order_by("-raw_ppi__confidence")
+
+    # Two Prefetches with different to_attr names avoid mypy's [no-redef] error
+    # that fires when both prefetches use the same attribute name.
     conflicts = list(
         Conflict.objects.filter(
             Q(edge_a_id__in=edge_ids) | Q(edge_b_id__in=edge_ids),
             resolution_status="open",
         )
-        .select_related("edge_a__source", "edge_a__target", "edge_b__source", "edge_b__target")
+        .select_related(
+            "edge_a__source__ontology_entity",
+            "edge_a__target__ontology_entity",
+            "edge_b__source__ontology_entity",
+            "edge_b__target__ontology_entity",
+        )
+        .prefetch_related(
+            Prefetch(
+                "edge_a__evidence",
+                queryset=_evidence_qs,
+                to_attr="edge_a_evidence_prefetched",
+            ),
+            Prefetch(
+                "edge_b__evidence",
+                queryset=_evidence_qs,
+                to_attr="edge_b_evidence_prefetched",
+            ),
+        )
         .order_by("created_at")
     )
+
+    # Build per-conflict evidence item lists from the prefetched data so we
+    # do not hit the DB again in the template.
+    _EVIDENCE_CAP = 5  # show first N sentences; template notes "+M more"
+    conflict_evidence: dict[int, dict[str, Any]] = {}
+    for conflict in conflicts:
+        conflict_evidence[conflict.pk] = {
+            "edge_a": _evidence_items_from_prefetch(
+                conflict.edge_a.edge_a_evidence_prefetched,  # type: ignore[attr-defined]
+                cap=_EVIDENCE_CAP,
+            ),
+            "edge_b": _evidence_items_from_prefetch(
+                conflict.edge_b.edge_b_evidence_prefetched,  # type: ignore[attr-defined]
+                cap=_EVIDENCE_CAP,
+            ),
+        }
+
     context: dict[str, Any] = {
         "network": network,
         "conflicts": conflicts,
+        "conflict_evidence": conflict_evidence,
     }
     return render(request, "dashboard/disagreement_queue.html", context)
+
+
+def _evidence_items_from_prefetch(
+    evidence_prefetched: list,
+    *,
+    cap: int = 5,
+) -> dict[str, Any]:
+    """Convert a pre-fetched list of EdgeEvidence rows into a display dict.
+
+    Returns:
+      {
+        "items": [list of evidence item dicts, capped at ``cap``],
+        "total": int (total count before cap),
+        "extra": int (total - len(items), i.e. how many are hidden),
+      }
+    """
+    seen_raw_ppi_ids: set[int] = set()
+    all_items: list[dict[str, Any]] = []
+    for ev in evidence_prefetched:
+        rp = ev.raw_ppi
+        if rp.pk in seen_raw_ppi_ids:
+            continue
+        seen_raw_ppi_ids.add(rp.pk)
+        paper = rp.run.chunk.section.paper
+        pmid = paper.pmid
+        pub_date = paper.publication_date
+        year = str(pub_date.year) if pub_date is not None else ""
+        journal = paper.journal or ""
+        citation_parts = [paper.title, journal, year]
+        citation = " · ".join(p for p in citation_parts if p)
+        all_items.append(
+            {
+                "pmid": pmid,
+                "pubmed_url": f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/",
+                "citation": citation,
+                "model_name": rp.run.model_name,
+                "relation_logprob": rp.relation_logprob,
+                "confidence": rp.confidence,
+                "evidence_span": rp.evidence_span,
+            }
+        )
+
+    total = len(all_items)
+    visible = all_items[:cap]
+    return {
+        "items": visible,
+        "total": total,
+        "extra": total - len(visible),
+    }
 
 
 # ---------------------------------------------------------------------------

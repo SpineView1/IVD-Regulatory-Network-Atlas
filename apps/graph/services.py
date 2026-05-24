@@ -29,6 +29,7 @@ __all__ = [
     "detect_inter_model_conflicts",
     "detect_inter_paper_conflicts",
     "detect_intra_paper_conflicts",
+    "edge_evidence_items",
     "mean_recency_for_dates",
     "normalize_and_integrate",
     "reassign_network_membership",
@@ -652,3 +653,72 @@ def reassign_network_membership(edge_ids: Iterable[int]) -> dict:
                             demoted_count += 1
 
     return {"memberships_created": created_count, "networks_demoted": demoted_count}
+
+
+# ---------------------------------------------------------------------------
+# Evidence items for a single edge — used by the disagreement queue
+# ---------------------------------------------------------------------------
+
+#: Maximum evidence items to return. Callers can slice further; this cap
+#: prevents pathological edges from returning hundreds of rows.
+_EVIDENCE_ITEMS_CAP = 50
+
+
+def edge_evidence_items(edge: Edge) -> list[dict]:
+    """Return a list of evidence dicts for *edge*, ordered by confidence desc.
+
+    Each dict contains:
+      pmid           — int, the supporting paper's PMID
+      pubmed_url     — str, canonical https://pubmed.ncbi.nlm.nih.gov/<pmid>/
+      citation       — str, "<title> · <journal> · <year>" (year from
+                       publication_date; falls back to "" if no date)
+      model_name     — str, extracting model
+      relation_logprob — float | None
+      confidence     — float
+      evidence_span  — str, the verbatim sentence
+
+    The result is deduplicated by (raw_ppi_id) — each RawPPI appears at most
+    once even if somehow duplicated in EdgeEvidence. Ordered by confidence
+    descending so the highest-confidence sentence appears first.
+
+    Uses a single ``select_related`` traversal (no N+1).
+    """
+    from graph.models import Edge as EdgeModel  # noqa: PLC0415 — avoid circular at module load
+
+    ev_qs = (
+        EdgeModel.objects.get(pk=edge.pk)  # ensure we're working with a fresh edge
+        .evidence.select_related(
+            "raw_ppi__run__chunk__section__paper",
+        )
+        .order_by("-raw_ppi__confidence")[:_EVIDENCE_ITEMS_CAP]
+    )
+
+    seen_raw_ppi_ids: set[int] = set()
+    items: list[dict] = []
+    for ev in ev_qs:
+        rp = ev.raw_ppi
+        if rp.pk in seen_raw_ppi_ids:
+            continue
+        seen_raw_ppi_ids.add(rp.pk)
+
+        paper = rp.run.chunk.section.paper
+        pmid = paper.pmid
+        pub_date = paper.publication_date
+        year = str(pub_date.year) if pub_date is not None else ""
+        journal = paper.journal or ""
+        citation_parts = [paper.title, journal, year]
+        citation = " · ".join(p for p in citation_parts if p)
+
+        items.append(
+            {
+                "pmid": pmid,
+                "pubmed_url": f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/",
+                "citation": citation,
+                "model_name": rp.run.model_name,
+                "relation_logprob": rp.relation_logprob,
+                "confidence": rp.confidence,
+                "evidence_span": rp.evidence_span,
+            }
+        )
+
+    return items
