@@ -137,3 +137,72 @@ class TestNetworkDetailView:
         resp = client.get(f"/networks/{network.code}/")
         body = resp.content.decode()
         assert "edgesUrl" in body or "edges_json_url" in body.lower() or "edges.json" in body
+
+
+def _add_edge_with_evidence(network, *, pmid, span, model="qwen3:8b"):
+    """Seed one edge in `network` with a full EdgeEvidence provenance chain."""
+    from core.models import OntologyEntity
+    from corpus.models import Paper
+    from extract.models import ExtractionRun, RawPPI
+    from graph.models import Edge, EdgeEvidence, Entity, NetworkEdgeMembership
+    from papers.models import Chunk, Section
+
+    oe1 = OntologyEntity.objects.create(entity_type="protein", preferred_label="TNF")
+    oe2 = OntologyEntity.objects.create(entity_type="protein", preferred_label="IL6")
+    src = Entity.objects.create(ontology_entity=oe1)
+    tgt = Entity.objects.create(ontology_entity=oe2)
+    edge = Edge.objects.create(
+        source=src,
+        target=tgt,
+        relation="activates",
+        status="candidate",
+        belief_score=0.6,
+        n_supporting_papers=1,
+        n_models_agreeing=1,
+    )
+    NetworkEdgeMembership.objects.create(network=network, edge=edge, relevance=1.0)
+    paper = Paper.objects.create(
+        pmid=pmid,
+        title="TNF and IL6 in disc degeneration",
+        journal="Spine",
+        publication_date="2024-01-01",
+        ingest_status="chunked",
+    )
+    sec = Section.objects.create(paper=paper, doco_type="Results", order_index=0, body_text=span)
+    chunk = Chunk.objects.create(
+        section=sec,
+        chunk_index=0,
+        text=span,
+        char_offset_start=0,
+        char_offset_end=len(span),
+        token_count=12,
+    )
+    run = ExtractionRun.objects.create(
+        chunk=chunk, model_name=model, prompt_version="v1", status=ExtractionRun.Status.DONE
+    )
+    raw = RawPPI.objects.create(
+        run=run,
+        subject="TNF",
+        object="IL6",
+        relation="activates",
+        evidence_span=span,
+        evidence_offset_start=0,
+        evidence_offset_end=len(span),
+        confidence=0.9,
+        relation_logprob=-0.1,
+    )
+    EdgeEvidence.objects.create(edge=edge, raw_ppi=raw)
+    return edge
+
+
+def test_network_detail_shows_edge_evidence_and_references(client, network):
+    span = "TNF-alpha markedly upregulated IL6 in nucleus pulposus cells."
+    edge = _add_edge_with_evidence(network, pmid=41356258, span=span)
+    resp = client.get(f"/networks/{network.code}/")
+    body = resp.content.decode()
+    assert resp.status_code == 200
+    assert span in body  # verbatim evidence sentence
+    assert "41356258" in body  # PMID
+    assert "pubmed.ncbi.nlm.nih.gov/41356258" in body  # PubMed reference link
+    assert "qwen3:8b" in body  # extracting model
+    assert f"/networks/edges/{edge.pk}/audit/" in body  # link to full audit trail

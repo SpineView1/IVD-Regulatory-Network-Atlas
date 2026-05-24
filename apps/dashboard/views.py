@@ -202,7 +202,11 @@ def grid(request: HttpRequest) -> HttpResponse:
 
 
 def network_detail(request: HttpRequest, code: str) -> HttpResponse:
-    """Per-network detail: Cytoscape.js graph + ModelVersion panel."""
+    """Per-network detail: Cytoscape.js graph + ModelVersion panel + a
+    per-edge Evidence & References table so a biologist sees the source
+    sentences and PMIDs without leaving the network page."""
+    from graph.models import NetworkEdgeMembership
+    from graph.services import edge_evidence_items
     from networks.models import Network
     from sbml.models import ModelVersion
 
@@ -212,11 +216,37 @@ def network_detail(request: HttpRequest, code: str) -> HttpResponse:
         .filter(frozen_at__isnull=False)
         .order_by("-created_at")
     )
+
+    # Edges in this network, each with its supporting evidence (PMID, verbatim
+    # sentence, model, confidence). edge_evidence_items fetches the full
+    # evidence chain in one query per edge; prefetch keeps the node labels cheap.
+    memberships = (
+        NetworkEdgeMembership.objects.filter(network=network, edge__isnull=False)
+        .select_related("edge__source__ontology_entity", "edge__target__ontology_entity")
+        .order_by("-edge__belief_score")
+    )
+    edges_with_evidence = []
+    for m in memberships:
+        edge = m.edge
+        if edge is None:  # pending-only membership (no concrete edge yet)
+            continue
+        items = edge_evidence_items(edge)
+        edges_with_evidence.append(
+            {
+                "edge": edge,
+                "source": edge.source.ontology_entity.preferred_label,
+                "target": edge.target.ontology_entity.preferred_label,
+                "evidence": items,
+                "evidence_count": len(items),
+            }
+        )
+
     edges_json_url = f"/graph/dev/networks/{code}/edges.json"
     context: dict[str, Any] = {
         "network": network,
         "versions": versions,
         "edges_json_url": edges_json_url,
+        "edges_with_evidence": edges_with_evidence,
     }
     return render(request, "dashboard/network_detail.html", context)
 
