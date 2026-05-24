@@ -206,3 +206,26 @@ def test_network_detail_shows_edge_evidence_and_references(client, network):
     assert "pubmed.ncbi.nlm.nih.gov/41356258" in body  # PubMed reference link
     assert "qwen3:8b" in body  # extracting model
     assert f"/networks/edges/{edge.pk}/audit/" in body  # link to full audit trail
+
+
+def test_network_detail_has_curation_csv_link(client, network):
+    resp = client.get(f"/networks/{network.code}/")
+    assert resp.status_code == 200
+    assert f"/networks/{network.code}/curation.csv" in resp.content.decode()
+
+
+def test_curation_csv_download(client, network):
+    span = "TNF-alpha markedly upregulated IL6 in nucleus pulposus cells."
+    _add_edge_with_evidence(network, pmid=41356258, span=span)
+    resp = client.get(f"/networks/{network.code}/curation.csv")
+    assert resp.status_code == 200
+    assert resp["Content-Type"] == "text/csv"
+    assert "attachment" in resp["Content-Disposition"]
+    assert ".csv" in resp["Content-Disposition"]
+    body = resp.content.decode()
+    assert "STIMULI,RELATION,RESPONSE,PATHWAY INVOLVED" in body  # header row
+    assert "PMID:41356258" in body
+
+
+def test_curation_csv_unknown_network_404(client, db):
+    assert client.get("/networks/does-not-exist/curation.csv").status_code == 404

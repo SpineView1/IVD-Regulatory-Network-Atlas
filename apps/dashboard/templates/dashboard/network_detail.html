@@ -17,6 +17,10 @@
   </div>
   <div class="d-flex gap-2 align-items-center">
     {% status_pill network.pipeline_status %}
+    <a href="{% url 'dashboard:network_curation_csv' code=network.code %}"
+       class="btn btn-sm btn-outline-primary">
+      <i class="bi bi-download"></i> Curation CSV
+    </a>
     <a href="{% url 'dashboard:disagreement_queue' code=network.code %}"
        class="btn btn-sm btn-outline-secondary">
       <i class="bi bi-list-check"></i> Disagreement Queue
