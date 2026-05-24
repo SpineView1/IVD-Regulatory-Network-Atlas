@@ -28,6 +28,13 @@ interactome.simbiosys.sb.upf.edu {
     }
 
     route {
+        # /metrics/ is internal-only: Prometheus scrapes web:8000/metrics
+        # directly over the Docker network (bypassing Caddy). Block any
+        # externally-routed access so authenticated browser users can't read
+        # the metric stream.
+        @metrics path /metrics /metrics/*
+        respond @metrics 403
+
         # Defense-in-depth: never trust client-supplied identity headers;
         # Authelia (via forward_auth copy_headers) is the only source.
         request_header -Remote-User
