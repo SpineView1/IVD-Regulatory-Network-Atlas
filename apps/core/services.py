@@ -79,8 +79,57 @@ class _Grounder(Protocol):
     def ground(self, text: str) -> list[Any]: ...
 
 
+class _HttpGrounder:
+    """Grounder backed by the Gilda/INDRA grounding web service.
+
+    Avoids loading Gilda's multi-GB in-memory index in every worker — useful
+    for memory-constrained deployments. POSTs ``{"text": ...}`` to the service
+    and adapts the JSON into ScoredMatch-like objects exposing ``.score`` and
+    ``.term.db / .term.id / .term.entry_name`` (the same surface ground_mention
+    reads from local gilda).
+    """
+
+    def __init__(self, url: str, *, timeout: float = 15.0) -> None:
+        self._url = url
+        self._timeout = timeout
+
+    def ground(self, text: str) -> list[Any]:
+        import types  # noqa: PLC0415
+
+        import httpx  # noqa: PLC0415
+
+        resp = httpx.post(self._url, json={"text": text}, timeout=self._timeout)
+        resp.raise_for_status()
+        out: list[Any] = []
+        for item in resp.json():
+            term = item.get("term") or {}
+            if not term.get("db") or not term.get("id"):
+                continue
+            out.append(
+                types.SimpleNamespace(
+                    score=float(item.get("score", 0.0)),
+                    term=types.SimpleNamespace(
+                        db=term["db"],
+                        id=str(term["id"]),
+                        entry_name=term.get("entry_name") or text,
+                    ),
+                )
+            )
+        out.sort(key=lambda m: m.score, reverse=True)  # defensive: highest first
+        return out
+
+
 def _default_grounder() -> _Grounder:
-    """Return the real gilda module (imported lazily to avoid startup cost)."""
+    """Return the grounder for the current settings.
+
+    If ``GILDA_GROUNDING_URL`` is set, use the remote grounding web service
+    (no local memory cost). Otherwise load the local ``gilda`` module lazily.
+    """
+    from django.conf import settings  # noqa: PLC0415
+
+    url = getattr(settings, "GILDA_GROUNDING_URL", "") or ""
+    if url:
+        return _HttpGrounder(url)
     import gilda  # noqa: PLC0415 — lazy import intentional
 
     return gilda

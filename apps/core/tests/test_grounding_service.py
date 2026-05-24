@@ -108,3 +108,32 @@ def test_ground_mention_gracefully_handles_grounder_exception(db):
     # Should not raise; should return None
     result = ground_mention("IL1B", grounder=grounder)
     assert result is None
+
+
+def test_http_grounder_used_when_url_set(db, settings, httpx_mock):
+    """When GILDA_GROUNDING_URL is set, ground_mention uses the web service
+    (no local gilda import) and maps the JSON to an OntologyEntity."""
+    from core.services import ground_mention
+
+    settings.GILDA_GROUNDING_URL = "https://grounding.example/ground"
+    httpx_mock.add_response(
+        method="POST",
+        url="https://grounding.example/ground",
+        json=[{"score": 1.0, "term": {"db": "HGNC", "id": "11892", "entry_name": "TNF"}}],
+    )
+    oe = ground_mention("TNF-alpha")
+    assert oe is not None
+    assert oe.preferred_label == "TNF"
+    assert oe.identifiers.filter(scheme="HGNC", value="11892").exists()
+
+
+def test_http_grounder_below_threshold_returns_none(db, settings, httpx_mock):
+    from core.services import ground_mention
+
+    settings.GILDA_GROUNDING_URL = "https://grounding.example/ground"
+    httpx_mock.add_response(
+        method="POST",
+        url="https://grounding.example/ground",
+        json=[{"score": 0.4, "term": {"db": "HGNC", "id": "99", "entry_name": "X"}}],
+    )
+    assert ground_mention("ambiguous") is None

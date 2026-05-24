@@ -198,6 +198,12 @@ PUBTATOR3_BASE_URL = "https://www.ncbi.nlm.nih.gov/research/pubtator3-api"
 GROBID_BASE_URL = os.environ.get("GROBID_BASE_URL", "http://grobid:8070")
 GROBID_TIMEOUT = float(os.environ.get("GROBID_TIMEOUT", "300"))
 
+# === Entity grounding (Gilda) ===
+# If set, ground_mention uses the Gilda/INDRA grounding web service instead of
+# loading Gilda's multi-GB in-memory index in every worker — for memory-
+# constrained deployments. Empty → local in-process gilda.
+GILDA_GROUNDING_URL = os.environ.get("GILDA_GROUNDING_URL", "")
+
 # Logging
 LOGGING = {
     "version": 1,
