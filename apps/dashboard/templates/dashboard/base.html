@@ -23,6 +23,23 @@
     body { padding-top: 56px; }
     .belief-badge { font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; color: #fff; }
   </style>
+
+  <!-- HTMX CSRF configuration: send X-CSRFToken on every mutating request.
+       Reads the csrftoken cookie that Django's CsrfViewMiddleware sets so
+       that HTMX swaps (which don't submit a full form) stay CSRF-safe.
+       This pairs with Authelia's Remote-User header auth to satisfy both
+       the identity and anti-CSRF layers on all HTMX POST/PUT/DELETE calls. -->
+  <meta name="htmx-config" content='{"includeIndicatorStyles": true, "useTemplateFragments": true}'>
+  <script>
+    document.addEventListener("htmx:configRequest", function (evt) {
+      var token = document.cookie.split("; ").find(function (r) {
+        return r.startsWith("csrftoken=");
+      });
+      if (token) {
+        evt.detail.headers["X-CSRFToken"] = token.split("=")[1];
+      }
+    });
+  </script>
 </head>
 <body>
   <!-- Navigation bar -->
