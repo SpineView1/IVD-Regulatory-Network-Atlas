@@ -1,7 +1,6 @@
-{# Partial: one subscription row in the subscription manager.
+{% comment %}Partial: one subscription row in the subscription manager.
    HTMX target: #subscription-{{ sub.pk }}
-   Context: sub (Subscription instance with .network selected)
-#}
+   Context: sub (Subscription instance with .network selected){% endcomment %}
 <div id="subscription-{{ sub.pk }}"
      class="list-group-item py-2">
   <form hx-post="{% url 'verify:subscription_toggle' pk=sub.pk %}"

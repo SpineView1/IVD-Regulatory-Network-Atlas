@@ -1,8 +1,7 @@
 {% load dashboard_extras %}
-{# Partial: initialise Cytoscape.js for the network graph.
+{% comment %}Partial: initialise Cytoscape.js for the network graph.
    Requires: edges_json_url, network.code
-   Cytoscape.js is loaded in base.html from CDN.
-#}
+   Cytoscape.js is loaded in base.html from CDN.{% endcomment %}
 <div id="cy-container" style="width: 100%; height: 500px; border: 1px solid #dee2e6; border-radius: 4px; background: #f8f9fa;"></div>
 <script>
 (function () {

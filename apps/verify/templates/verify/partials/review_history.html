@@ -1,7 +1,6 @@
-{# Partial: review history section for one edge.
+{% comment %}Partial: review history section for one edge.
    Updated via HTMX after a new review is recorded.
-   Context: edge, reviews (list of Review instances, latest-per-reviewer)
-#}
+   Context: edge, reviews (list of Review instances, latest-per-reviewer){% endcomment %}
 {% load dashboard_extras %}
 <div id="review-history-{{ edge.pk }}">
   {% if reviews %}
