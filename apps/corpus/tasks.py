@@ -39,7 +39,23 @@ logger = logging.getLogger(__name__)
     max_retries=5,
 )
 def refresh_pubmed(self: Any) -> dict:
-    """Incremental PubMed sweep. Enqueues ingest_paper for each new PMID."""
+    """Incremental PubMed sweep. Enqueues ingest_paper for each new PMID.
+
+    Short-circuits if (a) the global INGESTION_PAUSED flag is set, or
+    (b) the extraction queue depth exceeds the backpressure threshold.
+    See spec Section 10 (continuous monitoring) and Section 6 (Beat schedule).
+    """
+    from monitoring import services as monitoring_services  # noqa: PLC0415 — lazy to avoid circular
+
+    if monitoring_services.is_ingestion_paused():
+        return {"skipped": True, "reason": "ingestion_paused"}
+    if monitoring_services.is_backpressured():
+        return {"skipped": True, "reason": "backpressured"}
+    return _do_refresh_pubmed()
+
+
+def _do_refresh_pubmed() -> dict:
+    """The original body of refresh_pubmed — extracted to allow pause-flag wrapping."""
     wm = get_watermark("pubmed")
     query = build_incremental_query(since=wm.last_entrez_date)
     client = NcbiClient()
