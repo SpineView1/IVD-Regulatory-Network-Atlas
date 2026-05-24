@@ -582,8 +582,10 @@ def affected_network_ids(paper_id: int, *, threshold: float = 0.5) -> list[int]:
 
 def reassign_network_membership(edge_ids: Iterable[int]) -> dict:
     """For each edge in ``edge_ids``, create NetworkEdgeMembership rows for
-    every Network whose ``root_entities`` references either endpoint's
-    Identifier (scheme + value match, score ≥ 0.5 direct-match threshold).
+    every Network that references either endpoint — by structured
+    ``root_entities`` identifier (scheme + value) OR by ``root_entity_aliases``
+    gene-symbol match against the endpoint's symbol (preferred_label),
+    case-insensitive.
 
     Demote affected networks from ``verified`` → ``stale`` (and also
     ``idle`` → ``stale`` when a new edge arrives) per spec §7.
@@ -605,14 +607,22 @@ def reassign_network_membership(edge_ids: Iterable[int]) -> dict:
     )
 
     for edge in edges:
-        # Gather all (scheme, value) pairs from both endpoints
+        # Gather all (scheme, value) identifier pairs AND symbols from both
+        # endpoints. Networks are seeded with structured ``root_entities``
+        # (scheme+value) AND/OR ``root_entity_aliases`` (gene symbols), so we
+        # match on either: identifier overlap OR symbol-in-aliases. The symbol
+        # path is what populates the taxonomy networks, whose aliases are gene
+        # symbols (e.g. NFKB1, RELA) while grounded entities carry the symbol
+        # as ``preferred_label``.
         endpoint_ids: set[tuple[str, str]] = set()
+        endpoint_symbols: set[str] = set()
         for entity in (edge.source, edge.target):
-            for ident in entity.ontology_entity.identifiers.all():
+            oe = entity.ontology_entity
+            for ident in oe.identifiers.all():
                 endpoint_ids.add((ident.scheme, ident.value))
+            if oe.preferred_label:
+                endpoint_symbols.add(oe.preferred_label.strip().upper())
 
-        # Any Network whose root_entities mentions any of these (scheme, value)
-        # pairs is a candidate. root_entities is a JSONB list of dicts.
         for network in Network.objects.all():
             roots = network.root_entities or []
             wanted = {
@@ -620,7 +630,10 @@ def reassign_network_membership(edge_ids: Iterable[int]) -> dict:
                 for r in roots
                 if r.get("scheme") and r.get("value")
             }
-            if endpoint_ids & wanted:
+            wanted_aliases = {
+                a.strip().upper() for a in (network.root_entity_aliases or []) if a and a.strip()
+            }
+            if (endpoint_ids & wanted) or (endpoint_symbols & wanted_aliases):
                 _, was_created = NetworkEdgeMembership.objects.get_or_create(
                     network=network,
                     edge=edge,

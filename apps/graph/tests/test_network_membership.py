@@ -284,3 +284,30 @@ def test_reassign_network_membership_is_idempotent(
     reassign_network_membership({edge.pk})
 
     assert NetworkEdgeMembership.objects.filter(network=nfkb_network, edge=edge).count() == 1
+
+
+def test_membership_via_symbol_alias_when_root_entities_empty(
+    db, il1b_ontology_entity, nfkb1_ontology_entity
+):
+    """Taxonomy networks carry gene-SYMBOL aliases (root_entity_aliases) but no
+    structured root_entities. An edge whose endpoint symbol matches an alias
+    must still be captured into the network. Regression guard for the cross-phase
+    gap where membership only matched structured identifiers."""
+    from networks.models import Network  # noqa: PLC0415
+
+    net = Network.objects.create(
+        code="nfkb_aliasonly",
+        title="NF-kB (alias-only)",
+        category="I",
+        root_entities=[],
+        root_entity_aliases=["NFKB1", "RELA"],
+        pipeline_status="idle",
+    )
+    src = Entity.objects.create(ontology_entity=il1b_ontology_entity)
+    tgt = Entity.objects.create(ontology_entity=nfkb1_ontology_entity)
+    e = Edge.objects.create(source=src, target=tgt, relation="activates", status="accepted")
+
+    res = reassign_network_membership([e.pk])
+
+    assert res["memberships_created"] >= 1
+    assert NetworkEdgeMembership.objects.filter(network=net, edge=e).exists()
