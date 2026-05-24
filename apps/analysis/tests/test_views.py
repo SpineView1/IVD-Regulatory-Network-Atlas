@@ -63,3 +63,16 @@ def test_neighborhood_json_requires_entity_id(db, authed_client, settings):
     settings.ANALYSIS_GRAPH_BACKEND = "fake"
     r = authed_client.get("/analysis/neighborhood.json")
     assert r.status_code == 400
+
+
+def test_unauthenticated_json_endpoint_is_rejected(db, settings):
+    """Unauthenticated requests to JSON endpoints must redirect to login.
+
+    AUTHELIA_DEV_FAKE_USER is nullified so the middleware sets
+    request.user = AnonymousUser, then @login_required kicks in.
+    """
+    settings.AUTHELIA_DEV_FAKE_USER = None
+    anon_client = Client()  # no Remote-User header
+    r = anon_client.get("/analysis/neighborhood.json?entity_id=1")
+    assert r.status_code == 302
+    assert "/accounts/login/" in r["Location"]

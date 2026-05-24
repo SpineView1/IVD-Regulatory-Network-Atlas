@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import render
 
 from analysis import services
 
 
+@login_required
 def explorer(request: HttpRequest) -> HttpResponse:
     """The full crosstalk-explorer page. Graph data is fetched async via JSON."""
     from networks.models import Network
@@ -18,6 +20,7 @@ def explorer(request: HttpRequest) -> HttpResponse:
     return render(request, "analysis/explorer.html", {"networks": networks})
 
 
+@login_required
 def neighborhood_json(request: HttpRequest) -> JsonResponse:
     entity_id = request.GET.get("entity_id")
     if not entity_id:
@@ -27,6 +30,7 @@ def neighborhood_json(request: HttpRequest) -> JsonResponse:
     return JsonResponse(data)
 
 
+@login_required
 def crosstalk_json(request: HttpRequest) -> JsonResponse:
     a = request.GET.get("network_a")
     b = request.GET.get("network_b")
@@ -35,6 +39,7 @@ def crosstalk_json(request: HttpRequest) -> JsonResponse:
     return JsonResponse(services.crosstalk_edges(network_a=a, network_b=b))
 
 
+@login_required
 def paths_json(request: HttpRequest) -> JsonResponse:
     try:
         source = int(request.GET["source"])
@@ -52,6 +57,7 @@ def paths_json(request: HttpRequest) -> JsonResponse:
     return JsonResponse({"paths": paths})
 
 
+@login_required
 def analysis_panel(request: HttpRequest) -> HttpResponse:
     """HTMX partial: centrality ranking + communities + feedback loops.
 
