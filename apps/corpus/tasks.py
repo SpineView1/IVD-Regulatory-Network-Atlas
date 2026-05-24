@@ -100,7 +100,7 @@ def refresh_pubmed_full(self: Any) -> dict:
     client = NcbiClient()
     run = IngestRun.objects.create(source="pubmed_full", query=MASTER_IDD_QUERY)
     try:
-        pmids = client.esearch(query=MASTER_IDD_QUERY, retmax=100000)
+        pmids = client.esearch_all(query=MASTER_IDD_QUERY, max_results=40000)
         existing = set(Paper.objects.filter(pmid__in=pmids).values_list("pmid", flat=True))
         new_pmids = [p for p in pmids if p not in existing]
         for pmid in new_pmids:

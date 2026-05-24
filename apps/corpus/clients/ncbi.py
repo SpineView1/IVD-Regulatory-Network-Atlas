@@ -71,6 +71,40 @@ class NcbiClient:
         tree = etree.fromstring(resp.content)  # noqa: S320
         return [int(id_el.text) for id_el in tree.findall(".//IdList/Id")]
 
+    def esearch_all(
+        self,
+        *,
+        query: str,
+        db: str = "pubmed",
+        page_size: int = 9999,
+        max_results: int = 40000,
+    ) -> list[int]:
+        """Paginated ESearch returning ALL matching PMIDs up to ``max_results``.
+
+        NCBI's ESearch returns at most ~10k IdList entries per request
+        regardless of ``retmax``, so a single call silently truncates a large
+        result set (the master IDD query has ~27k hits). This walks ``retstart``
+        in pages of ``page_size`` until the result set is exhausted or
+        ``max_results`` is reached. Each page consumes a rate-limit token via
+        the underlying ``esearch``. Returns de-duplicated PMIDs in order.
+        """
+        seen: set[int] = set()
+        out: list[int] = []
+        retstart = 0
+        while len(out) < max_results:
+            want = min(page_size, max_results - len(out))
+            page = self.esearch(query=query, retmax=want, retstart=retstart, db=db)
+            if not page:
+                break
+            for pmid in page:
+                if pmid not in seen:
+                    seen.add(pmid)
+                    out.append(pmid)
+            if len(page) < want:
+                break  # last page
+            retstart += len(page)
+        return out[:max_results]
+
     @require_token("ncbi_eutils", cost=1)
     def efetch(self, *, pmids: list[int], db: str = "pubmed") -> list[PaperMetadata]:
         if not pmids:
