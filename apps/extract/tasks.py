@@ -126,6 +126,8 @@ def _execute_run(run: ExtractionRun) -> str:
             evidence_offset_start=ppi.evidence_offset_start,
             evidence_offset_end=ppi.evidence_offset_end,
             cell_type=ppi.cell_type,
+            species=(ppi.species.value if ppi.species is not None else None),
+            deg_status=(ppi.deg_status.value if ppi.deg_status is not None else None),
             stimulus=ppi.stimulus,
             confidence=ppi.confidence,
             relation_logprob=relation_logprob,

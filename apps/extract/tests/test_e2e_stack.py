@@ -105,9 +105,10 @@ def test_ollama_env_vars_present_in_settings():
 
 @pytest.mark.django_db
 def test_active_prompt_template_exists_after_migration():
-    """The seed migration 0002_seed_prompt must create an active PromptTemplate."""
+    """The seed migrations must leave exactly one active PromptTemplate; the
+    latest (0004_seed_prompt_v2) activates V2."""
     from extract.models import PromptTemplate
 
     active = PromptTemplate.objects.filter(is_active=True).first()
-    assert active is not None, "No active PromptTemplate; check 0002_seed_prompt migration"
-    assert active.version == "1.0.0"
+    assert active is not None, "No active PromptTemplate; check the seed migrations"
+    assert active.version == "2.0.0"

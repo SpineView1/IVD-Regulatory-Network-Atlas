@@ -86,6 +86,50 @@ def test_empty_ppi_list_is_valid():
     assert parsed.ppis == []
 
 
+def _ppi(**overrides):
+    base = {
+        "subject": "A",
+        "object": "B",
+        "relation": "activates",
+        "evidence_span": "x",
+        "evidence_offset_start": 0,
+        "evidence_offset_end": 1,
+        "confidence": 0.5,
+    }
+    base.update(overrides)
+    return {"ppis": [base]}
+
+
+def test_species_and_deg_status_default_to_none_when_omitted():
+    parsed = PPIExtractionResponse.model_validate(_ppi())
+    assert parsed.ppis[0].species is None
+    assert parsed.ppis[0].deg_status is None
+
+
+def test_species_and_deg_status_parse_when_present():
+    from extract.schemas import DegStatus, Species
+
+    parsed = PPIExtractionResponse.model_validate(_ppi(species="bovine", deg_status="DEG"))
+    assert parsed.ppis[0].species == Species.BOVINE
+    assert parsed.ppis[0].deg_status == DegStatus.DEG
+
+
+def test_unknown_species_rejected():
+    with pytest.raises(ValidationError):
+        PPIExtractionResponse.model_validate(_ppi(species="dragon"))
+
+
+def test_unknown_deg_status_rejected():
+    with pytest.raises(ValidationError):
+        PPIExtractionResponse.model_validate(_ppi(deg_status="maybe"))
+
+
+def test_json_schema_enumerates_species_and_deg_status():
+    item = PPI_JSON_SCHEMA["properties"]["ppis"]["items"]["properties"]
+    assert "species" in item
+    assert "deg_status" in item
+
+
 def test_json_schema_has_required_top_level_key():
     assert PPI_JSON_SCHEMA["type"] == "object"
     assert "ppis" in PPI_JSON_SCHEMA["properties"]

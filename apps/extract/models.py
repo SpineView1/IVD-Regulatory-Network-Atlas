@@ -100,6 +100,11 @@ class RawPPI(TimestampedModel):
     evidence_offset_start = models.PositiveIntegerField()
     evidence_offset_end = models.PositiveIntegerField()
     cell_type = models.CharField(max_length=128, null=True, blank=True)  # noqa: DJ001
+    # Curation metadata (prompt V2): source organism and degenerated-vs-healthy
+    # disc context. Null when the paper did not state it; values constrained by
+    # extract.schemas.Species / DegStatus at extraction time.
+    species = models.CharField(max_length=16, null=True, blank=True)  # noqa: DJ001
+    deg_status = models.CharField(max_length=8, null=True, blank=True)  # noqa: DJ001
     stimulus = models.CharField(max_length=256, null=True, blank=True)  # noqa: DJ001
     confidence = models.FloatField()
 

@@ -93,6 +93,42 @@ def test_run_ppi_stores_relation_as_string(db, run, mock_ollama_response):
     assert ppi.relation == "activates"
 
 
+def test_run_ppi_persists_species_and_deg_status(db, run):
+    """V2 curation fields are stored as their plain string values (not enums)."""
+    response_text = json.dumps(
+        {
+            "ppis": [
+                {
+                    "subject": "SOX9",
+                    "object": "COL2A1",
+                    "relation": "activates",
+                    "evidence_span": "SOX9 drives COL2A1 in bovine NP.",
+                    "evidence_offset_start": 0,
+                    "evidence_offset_end": 31,
+                    "cell_type": "nucleus pulposus",
+                    "species": "bovine",
+                    "deg_status": "NON-DEG",
+                    "stimulus": None,
+                    "confidence": 0.8,
+                }
+            ]
+        }
+    )
+    with patch("extract.tasks._ollama_generate", return_value=(response_text, -0.1, 40)):
+        run_ppi(row_id=run.id)
+    ppi = RawPPI.objects.get(run=run)
+    assert ppi.species == "bovine"
+    assert ppi.deg_status == "NON-DEG"
+
+
+def test_run_ppi_leaves_curation_fields_null_when_absent(db, run, mock_ollama_response):
+    with patch("extract.tasks._ollama_generate", return_value=mock_ollama_response):
+        run_ppi(row_id=run.id)
+    ppi = RawPPI.objects.get(run=run)
+    assert ppi.species is None
+    assert ppi.deg_status is None
+
+
 def test_run_ppi_records_timing(db, run, mock_ollama_response):
     with patch("extract.tasks._ollama_generate", return_value=mock_ollama_response):
         run_ppi(row_id=run.id)

@@ -54,6 +54,7 @@ def test_janitor_resets_stale_extractionrun_to_queued(db):
     from papers.models import Chunk, Section
 
     # Ensure a clean prompt (seed migration already inserts 1.0.0 active).
+    PromptTemplate.objects.update(is_active=False)
     PromptTemplate.objects.update_or_create(
         version="1.0.0", defaults={"body": "{{CHUNK_TEXT}}", "is_active": True}
     )
@@ -93,6 +94,7 @@ def test_janitor_increments_attempts_on_reset(db):
     from extract.models import ExtractionRun, PromptTemplate
     from papers.models import Chunk, Section
 
+    PromptTemplate.objects.update(is_active=False)
     PromptTemplate.objects.update_or_create(
         version="1.0.0", defaults={"body": "{{CHUNK_TEXT}}", "is_active": True}
     )
@@ -136,6 +138,7 @@ def test_janitor_summary_includes_extractionrun(db):
     from extract.models import ExtractionRun, PromptTemplate
     from papers.models import Chunk, Section
 
+    PromptTemplate.objects.update(is_active=False)
     PromptTemplate.objects.update_or_create(
         version="1.0.0", defaults={"body": "{{CHUNK_TEXT}}", "is_active": True}
     )
