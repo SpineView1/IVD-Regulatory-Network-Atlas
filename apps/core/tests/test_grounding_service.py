@@ -65,6 +65,42 @@ def test_ground_mention_returns_none_on_empty_match_list(db):
     assert ground_mention("unknownium", grounder=grounder) is None
 
 
+def test_ground_mention_falls_back_to_alias(db, make_match):
+    """A colloquial mention that fails raw grounding is recovered via its
+    alias: 'Collagen II' grounds nowhere, but 'COL2A1' does."""
+    col2a1 = make_match("HGNC", "2200", "COL2A1", 0.97)
+
+    def fake_ground(text):
+        return [col2a1] if text == "COL2A1" else []
+
+    grounder = MagicMock()
+    grounder.ground.side_effect = fake_ground
+
+    entity = ground_mention("Collagen II", grounder=grounder)
+    assert entity is not None
+    assert entity.preferred_label == "COL2A1"
+    # Raw text was tried first, then the alias.
+    assert grounder.ground.call_args_list[0].args[0] == "Collagen II"
+    assert "COL2A1" in [c.args[0] for c in grounder.ground.call_args_list]
+
+
+def test_ground_mention_prefers_raw_match_over_alias(db, make_match):
+    """When the raw mention grounds, the alias path is never consulted."""
+    grounder = MagicMock()
+    grounder.ground.return_value = [make_match("HGNC", "2200", "COL2A1", 0.95)]
+    entity = ground_mention("Collagen II", grounder=grounder)
+    assert entity is not None
+    # Only one grounding call — the raw one — since it succeeded.
+    assert grounder.ground.call_count == 1
+    assert grounder.ground.call_args_list[0].args[0] == "Collagen II"
+
+
+def test_ground_mention_none_when_neither_raw_nor_alias_grounds(db):
+    grounder = MagicMock()
+    grounder.ground.return_value = []
+    assert ground_mention("Collagen II", grounder=grounder) is None
+
+
 def test_ground_mention_is_idempotent(db, stub_grounder):
     e1 = ground_mention("IL1B", grounder=stub_grounder)
     e2 = ground_mention("IL-1B", grounder=stub_grounder)
