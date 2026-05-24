@@ -1,15 +1,25 @@
-# IVD Regulatory Network Atlas
+# IVD Regulatory Network Atlas — v1.0.0
 
 Autonomous PubMed → SBML-qual pipeline for intervertebral disc regulatory
 networks. Built as a Django application hosted alongside the SIMBIOsys
 Ollama gateway.
 
+**Status: v1.0.0 (Phase 7 complete).** All phases (0–8) implemented.
+The NF-κB axis network is the first to be signed off by a curator at v1.0.0.
+The stack runs 18–20 Docker Compose services on the SIMBIOsys cluster.
+855 tests passing (ruff + mypy + pytest all green).
+
 ## Documentation
 
 - [Full design specification](docs/superpowers/specs/2026-05-19-disc-interactome-app-design.md)
+- [Operations runbook](docs/runbook.md) — six named procedures (deploy, restore, hardware failure, Ollama outage, full bring-up, Authelia outage)
+- [Biologist onboarding guide](docs/onboarding-biologist.md) — access, dashboard, colour codes, first edge review, sign-off semantics
+- [Sign-off ceremony record](docs/signoff-ceremony.md) — NF-κB axis ceremony procedure + record template
+- [Security review](docs/security-review.md) — Caddy/Authelia/Django hardening record
 - [Phase 0 implementation plan](docs/superpowers/plans/2026-05-19-phase-0-foundation.md)
 - [Phase 1 implementation plan (master corpus — complete)](docs/superpowers/plans/2026-05-19-phase-1-master-corpus.md)
 - [Phase 4 implementation plan (SBML-qual emission — complete)](docs/superpowers/plans/2026-05-19-phase-4-sbml-emission.md)
+- [Phase 7 implementation plan (hardening + handoff — complete)](docs/superpowers/plans/2026-05-19-phase-7-hardening.md)
 
 ## Prerequisites
 
@@ -224,11 +234,28 @@ curl -H 'Remote-User: fchemorion' \
 curl -H 'Remote-User: fchemorion' https://interactome.simbiosys.sb.upf.edu/corpus/stats
 ```
 
+## Phase 7 — Hardening + Handoff (complete, v1.0.0)
+
+Phase 7 makes the stack production-grade:
+
+- **pgbackrest backups** — daily incremental + weekly full + automated restore-test
+- **Off-host rsync** — weekly copy of `backupdata` + `miniodata` to backup host
+- **Sentry** — exception capture wired into Django and all Celery workers
+- **Prometheus + Grafana** — `/metrics/` endpoint, custom collectors (queue depth, healthcheck age), provisioned dashboard
+- **Covering indexes** — Phase 7 adds performance indexes on `corpus_paper`, `graph_edge`, `verify_reviewassignment` for the hottest dashboard queries
+- **`signoff_ceremony` management command** — scripted first-sign-off with `--dry-run` mode
+- **Operations runbook** — `docs/runbook.md` with six named procedures
+- **Biologist onboarding** — `docs/onboarding-biologist.md`
+- **Sign-off ceremony record** — `docs/signoff-ceremony.md`
+- **Security hardening** — Caddy security headers, deprecated setting removal, full review in `docs/security-review.md`
+- **855 tests passing**
+
 ## Deployment
 
-The cluster host runs the same `docker-compose.yml`. See
-[Section 9 of the spec](docs/superpowers/specs/2026-05-19-disc-interactome-app-design.md#9-deployment-and-operations)
-for IT prerequisites (DNS, Authelia AD group) and the deploy procedure.
+The cluster host runs the same `docker-compose.yml`. See the
+[operations runbook](docs/runbook.md) for the full bring-up procedure.
+For IT prerequisites (DNS, Authelia AD group `simbiosys-lab`), see
+[Section 9 of the spec](docs/superpowers/specs/2026-05-19-disc-interactome-app-design.md#9-deployment-and-operations).
 
 ## License
 

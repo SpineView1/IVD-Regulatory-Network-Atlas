@@ -224,6 +224,25 @@ LOGGING = {
     },
 }
 
+# Phase 7: route logs to a host-mounted file in addition to stdout.
+# When LOG_FILE_PATH is unset (default in dev), only stdout is used.
+import os as _os  # noqa: E402
+
+from core.observability import configure_log_file as _configure_log_file  # noqa: E402
+
+_log_file = _os.environ.get("LOG_FILE_PATH")
+if _log_file:
+    LOGGING = _configure_log_file(LOGGING, _log_file)
+
+# Phase 7: django-prometheus mounts at /metrics/. Add the app and
+# the two middlewares that bracket every request to record duration.
+INSTALLED_APPS = [*INSTALLED_APPS, "django_prometheus"]
+MIDDLEWARE = [
+    "django_prometheus.middleware.PrometheusBeforeMiddleware",
+    *MIDDLEWARE,
+    "django_prometheus.middleware.PrometheusAfterMiddleware",
+]
+
 # === Celery Beat schedule (merged across phases) ===
 from schedule.beat_schedule import BEAT_SCHEDULE  # noqa: E402
 

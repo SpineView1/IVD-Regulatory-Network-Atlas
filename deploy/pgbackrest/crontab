@@ -1,0 +1,11 @@
+SHELL=/bin/bash
+PATH=/usr/bin:/bin:/usr/local/bin
+
+# Daily incremental at 03:00 UTC (every day except Sunday, when 'full' runs)
+0 3 * * 1-6  pgbackrest --stanza=interactome --type=incr backup >> /proc/1/fd/1 2>&1
+
+# Weekly full at 02:00 UTC Sunday
+0 2 * * 0    pgbackrest --stanza=interactome --type=full backup >> /proc/1/fd/1 2>&1
+
+# Restore-test every Saturday at 04:00 UTC — verifies the backup is restorable
+0 4 * * 6    /usr/local/bin/restore-test.sh >> /proc/1/fd/1 2>&1
