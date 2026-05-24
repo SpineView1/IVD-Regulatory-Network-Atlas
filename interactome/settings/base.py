@@ -136,6 +136,7 @@ CELERY_TASK_ROUTES = {
     # extract.tasks.run_ppi is routed dynamically by enqueue_pending_chunks
     # via apply_async(queue=queue_for_model(...)); no static route here.
     "extract.tasks.enqueue_pending_chunks": {"queue": "q.io"},
+    "extract.tasks.requeue_transient_extraction_failures": {"queue": "q.io"},
     "extract.tasks.smoke_all_models": {"queue": "q.io"},
     "graph.integrate_pending": {"queue": "q.io"},
     # Phase 5: verify notification + reviewer-reminder tasks (shared q.io worker)

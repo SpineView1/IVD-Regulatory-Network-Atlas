@@ -373,3 +373,63 @@ def _do_enqueue_pending_chunks(batch_size: int = 200) -> dict:
 
     logger.info("enqueue_pending_chunks dispatched: %s", enqueued)
     return enqueued
+
+
+# ---------------------------------------------------------------------------
+# requeue_transient_extraction_failures — self-healing across Ollama/VPN blips
+# ---------------------------------------------------------------------------
+
+# Substrings (lower-cased) that mark a FAILED run as transient — a network or
+# gateway hiccup (e.g. the VPN to the Ollama cluster dropping mid-request),
+# not a permanent problem with the chunk or the model output. These reach the
+# ``except Exception`` path in _execute_run as raw httpx errors, so they land
+# as terminal FAILED and would otherwise never retry on their own.
+_TRANSIENT_ERROR_MARKERS: tuple[str, ...] = (
+    "name or service not known",
+    "timed out",
+    "timeout",
+    "connecterror",
+    "connectionerror",
+    "networkerror",
+    "server disconnected",
+    "connection reset",
+    "connection refused",
+    "temporarily unavailable",
+    "max retries exceeded",
+)
+
+
+@shared_task(name="extract.tasks.requeue_transient_extraction_failures")
+def requeue_transient_extraction_failures(max_attempts: int = 5) -> dict:
+    """Reset transiently-failed extraction runs to queued and re-dispatch them.
+
+    When the Ollama gateway is briefly unreachable (VPN flap, gateway restart),
+    ``_execute_run`` records the run as FAILED with a network error string.
+    Such runs are recoverable but never retry on their own. This periodic sweep
+    finds them — only for the active model roster, only with a transient error
+    marker, and only while ``attempts < max_attempts`` so a genuinely broken
+    chunk can't loop forever — resets them to QUEUED, and re-dispatches to the
+    model's queue. Permanent failures (schema/validation errors) are left as-is.
+    """
+    models = set(active_models())
+    candidates = ExtractionRun.objects.filter(
+        status=ExtractionRun.Status.FAILED,
+        model_name__in=models,
+        attempts__lt=max_attempts,
+    )
+    requeued = 0
+    for run in candidates.iterator():
+        error = (run.error or "").lower()
+        if not any(marker in error for marker in _TRANSIENT_ERROR_MARKERS):
+            continue
+        run.status = ExtractionRun.Status.QUEUED
+        run.error = ""
+        run.save(update_fields=["status", "error", "updated_at"])
+        run_ppi.apply_async(
+            kwargs={"row_id": run.id},
+            queue=queue_for_model(run.model_name),
+        )
+        requeued += 1
+
+    logger.info("requeue_transient_extraction_failures: requeued=%d", requeued)
+    return {"requeued": requeued}
