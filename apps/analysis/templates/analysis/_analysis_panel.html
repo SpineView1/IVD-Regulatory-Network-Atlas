@@ -1,0 +1,27 @@
+<div>
+  <h4>Centrality ({{ measure }}{% if network %} &middot; {{ network }}{% endif %})</h4>
+  <ol style="padding-left:1.1rem; font-size:.8rem;">
+    {% for row in centrality %}
+      <li>{{ row.symbol }} <span style="color:#777;">{{ row.score|floatformat:4 }}</span></li>
+    {% empty %}
+      <li class="hint">No nodes in scope.</li>
+    {% endfor %}
+  </ol>
+
+  <h4>Communities</h4>
+  <p style="font-size:.8rem;">
+    {{ communities|length }} node assignments across detected communities.
+  </p>
+
+  <h4>Feedback loops (&le; length)</h4>
+  <ul style="padding-left:1.1rem; font-size:.8rem;">
+    {% for loop in feedback_loops %}
+      <li>
+        {{ loop.edges|length }}-edge cycle
+        {% if loop.double_negative %}<strong style="color:#d62728;">&middot; double-negative</strong>{% endif %}
+      </li>
+    {% empty %}
+      <li class="hint">No cycles found in scope.</li>
+    {% endfor %}
+  </ul>
+</div>

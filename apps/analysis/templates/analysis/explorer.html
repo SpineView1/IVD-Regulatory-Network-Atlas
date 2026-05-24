@@ -1,0 +1,133 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Atlas Crosstalk Explorer</title>
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.2/cytoscape.min.js"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; display: flex; height: 100vh; }
+    #controls { width: 320px; padding: 1rem; border-right: 1px solid #ddd; overflow-y: auto; }
+    #cy { flex: 1; }
+    #panel { width: 340px; padding: 1rem; border-left: 1px solid #ddd; overflow-y: auto; }
+    label { display: block; margin-top: .75rem; font-weight: 600; font-size: .85rem; }
+    input, select, button { width: 100%; margin-top: .25rem; padding: .35rem; box-sizing: border-box; }
+    button { cursor: pointer; margin-top: .75rem; }
+    .hint { color: #777; font-size: .75rem; }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <h3>Crosstalk Explorer</h3>
+
+    <label>Entity neighborhood</label>
+    <input id="entity_id" type="number" placeholder="Entity pg_id (e.g. 42)">
+    <label>k (hops)</label>
+    <input id="khops" type="number" value="1" min="1" max="4">
+    <button onclick="loadNeighborhood()">Render neighborhood</button>
+
+    <hr>
+    <label>Network A</label>
+    <select id="net_a">
+      {% for n in networks %}<option value="{{ n.code }}">{{ n.title }}</option>{% endfor %}
+    </select>
+    <label>Network B</label>
+    <select id="net_b">
+      {% for n in networks %}<option value="{{ n.code }}">{{ n.title }}</option>{% endfor %}
+    </select>
+    <button onclick="loadCrosstalk()">Render crosstalk</button>
+
+    <hr>
+    <label>Path: source &rarr; target</label>
+    <input id="src" type="number" placeholder="source pg_id">
+    <input id="tgt" type="number" placeholder="target pg_id">
+    <select id="path_mode">
+      <option value="shortest">shortest</option>
+      <option value="all">all simple</option>
+    </select>
+    <button onclick="loadPaths()">Render path(s)</button>
+    <p class="hint">Nodes are colored by network membership.</p>
+  </div>
+
+  <div id="cy"></div>
+
+  <div id="panel">
+    <h3>Analysis</h3>
+    <label>Centrality measure</label>
+    <select id="measure" name="measure"
+            hx-get="/analysis/panel/" hx-target="#analysis_panel" hx-trigger="change"
+            hx-include="#max_len,#scope_net">
+      <option value="pagerank">PageRank</option>
+      <option value="betweenness">Betweenness</option>
+      <option value="degree">Degree</option>
+    </select>
+    <label>Feedback loop max length</label>
+    <input id="max_len" name="max_len" type="number" value="4" min="2" max="8"
+           hx-get="/analysis/panel/" hx-target="#analysis_panel" hx-trigger="change"
+           hx-include="#measure,#scope_net">
+    <label>Scope to network (optional)</label>
+    <select id="scope_net" name="network"
+            hx-get="/analysis/panel/" hx-target="#analysis_panel" hx-trigger="change"
+            hx-include="#measure,#max_len">
+      <option value="">(whole atlas)</option>
+      {% for n in networks %}<option value="{{ n.code }}">{{ n.title }}</option>{% endfor %}
+    </select>
+    <div id="analysis_panel" hx-get="/analysis/panel/?measure=pagerank&amp;max_len=4"
+         hx-trigger="load"></div>
+  </div>
+
+  <script>
+    const cy = cytoscape({
+      container: document.getElementById('cy'),
+      style: [
+        { selector: 'node', style: {
+            'label': 'data(label)', 'font-size': 9, 'background-color': '#888',
+            'text-valign': 'center', 'color': '#fff', 'width': 26, 'height': 26 } },
+        { selector: 'node[?multinet]', style: { 'background-color': '#d62728' } },
+        { selector: 'edge', style: {
+            'label': 'data(relation)', 'font-size': 7, 'curve-style': 'bezier',
+            'target-arrow-shape': 'triangle', 'width': 'mapData(belief, 0, 1, 1, 5)',
+            'line-color': '#bbb', 'target-arrow-color': '#bbb' } },
+      ],
+      layout: { name: 'cose' },
+    });
+
+    function paint(data) {
+      cy.elements().remove();
+      (data.nodes || []).forEach(n => {
+        n.data.multinet = (n.data.networks || []).length > 1;
+      });
+      cy.add((data.nodes || []).concat(data.edges || []));
+      cy.layout({ name: 'cose', animate: false }).run();
+    }
+    function paintPaths(payload) {
+      const nodes = {}, edges = {};
+      (payload.paths || []).forEach(p => {
+        (p.nodes || []).forEach(n => nodes[n.data.id] = n);
+        (p.edges || []).forEach(e => edges[e.data.id] = e);
+      });
+      paint({ nodes: Object.values(nodes), edges: Object.values(edges) });
+    }
+    function loadNeighborhood() {
+      const id = document.getElementById('entity_id').value;
+      const k = document.getElementById('khops').value || 1;
+      if (!id) return;
+      fetch(`/analysis/neighborhood.json?entity_id=${id}&k=${k}`).then(r => r.json()).then(paint);
+    }
+    function loadCrosstalk() {
+      const a = document.getElementById('net_a').value;
+      const b = document.getElementById('net_b').value;
+      fetch(`/analysis/crosstalk.json?network_a=${a}&network_b=${b}`).then(r => r.json()).then(paint);
+    }
+    function loadPaths() {
+      const s = document.getElementById('src').value;
+      const t = document.getElementById('tgt').value;
+      const m = document.getElementById('path_mode').value;
+      if (!s || !t) return;
+      fetch(`/analysis/paths.json?source=${s}&target=${t}&mode=${m}&max_len=6`)
+        .then(r => r.json()).then(paintPaths);
+    }
+  </script>
+</body>
+</html>
