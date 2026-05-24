@@ -101,7 +101,10 @@ class NcbiClient:
                 break
             windowed = f'({query}) AND ("{year}"[PDAT] : "{year}"[PDAT])'
             # Each year is < page_size for this corpus; one esearch per window.
-            page = self.esearch(query=windowed, retmax=page_size, db=db)
+            # A single transient NCBI hiccup must NOT abort the whole multi-year
+            # sweep: retry the window a few times, then skip it and continue so
+            # ingestion keeps making progress.
+            page = self._esearch_window(query=windowed, page_size=page_size, db=db)
             for pmid in page:
                 if pmid not in seen:
                     seen.add(pmid)
@@ -109,6 +112,34 @@ class NcbiClient:
                     if len(out) >= max_results:
                         break
         return out[:max_results]
+
+    def _esearch_window(
+        self,
+        *,
+        query: str,
+        page_size: int,
+        db: str,
+        attempts: int = 3,
+    ) -> list[int]:
+        """Run one esearch window, retrying transient network errors.
+
+        Returns the PMIDs for the window, or an empty list if every attempt
+        failed — the caller treats a failed window as "no results this year"
+        and moves on, so a flaky NCBI connection can't sink the full sweep.
+        """
+        import logging  # noqa: PLC0415
+        import time  # noqa: PLC0415
+
+        log = logging.getLogger(__name__)
+        for attempt in range(1, attempts + 1):
+            try:
+                return self.esearch(query=query, retmax=page_size, db=db)
+            except (httpx.HTTPError, etree.XMLSyntaxError) as exc:
+                if attempt == attempts:
+                    log.warning("esearch window failed after %d attempts: %s", attempts, exc)
+                    return []
+                time.sleep(0.5 * attempt)
+        return []
 
     @require_token("ncbi_eutils", cost=1)
     def efetch(self, *, pmids: list[int], db: str = "pubmed") -> list[PaperMetadata]:
