@@ -276,6 +276,17 @@ class NetworkEdgeMembership(TimestampedModel):
                 name="networkedgemembership_unique_network_edge",
                 condition=models.Q(edge__isnull=False),
             ),
+            # Durable DB-level idempotency for detect_affected_networks:
+            # only one pending-extraction placeholder per (network, paper).
+            # The condition restricts to NULL-edge rows so it does NOT
+            # clash with the edge-based constraint above, and does NOT
+            # affect Phase 3's reassign_network_membership (which always
+            # writes a non-null edge) or Phase 8 projection (read-only).
+            models.UniqueConstraint(
+                fields=["network", "pending_paper_id"],
+                name="networkedgemembership_unique_network_pending_paper",
+                condition=models.Q(edge__isnull=True),
+            ),
         ]
         indexes = [
             models.Index(fields=["network", "relevance"]),

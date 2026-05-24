@@ -180,9 +180,10 @@ def auto_resolve(self: Any, conflict_id: int) -> dict:
         conflict = Conflict.objects.select_for_update().get(id=conflict_id)
         if conflict.resolution_status != "open":
             return {"skipped": True, "status": conflict.resolution_status}
-
-    edge_a = conflict.edge_a
-    edge_b = conflict.edge_b
+        # Capture edge references under the lock so they are consistent with
+        # the conflict row we just locked (tightened atomic window — fix 3).
+        edge_a = conflict.edge_a
+        edge_b = conflict.edge_b
 
     # Get one RawPPI from each edge to get model, confidence, relation, evidence_span
     ppi_a = edge_a.evidence.select_related("raw_ppi__run__chunk__section__paper").first()

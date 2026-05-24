@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 PUBMED_FRESHNESS_THRESHOLD_HOURS = 2
 POSTGRES_LATENCY_WARN_MS = 200.0
 OLLAMA_PROBE_TIMEOUT_SECONDS = 5.0
+BEAT_HEARTBEAT_STALE_MINUTES = 5
 
 
 def _probe_ollama() -> bool:
@@ -85,7 +86,7 @@ def notify_admins(*, severity: str, check_name: str, message: str) -> None:
 
 @shared_task(queue="q.io", name="schedule.healthcheck")
 def healthcheck() -> dict:
-    """Run all three health probes; emit one HealthAlert per failure.
+    """Run all four health probes; emit one HealthAlert per failure.
 
     Returns a small dict summarising the run, so Flower / task logs
     are searchable.
@@ -93,14 +94,20 @@ def healthcheck() -> dict:
     Uses ``Watermark.updated_at`` as a proxy for the last successful
     PubMed advance (``advance_watermark`` calls ``save()``, so
     ``updated_at`` is set by ``TimestampedModel.auto_now``).
+
+    Also reads the beat-liveness Watermark row (source=``beat:heartbeat``)
+    written every 60 s by ``schedule.tasks.assert_beat_alive`` to detect
+    a dead Beat scheduler.
     """
     # Lazy import: ``schedule`` depends on ``monitoring`` at import time.
     from schedule.models import Watermark
+    from schedule.tasks import BEAT_HEARTBEAT_SOURCE  # noqa: PLC0415
 
     result = {
         "pubmed_refresh_stale": False,
         "ollama_unreachable": False,
         "postgres_slow": False,
+        "beat_scheduler_stale": False,
     }
 
     # (a) PubMed freshness — use watermark.updated_at as last-advance proxy.
@@ -154,5 +161,33 @@ def healthcheck() -> dict:
             context={"latency_ms": latency_ms},
         )
         result["postgres_slow"] = True
+
+    # (d) Beat scheduler liveness — probe the heartbeat Watermark row.
+    try:
+        beat_wm = Watermark.objects.get(source=BEAT_HEARTBEAT_SOURCE)
+        beat_age = timezone.now() - beat_wm.updated_at
+        if beat_age > timedelta(minutes=BEAT_HEARTBEAT_STALE_MINUTES):
+            _emit_alert(
+                check_name="beat_scheduler_stale",
+                severity="critical",
+                message=(
+                    f"Beat scheduler heartbeat is {beat_age.total_seconds() / 60:.1f} min old "
+                    f"(threshold {BEAT_HEARTBEAT_STALE_MINUTES} min). "
+                    f"assert_beat_alive may not be running."
+                ),
+                context={"age_minutes": beat_age.total_seconds() / 60},
+            )
+            result["beat_scheduler_stale"] = True
+    except Watermark.DoesNotExist:
+        _emit_alert(
+            check_name="beat_scheduler_stale",
+            severity="critical",
+            message=(
+                f"Beat scheduler heartbeat row ({BEAT_HEARTBEAT_SOURCE!r}) does not exist. "
+                f"Beat scheduler has never run or assert_beat_alive is not registered."
+            ),
+            context={},
+        )
+        result["beat_scheduler_stale"] = True
 
     return result

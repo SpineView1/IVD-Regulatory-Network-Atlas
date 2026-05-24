@@ -95,7 +95,8 @@ PHASE_8_BEAT_SCHEDULE: dict[str, dict] = {
     },
 }
 
-# Phase 6: Continuous monitoring — health checks, conflict sweeper, digest notifier.
+# Phase 6: Continuous monitoring — health checks, conflict sweeper, digest notifier,
+# and Beat liveness heartbeat.
 PHASE_6_BEAT_SCHEDULE: dict[str, dict] = {
     "monitoring-healthcheck": {
         "task": "schedule.healthcheck",
@@ -110,6 +111,14 @@ PHASE_6_BEAT_SCHEDULE: dict[str, dict] = {
     "verify-notify-subscribers-daily-digest": {
         "task": "verify.notify_subscribers_daily_digest",
         "schedule": crontab(hour=9, minute=0),  # daily 09:00 UTC, per spec §6
+        "options": {"queue": "q.io"},
+    },
+    # 4th Phase-6 entry: Beat liveness heartbeat (every 60 s, q.io).
+    # Writes a Watermark row whose updated_at the healthcheck reads to
+    # detect a dead Beat scheduler.
+    "schedule-assert-beat-alive": {
+        "task": "schedule.tasks.assert_beat_alive",
+        "schedule": 60,  # every 60 s, per spec §6
         "options": {"queue": "q.io"},
     },
 }
