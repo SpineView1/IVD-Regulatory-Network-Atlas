@@ -7,6 +7,7 @@ drill-down query still returns correct results.
 EXPLAIN ANALYZE timings against production data are to be captured at
 deploy time — not fabricated here.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -55,7 +56,6 @@ def test_covering_index_graph_networkedgemembership_network_edge_exists() -> Non
 def test_network_drilldown_query_returns_accepted_edges_ordered(db) -> None:
     """The network drill-down query returns accepted edges ordered by belief_score DESC."""
     from core.models import OntologyEntity
-
     from graph.models import Edge, Entity, NetworkEdgeMembership
     from networks.models import Network
 
@@ -85,8 +85,7 @@ def test_network_drilldown_query_returns_accepted_edges_ordered(db) -> None:
         Edge.objects.filter(
             network_memberships__network=network,
             status="accepted",
-        )
-        .order_by("-belief_score")[:200]
+        ).order_by("-belief_score")[:200]
     )
 
     assert len(edges) == 2
