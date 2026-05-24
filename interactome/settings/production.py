@@ -19,7 +19,8 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 SECURE_CONTENT_TYPE_NOSNIFF = True
-SECURE_BROWSER_XSS_FILTER = True
+# SECURE_BROWSER_XSS_FILTER was removed in Django 4.0 (no-op in 5.x).
+# X-XSS-Protection header is set at the Caddy layer via the header directive.
 X_FRAME_OPTIONS = "DENY"
 
 # CSRF trusted origins — required for HTTPS POSTs behind Caddy's TLS termination.

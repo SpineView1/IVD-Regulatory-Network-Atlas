@@ -15,6 +15,18 @@
 interactome.simbiosys.sb.upf.edu {
     encode zstd gzip
 
+    # Security response headers (defense-in-depth; Django also sets most of
+    # these via SECURE_* settings, but Caddy ensures they're present even if
+    # Django's middleware chain is bypassed or misconfigured).
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        # Remove the Server header to avoid leaking Caddy version.
+        -Server
+    }
+
     route {
         # Defense-in-depth: never trust client-supplied identity headers;
         # Authelia (via forward_auth copy_headers) is the only source.
