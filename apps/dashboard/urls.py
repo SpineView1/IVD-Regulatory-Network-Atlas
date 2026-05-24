@@ -28,4 +28,9 @@ urlpatterns = [
         views.subscriptions,
         name="subscriptions",
     ),
+    path(
+        "dashboard/health-alerts/",
+        views.health_alerts_panel,
+        name="health-alerts",
+    ),
 ]

@@ -293,6 +293,27 @@ def audit_trail(request: HttpRequest, pk: int) -> HttpResponse:
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# Phase 6 Task 11: Health alerts panel (HTMX polled partial)
+# ---------------------------------------------------------------------------
+
+
+def health_alerts_panel(request: HttpRequest) -> HttpResponse:
+    """Render the recent-open-alerts widget for the dashboard navbar.
+
+    Polled every 30s by HTMX from the base template. Returns only
+    unresolved HealthAlert rows, capped at 5 most recent.
+    """
+    from monitoring.models import HealthAlert  # noqa: PLC0415 — lazy import
+
+    alerts = HealthAlert.objects.filter(resolved_at__isnull=True).order_by("-created_at")[:5]
+    return render(
+        request,
+        "dashboard/partials/health_alerts.html",
+        {"alerts": list(alerts)},
+    )
+
+
 @login_required
 def subscriptions(request: HttpRequest) -> HttpResponse:
     """List all of the logged-in user's subscriptions with toggle controls."""

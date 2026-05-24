@@ -24,3 +24,10 @@ def unread_notifications_count(request: HttpRequest) -> dict[str, int]:
         read_at__isnull=True,
     ).count()
     return {"unread_notifications_count": count}
+
+
+def monitoring_status(request: HttpRequest) -> dict[str, bool]:
+    """Return ``{"ingestion_paused": bool}`` for the pause panel in base.html."""
+    from monitoring.services import is_ingestion_paused  # noqa: PLC0415 — lazy import
+
+    return {"paused": is_ingestion_paused()}
