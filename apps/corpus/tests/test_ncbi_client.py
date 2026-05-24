@@ -6,6 +6,7 @@ import re
 from datetime import date
 from pathlib import Path
 
+import httpx
 import pytest
 from pytest_httpx import HTTPXMock
 
@@ -138,3 +139,29 @@ def test_esearch_all_respects_max_results(client, httpx_mock: HTTPXMock):
     httpx_mock.add_response(method="GET", url=ESEARCH_URL_RE, content=_esearch_xml([4, 5, 6]))
     out = client.esearch_all(query="test", start_year=2000, end_year=2005, max_results=5)
     assert out == [1, 2, 3, 4, 5]
+
+
+def test_esearch_all_survives_transient_window_failure(client, httpx_mock: HTTPXMock, monkeypatch):
+    """A transient NCBI disconnect on one year window is retried, and if it
+    keeps failing the window is skipped so the rest of the sweep still runs —
+    a single hiccup must never abort multi-year ingestion."""
+    monkeypatch.setattr("time.sleep", lambda *_: None)  # don't actually back off
+    # Window 2000: succeeds
+    httpx_mock.add_response(method="GET", url=ESEARCH_URL_RE, content=_esearch_xml([1, 2]))
+    # Window 2001: disconnects on every attempt (3 tries) -> skipped
+    httpx_mock.add_exception(httpx.RemoteProtocolError("Server disconnected"))
+    httpx_mock.add_exception(httpx.RemoteProtocolError("Server disconnected"))
+    httpx_mock.add_exception(httpx.RemoteProtocolError("Server disconnected"))
+    # Window 2002: succeeds
+    httpx_mock.add_response(method="GET", url=ESEARCH_URL_RE, content=_esearch_xml([5, 6]))
+    out = client.esearch_all(query="test", start_year=2000, end_year=2002, max_results=100)
+    assert out == [1, 2, 5, 6]  # 2001 skipped, sweep completed
+
+
+def test_esearch_all_recovers_after_one_retry(client, httpx_mock: HTTPXMock, monkeypatch):
+    """A window that fails once then succeeds yields its results (no data lost)."""
+    monkeypatch.setattr("time.sleep", lambda *_: None)
+    httpx_mock.add_exception(httpx.RemoteProtocolError("Server disconnected"))  # 2000 try 1
+    httpx_mock.add_response(method="GET", url=ESEARCH_URL_RE, content=_esearch_xml([7, 8]))  # retry
+    out = client.esearch_all(query="test", start_year=2000, end_year=2000, max_results=100)
+    assert out == [7, 8]
