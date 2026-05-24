@@ -1,13 +1,11 @@
 """Tests for core.observability."""
+
 from __future__ import annotations
 
 import json
 import logging
-import logging.handlers
-from pathlib import Path
+import logging.config
 from unittest.mock import patch
-
-import pytest
 
 from core import observability
 
@@ -51,8 +49,10 @@ def test_sentry_init_attaches_django_and_celery_integrations(monkeypatch):
 def test_sentry_init_release_falls_back_to_git_sha(monkeypatch):
     monkeypatch.setenv("SENTRY_DSN_WEB", "https://k@sentry.io/1")
     monkeypatch.delenv("SENTRY_RELEASE", raising=False)
-    with patch("sentry_sdk.init") as mock_init, \
-         patch("subprocess.check_output", return_value=b"abcdef0\n"):
+    with (
+        patch("sentry_sdk.init") as mock_init,
+        patch("subprocess.check_output", return_value=b"abcdef0\n"),
+    ):
         observability.sentry_init(service="web")
     assert mock_init.call_args.kwargs["release"] == "abcdef0"
 
@@ -84,7 +84,12 @@ def test_configure_log_file_creates_parent_dir(tmp_path):
 def test_configure_log_file_writes_json_lines(tmp_path):
     log_path = tmp_path / "app.jsonl"
     cfg = observability.configure_log_file(
-        {"version": 1, "disable_existing_loggers": False, "handlers": {}, "root": {"handlers": [], "level": "INFO"}},
+        {
+            "version": 1,
+            "disable_existing_loggers": False,
+            "handlers": {},
+            "root": {"handlers": [], "level": "INFO"},
+        },
         str(log_path),
     )
     logging.config.dictConfig(cfg)

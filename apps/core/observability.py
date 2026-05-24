@@ -8,6 +8,7 @@ file handler alongside the existing stdout handler. The file path is
 host-mounted by docker-compose (see Task 7) so logs survive container
 restart for downstream Loki / ELK ingest.
 """
+
 from __future__ import annotations
 
 import os
@@ -26,8 +27,8 @@ def _resolve_release() -> str:
     if explicit:
         return explicit
     try:
-        sha = subprocess.check_output(
-            ["git", "rev-parse", "--short", "HEAD"],
+        sha = subprocess.check_output(  # noqa: S603
+            ["git", "rev-parse", "--short", "HEAD"],  # noqa: S607
             stderr=subprocess.DEVNULL,
         )
         return sha.decode().strip()
@@ -69,7 +70,7 @@ def sentry_init(*, service: str) -> None:
                 propagate_traces=True,
             ),
             LoggingIntegration(
-                level=20,        # INFO becomes breadcrumb
+                level=20,  # INFO becomes breadcrumb
                 event_level=40,  # ERROR becomes event
             ),
         ],
