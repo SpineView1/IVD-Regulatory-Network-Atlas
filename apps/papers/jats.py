@@ -22,7 +22,12 @@ class ParsedSection:
     body_text: str
 
 
-def _strip_ns(tag: str) -> str:
+def _strip_ns(tag: object) -> str:
+    # lxml yields Comment / ProcessingInstruction nodes whose .tag is a
+    # callable, not a string — real PMC JATS contains these. Treat them as
+    # non-elements so iteration over tree.iter() never crashes.
+    if not isinstance(tag, str):
+        return ""
     return tag.split("}", 1)[-1] if "}" in tag else tag
 
 

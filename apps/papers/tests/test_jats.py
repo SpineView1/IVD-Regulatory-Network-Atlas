@@ -51,3 +51,27 @@ def test_parse_jats_preserves_heading():
     headings = {s.heading for s in sections}
     assert "Introduction" in headings
     assert "Methods" in headings
+
+
+def test_parse_jats_tolerates_comments_and_pis():
+    """Real PMC JATS contains XML comments / processing instructions whose
+    lxml node .tag is a callable; the parser must not crash on them."""
+    from papers.jats import parse_jats
+
+    xml = b"""<?xml version="1.0"?>
+    <!-- a top-level comment -->
+    <article xmlns:xlink="http://www.w3.org/1999/xlink">
+      <?some-pi data?>
+      <body>
+        <!-- comment inside body -->
+        <sec sec-type="results">
+          <title>Results</title>
+          <p>TNF activates NF-kB in nucleus pulposus cells.</p>
+        </sec>
+      </body>
+    </article>"""
+    secs = parse_jats(xml)
+    assert any(
+        s.heading.lower().startswith("results") or "result" in s.doco_label.lower() for s in secs
+    )
+    assert any("nucleus pulposus" in s.body_text.lower() for s in secs)
