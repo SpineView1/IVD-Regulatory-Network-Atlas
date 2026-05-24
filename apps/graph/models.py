@@ -225,6 +225,10 @@ class Conflict(TimestampedModel):
     )
     # Phase 3 defines this field; Phase 6 reuses it (reconciliation doc §9.B).
     reasoning = models.TextField(blank=True, default="")
+    # Phase 6: auto-resolver outcome fields (additive; reasoning NOT re-added).
+    resolved_relation = models.CharField(max_length=64, blank=True, default="")
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    auto_resolve_attempted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         constraints = [
