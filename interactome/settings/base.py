@@ -135,6 +135,9 @@ CELERY_TASK_ROUTES = {
     "extract.tasks.enqueue_pending_chunks": {"queue": "q.io"},
     "extract.tasks.smoke_all_models": {"queue": "q.io"},
     "graph.integrate_pending": {"queue": "q.io"},
+    # Phase 5: verify notification + reviewer-reminder tasks (shared q.io worker)
+    "verify.notify": {"queue": "q.io"},
+    "verify.dispatch_review_assignments": {"queue": "q.io"},
 }
 
 # === MinIO / S3-compatible object store ===
