@@ -15,12 +15,12 @@ It is NOT gated by @pytest.mark.neo4j.
 
 from __future__ import annotations
 
-import pytest
-from django.test import Client
 from unittest.mock import patch
 
-from analysis.backends.fake import FakeGraphBackend
+import pytest
+from django.test import Client
 
+from analysis.backends.fake import FakeGraphBackend
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -55,7 +55,9 @@ def two_network_atlas(db):
     il1b = make_entity(1, "IL1B", "protein", "HGNC", "5992", "https://identifiers.org/hgnc:5992")
     nfkb1 = make_entity(2, "NFKB1", "protein", "HGNC", "7794", "https://identifiers.org/hgnc:7794")
     mmp3 = make_entity(3, "MMP3", "protein", "HGNC", "7173", "https://identifiers.org/hgnc:7173")
-    sirt1 = make_entity(4, "SIRT1", "protein", "HGNC", "14929", "https://identifiers.org/hgnc:14929")
+    sirt1 = make_entity(
+        4, "SIRT1", "protein", "HGNC", "14929", "https://identifiers.org/hgnc:14929"
+    )
 
     net_nfkb = Network.objects.create(
         code="nfkb",
