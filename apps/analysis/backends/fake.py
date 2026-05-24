@@ -6,21 +6,28 @@ are emulated with networkx algorithms (PageRank, betweenness, degree,
 greedy-modularity communities, simple_cycles) so the *shape* of the result
 matches what the real backend returns.
 """
+
 from __future__ import annotations
 
-import networkx as nx  # type: ignore[import-untyped]
+import networkx as nx
 
 from analysis.backends.base import GraphBackend
 
 # Relations whose semantics are inhibitory — used for double-negative motif tagging.
-INHIBITORY = {"inhibits", "represses", "dephosphorylates", "deubiquitinates",
-              "deacetylates", "demethylates"}
+INHIBITORY = {
+    "inhibits",
+    "represses",
+    "dephosphorylates",
+    "deubiquitinates",
+    "deacetylates",
+    "demethylates",
+}
 
 
 class FakeGraphBackend(GraphBackend):
     def __init__(self) -> None:
         self._g: nx.MultiDiGraph = nx.MultiDiGraph()  # entity nodes + REGULATES edges
-        self._networks: dict[str, dict] = {}          # code -> props
+        self._networks: dict[str, dict] = {}  # code -> props
         self._in_network: set[tuple[int, str]] = set()
         self._edge_by_id: dict[int, tuple[int, int]] = {}  # edge_id -> (src, tgt)
 
@@ -95,19 +102,33 @@ class FakeGraphBackend(GraphBackend):
     def _node_payload(self, n: int) -> dict:
         d = self._g.nodes[n]
         networks = sorted(c for (e, c) in self._in_network if e == n)
-        return {"data": {"id": str(n), "pg_id": n, "label": d.get("symbol", str(n)),
-                         "entity_type": d.get("entity_type", ""),
-                         "compartment": d.get("compartment", ""),
-                         "networks": networks}}
+        return {
+            "data": {
+                "id": str(n),
+                "pg_id": n,
+                "label": d.get("symbol", str(n)),
+                "entity_type": d.get("entity_type", ""),
+                "compartment": d.get("compartment", ""),
+                "networks": networks,
+            }
+        }
 
     def _edge_payload(self, eid: int, pair: tuple[int, int]) -> dict:
         d = self._g.edges[pair[0], pair[1], eid]
-        return {"data": {"id": f"e{eid}", "edge_id": eid, "source": str(pair[0]),
-                         "target": str(pair[1]), "relation": d.get("relation"),
-                         "belief": d.get("belief_score"), "status": d.get("status"),
-                         "n_supporting_papers": d.get("n_supporting_papers"),
-                         "n_models_agreeing": d.get("n_models_agreeing"),
-                         "networks": d.get("networks", [])}}
+        return {
+            "data": {
+                "id": f"e{eid}",
+                "edge_id": eid,
+                "source": str(pair[0]),
+                "target": str(pair[1]),
+                "relation": d.get("relation"),
+                "belief": d.get("belief_score"),
+                "status": d.get("status"),
+                "n_supporting_papers": d.get("n_supporting_papers"),
+                "n_models_agreeing": d.get("n_models_agreeing"),
+                "networks": d.get("networks", []),
+            }
+        }
 
     # --- query surface ---
     def neighborhood(self, *, entity_pg_id: int, k: int) -> dict:
@@ -116,8 +137,9 @@ class FakeGraphBackend(GraphBackend):
         und = self._g.to_undirected(as_view=True)
         reach = nx.single_source_shortest_path_length(und, entity_pg_id, cutoff=k)
         node_ids = set(reach)
-        edge_ids = {eid for eid, (s, t) in self._edge_by_id.items()
-                    if s in node_ids and t in node_ids}
+        edge_ids = {
+            eid for eid, (s, t) in self._edge_by_id.items() if s in node_ids and t in node_ids
+        }
         return self._serialize(node_ids, edge_ids)
 
     def crosstalk_edges(self, *, network_a: str, network_b: str) -> dict:
@@ -126,8 +148,11 @@ class FakeGraphBackend(GraphBackend):
         edge_ids = set()
         for eid, (s, t) in self._edge_by_id.items():
             nets = set(self._g.edges[s, t, eid].get("networks", []))
-            bridges = (s in in_a and t in in_b) or (s in in_b and t in in_a) \
+            bridges = (
+                (s in in_a and t in in_b)
+                or (s in in_b and t in in_a)
                 or ({network_a, network_b} <= nets)
+            )
             if bridges:
                 edge_ids.add(eid)
         node_ids = set()
@@ -154,7 +179,7 @@ class FakeGraphBackend(GraphBackend):
     def _path_to_dict(self, path: list[int]) -> dict:
         node_ids = set(path)
         edge_ids = set()
-        for s, t in zip(path, path[1:]):
+        for s, t in zip(path, path[1:], strict=False):
             for eid, pair in self._edge_by_id.items():
                 if pair == (s, t):
                     edge_ids.add(eid)
@@ -180,8 +205,10 @@ class FakeGraphBackend(GraphBackend):
         else:
             raise ValueError(f"unknown centrality measure: {measure}")
         ranked = sorted(scores.items(), key=lambda kv: kv[1], reverse=True)
-        return [{"pg_id": n, "symbol": self._g.nodes[n].get("symbol", str(n)),
-                 "score": float(s)} for n, s in ranked]
+        return [
+            {"pg_id": n, "symbol": self._g.nodes[n].get("symbol", str(n)), "score": float(s)}
+            for n, s in ranked
+        ]
 
     def communities(self, *, network: str | None) -> list[dict]:
         g = self._scope_graph(network)
@@ -191,8 +218,9 @@ class FakeGraphBackend(GraphBackend):
         out = []
         for idx, members in enumerate(comms):
             for n in members:
-                out.append({"pg_id": n, "symbol": self._g.nodes[n].get("symbol", str(n)),
-                            "community": idx})
+                out.append(
+                    {"pg_id": n, "symbol": self._g.nodes[n].get("symbol", str(n)), "community": idx}
+                )
         return out
 
     def feedback_loops(self, *, max_len: int, network: str | None) -> list[dict]:
@@ -204,7 +232,7 @@ class FakeGraphBackend(GraphBackend):
             ring = cycle + [cycle[0]]
             edge_ids: set[int] = set()
             inhib_count = 0
-            for s, t in zip(ring, ring[1:]):
+            for s, t in zip(ring, ring[1:], strict=False):
                 for eid, pair in self._edge_by_id.items():
                     if pair == (s, t):
                         edge_ids.add(eid)
@@ -212,6 +240,6 @@ class FakeGraphBackend(GraphBackend):
                             inhib_count += 1
                         break
             payload = self._serialize(set(cycle), edge_ids)
-            payload["double_negative"] = (len(cycle) == 2 and inhib_count == 2)
+            payload["double_negative"] = len(cycle) == 2 and inhib_count == 2
             loops.append(payload)
         return loops

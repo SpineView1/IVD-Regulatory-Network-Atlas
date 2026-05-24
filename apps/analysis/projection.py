@@ -9,61 +9,63 @@ Canonical field names (cross-plan reconciliation §4/§5/§6):
   Edge.n_models_agreeing; Entity.symbol/compartment/canonical_uri proxies;
   Network.code/title/category; NetworkEdgeMembership.network/edge.
 """
+
 from __future__ import annotations
 
 from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
 from analysis.backends.base import GraphBackend
+
+if TYPE_CHECKING:
+    from graph.models import Edge, Entity
+    from networks.models import Network
 
 
 def accepted_edge_ids() -> set[int]:
     """Set of all Edge.id where status == 'accepted' in Postgres."""
     from graph.models import Edge
 
-    return set(
-        Edge.objects.filter(status="accepted").values_list("id", flat=True)
-    )
+    return set(Edge.objects.filter(status="accepted").values_list("id", flat=True))
 
 
-def build_entity_payload(entity: object) -> dict:
+def build_entity_payload(entity: Entity) -> dict:
     """Map a graph.Entity to the (:Entity) node props."""
-    oe = entity.ontology_entity  # type: ignore[attr-defined]
+    oe = entity.ontology_entity
     return {
-        "pg_id": entity.id,  # type: ignore[attr-defined]
-        "ontology_id": oe.id,
-        "symbol": entity.symbol,            # proxy -> preferred_label (§5)  # type: ignore[attr-defined]
+        "pg_id": entity.pk,
+        "ontology_id": oe.pk,
+        "symbol": entity.symbol,  # proxy -> preferred_label (§5)
         "entity_type": oe.entity_type,
-        "compartment": entity.compartment,  # proxy (§5)  # type: ignore[attr-defined]
-        "canonical_uri": entity.canonical_uri,  # type: ignore[attr-defined]
+        "compartment": entity.compartment,  # proxy (§5)
+        "canonical_uri": entity.canonical_uri,
     }
 
 
-def _edge_network_codes(edge: object) -> list[str]:
+def _edge_network_codes(edge: Edge) -> list[str]:
     """Network codes this edge belongs to, sorted, via NetworkEdgeMembership."""
-    return sorted(
-        edge.network_memberships.values_list("network__code", flat=True)  # type: ignore[attr-defined]
-    )
+    return sorted(edge.network_memberships.values_list("network__code", flat=True))
 
 
-def build_edge_payload(edge: object) -> dict:
+def build_edge_payload(edge: Edge) -> dict:
     """Map a graph.Edge to the [:REGULATES] relationship props."""
     return {
-        "edge_id": edge.id,  # type: ignore[attr-defined]
-        "relation": edge.relation,                       # NOT relation_type (§4)  # type: ignore[attr-defined]
-        "belief_score": edge.belief_score,  # type: ignore[attr-defined]
-        "n_supporting_papers": edge.n_supporting_papers,  # persisted (§8)  # type: ignore[attr-defined]
-        "n_models_agreeing": edge.n_models_agreeing,      # persisted (§8)  # type: ignore[attr-defined]
-        "status": edge.status,  # type: ignore[attr-defined]
+        "edge_id": edge.pk,
+        "relation": edge.relation,  # NOT relation_type (§4)
+        "belief_score": edge.belief_score,
+        "n_supporting_papers": edge.n_supporting_papers,  # persisted (§8)
+        "n_models_agreeing": edge.n_models_agreeing,  # persisted (§8)
+        "status": edge.status,
         "networks": _edge_network_codes(edge),
     }
 
 
-def build_network_payload(network: object) -> dict:
+def build_network_payload(network: Network) -> dict:
     """Map a networks.Network to the (:Network) node props."""
     return {
-        "code": network.code,  # type: ignore[attr-defined]
-        "title": network.title,  # type: ignore[attr-defined]
-        "category": network.category,  # type: ignore[attr-defined]
+        "code": network.code,
+        "title": network.title,
+        "category": network.category,
     }
 
 
