@@ -57,6 +57,14 @@ PHASE_2_BEAT_SCHEDULE: dict[str, dict] = {
         "schedule": crontab(minute="*/5"),
         "options": {"queue": "q.io"},
     },
+    # Self-heal transient extraction failures (e.g. an Ollama/VPN blip that
+    # left runs in FAILED): re-queue and re-dispatch them so the pipeline
+    # recovers without manual intervention.
+    "extract-requeue-transient-failures": {
+        "task": "extract.tasks.requeue_transient_extraction_failures",
+        "schedule": crontab(minute="*/10"),
+        "options": {"queue": "q.io"},
+    },
 }
 
 # Phase 3: graph integration (per spec §6 Beat schedule).
