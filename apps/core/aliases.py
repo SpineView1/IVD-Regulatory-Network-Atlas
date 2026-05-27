@@ -99,3 +99,24 @@ def alias_for(text: str) -> str | None:
     if not text:
         return None
     return MENTION_ALIASES.get(_normalize_key(text))
+
+
+# miRNA mentions ("miR-191-5p", "hsa-miR-21", "microRNA-140") map 1:1 to an
+# HGNC miRNA *gene* symbol (MIR191, MIR21, MIR140), which grounds cleanly. We
+# strip the leading species prefix and the mature-arm suffix (-5p/-3p), which
+# denote the same gene. Conservative: only fires on canonical miR-<number>
+# naming, so it can't mis-map a non-miRNA. (let-7 family and circRNAs are
+# intentionally out of scope — let-7 gene symbols don't ground, and circRNAs
+# have no HGNC symbol so mapping them to a host gene would be wrong.)
+_MIRNA_RE = re.compile(r"(?:hsa[-_]?)?mir[-_]?(\d{1,4})([a-z]?)(?:[-_]?[35]p)?$", re.IGNORECASE)
+
+
+def mirna_symbol(text: str) -> str | None:
+    """Return the HGNC miRNA gene symbol for a miRNA mention, else None."""
+    if not text:
+        return None
+    s = re.sub(r"microrna", "mir", text.strip(), flags=re.IGNORECASE).replace(" ", "")
+    m = _MIRNA_RE.fullmatch(s)
+    if not m:
+        return None
+    return f"MIR{m.group(1)}{m.group(2).upper()}"
