@@ -60,7 +60,9 @@ def test_mirna_symbol_normalizes(mention, expected):
     assert mirna_symbol(mention) == expected
 
 
-@pytest.mark.parametrize("mention", ["MMP13", "circVMA21", "let-7a", "LINC00638", "miR", "", "SOX9"])
+@pytest.mark.parametrize(
+    "mention", ["MMP13", "circVMA21", "let-7a", "LINC00638", "miR", "", "SOX9"]
+)
 def test_mirna_symbol_ignores_non_mirna(mention):
     # Conservative: only canonical miR-<number> mentions match; everything else None.
     assert mirna_symbol(mention) is None
