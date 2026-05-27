@@ -155,6 +155,20 @@ def _ground_top(grounder: _Grounder, text: str) -> Any | None:
     return top
 
 
+# In-process cache of SUCCESSFUL groundings: (mention, hint) -> OntologyEntity pk.
+# Entity mentions repeat heavily in the corpus (e.g. "MMP13" hundreds of times),
+# and grounding is a per-call HTTP round-trip to the Gilda service — so caching
+# resolved names turns N calls into N-distinct. Only successes are cached: a
+# ``None`` may be a transient service error, and caching it would wrongly strand
+# the name for the process lifetime. Cleared between tests via clear_grounding_cache.
+_GROUND_CACHE: dict[tuple[str, str | None], int] = {}
+
+
+def clear_grounding_cache() -> None:
+    """Drop the in-process grounding cache (used by tests for isolation)."""
+    _GROUND_CACHE.clear()
+
+
 def ground_mention(
     text: str,
     *,
@@ -189,6 +203,14 @@ def ground_mention(
     _g: _Grounder = grounder if grounder is not None else _default_grounder()
     text_s = text.strip()
 
+    # Cache only applies to real grounding (not injected test stubs).
+    use_cache = grounder is None
+    cache_key = (text_s, entity_type_hint)
+    if use_cache and cache_key in _GROUND_CACHE:
+        cached = OntologyEntity.objects.filter(pk=_GROUND_CACHE[cache_key]).first()
+        if cached is not None:
+            return cached  # cached row gone (deleted) → fall through and re-ground
+
     # Try the raw mention first (proven path for clean symbols). Only if that
     # fails fall back to a curated alias — e.g. "Collagen II" → "COL2A1" — so
     # normalization can recover groundings without ever breaking an existing one.
@@ -216,6 +238,8 @@ def ground_mention(
             .first()
         )
         if ident is not None:
+            if use_cache:
+                _GROUND_CACHE[cache_key] = ident.entity.pk
             return ident.entity
 
         entity = OntologyEntity.objects.create(
@@ -228,4 +252,6 @@ def ground_mention(
             value=top.term.id,
             is_primary=True,
         )
+        if use_cache:
+            _GROUND_CACHE[cache_key] = entity.pk
         return entity

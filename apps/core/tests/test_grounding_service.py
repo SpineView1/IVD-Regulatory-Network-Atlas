@@ -17,7 +17,15 @@ from unittest.mock import MagicMock
 import pytest
 
 from core.models import Identifier, OntologyEntity
-from core.services import GROUND_SCORE_THRESHOLD, ground_mention
+from core.services import GROUND_SCORE_THRESHOLD, clear_grounding_cache, ground_mention
+
+
+@pytest.fixture(autouse=True)
+def _clear_ground_cache():
+    """Isolate the module-level grounding cache between tests."""
+    clear_grounding_cache()
+    yield
+    clear_grounding_cache()
 
 
 @pytest.fixture
@@ -173,3 +181,37 @@ def test_http_grounder_below_threshold_returns_none(db, settings, httpx_mock):
         json=[{"score": 0.4, "term": {"db": "HGNC", "id": "99", "entry_name": "X"}}],
     )
     assert ground_mention("ambiguous") is None
+
+
+def test_grounding_cache_skips_repeat_http_calls(db, make_match, monkeypatch):
+    """Repeated mentions resolve from the in-process cache — the grounder is
+    only hit once per distinct name (the whole point of the cache)."""
+    from core import services
+
+    stub = MagicMock()
+    stub.ground.return_value = [make_match("HGNC", "7173", "MMP3", 0.95)]
+    # ground_mention with grounder=None uses _default_grounder() → our stub.
+    monkeypatch.setattr(services, "_default_grounder", lambda: stub)
+
+    e1 = ground_mention("MMP3")
+    e2 = ground_mention("MMP3")
+    e3 = ground_mention("MMP3")
+    assert e1 is not None
+    assert e2 is not None
+    assert e3 is not None
+    assert e1.pk == e2.pk == e3.pk
+    assert stub.ground.call_count == 1  # 2nd and 3rd served from cache
+
+
+def test_grounding_cache_does_not_cache_misses(db, monkeypatch):
+    """A no-match (possibly a transient error) is NOT cached, so the name is
+    re-attempted next time rather than wrongly stranded."""
+    from core import services
+
+    stub = MagicMock()
+    stub.ground.return_value = []  # no match
+    monkeypatch.setattr(services, "_default_grounder", lambda: stub)
+
+    assert ground_mention("mysteryprotein") is None
+    assert ground_mention("mysteryprotein") is None
+    assert stub.ground.call_count == 2  # re-attempted, not cached
