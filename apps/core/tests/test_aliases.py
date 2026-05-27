@@ -42,3 +42,29 @@ def test_unknown_or_clean_mentions_return_none(mention):
 
 def test_lookup_is_case_and_punctuation_insensitive():
     assert alias_for("  COLLAGEN   type-II  ") == "COL2A1"
+
+
+import pytest as _pytest
+from core.aliases import mirna_symbol
+
+
+@_pytest.mark.parametrize(
+    ("mention", "expected"),
+    [
+        ("miR-191-5p", "MIR191"),
+        ("miR-21", "MIR21"),
+        ("hsa-miR-191-5p", "MIR191"),
+        ("microRNA-140", "MIR140"),
+        ("miR-29a", "MIR29A"),
+        ("miR-200b-3p", "MIR200B"),
+        ("miR140", "MIR140"),
+    ],
+)
+def test_mirna_symbol_normalizes(mention, expected):
+    assert mirna_symbol(mention) == expected
+
+
+@_pytest.mark.parametrize("mention", ["MMP13", "circVMA21", "let-7a", "LINC00638", "miR", "", "SOX9"])
+def test_mirna_symbol_ignores_non_mirna(mention):
+    # Conservative: only canonical miR-<number> mentions match; everything else None.
+    assert mirna_symbol(mention) is None

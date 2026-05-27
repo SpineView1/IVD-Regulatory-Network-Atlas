@@ -23,7 +23,7 @@ from typing import Any, Protocol, runtime_checkable
 
 from django.db import transaction
 
-from core.aliases import alias_for
+from core.aliases import alias_for, mirna_symbol
 from core.models import Identifier, OntologyEntity
 
 logger = logging.getLogger(__name__)
@@ -216,12 +216,16 @@ def ground_mention(
     # normalization can recover groundings without ever breaking an existing one.
     top = _ground_top(_g, text_s)
     if top is None:
-        alias = alias_for(text_s)
-        if alias is not None and alias.lower() != text_s.lower():
-            alias_top = _ground_top(_g, alias)
-            if alias_top is not None:
-                logger.info("grounded %r via alias %r", text_s, alias)
-                top = alias_top
+        # Fallbacks, tried in order: curated alias (e.g. "Collagen II"→"COL2A1"),
+        # then miRNA normalization ("miR-191-5p"→"MIR191"). Each only recovers
+        # groundings; it can never break an existing one.
+        for normalized in (alias_for(text_s), mirna_symbol(text_s)):
+            if normalized is not None and normalized.lower() != text_s.lower():
+                norm_top = _ground_top(_g, normalized)
+                if norm_top is not None:
+                    logger.info("grounded %r via %r", text_s, normalized)
+                    top = norm_top
+                    break
     if top is None:
         return None
 

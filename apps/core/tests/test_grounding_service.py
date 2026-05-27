@@ -215,3 +215,19 @@ def test_grounding_cache_does_not_cache_misses(db, monkeypatch):
     assert ground_mention("mysteryprotein") is None
     assert ground_mention("mysteryprotein") is None
     assert stub.ground.call_count == 2  # re-attempted, not cached
+
+
+def test_ground_mention_falls_back_to_mirna(db, make_match, monkeypatch):
+    """A miRNA mention that fails raw grounding is recovered via its HGNC gene
+    symbol: 'miR-191-5p' grounds nowhere, but 'MIR191' does."""
+    mir191 = make_match("HGNC", "31561", "MIR191", 0.99)
+
+    def fake_ground(text):
+        return [mir191] if text == "MIR191" else []
+
+    grounder = MagicMock()
+    grounder.ground.side_effect = fake_ground
+    e = ground_mention("miR-191-5p", grounder=grounder)
+    assert e is not None
+    assert e.preferred_label == "MIR191"
+    assert "MIR191" in [c.args[0] for c in grounder.ground.call_args_list]
