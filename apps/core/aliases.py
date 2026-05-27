@@ -71,6 +71,23 @@ _RAW_ALIASES: dict[str, str] = {
     "nf kb": "RELA",
     "nf kappab": "RELA",
     "nf kappa b": "RELA",
+    # Batch 2 — high-frequency IDD mentions the grounder still misses.
+    # (Verified these do NOT ground raw; most other ungrounded names were
+    # stranded by a grounding-service outage and just need re-grounding.)
+    "lamp2a": "LAMP2",  # chaperone-mediated-autophagy receptor isoform
+    "l2a": "LAMP2",
+    "tie2": "TEK",
+    "tie 2": "TEK",
+    "asic1a": "ASIC1",
+    "asic 1a": "ASIC1",
+    "caspase 3": "CASP3",
+    "cleaved caspase 3": "CASP3",
+    "caspase 1": "CASP1",
+    "cleaved caspase 1": "CASP1",
+    "caspase 9": "CASP9",
+    "cleaved caspase 9": "CASP9",
+    "mir 191 5p": "MIR191",
+    "mir 191": "MIR191",
 }
 
 # Pre-normalize the keys once so lookups are O(1) and definition stays readable.

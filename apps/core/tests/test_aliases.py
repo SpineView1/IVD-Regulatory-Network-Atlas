@@ -19,6 +19,15 @@ from core.aliases import alias_for
         ("Wnt 3a", "WNT3A"),
         ("Wnt 3α", "WNT3A"),  # Greek-letter form transliterates to the same key
         ("WNT-3A", "WNT3A"),
+        # batch 2
+        ("LAMP2A", "LAMP2"),
+        ("Tie2", "TEK"),
+        ("Tie-2", "TEK"),
+        ("ASIC1a", "ASIC1"),
+        ("cleaved caspase-3", "CASP3"),
+        ("caspase-3", "CASP3"),
+        ("cleaved caspase-1", "CASP1"),
+        ("miR-191-5p", "MIR191"),
     ],
 )
 def test_known_aliases_resolve(mention, expected):
